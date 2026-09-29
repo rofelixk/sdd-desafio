@@ -307,3 +307,47 @@ describe('Casos de borda — hospedagem e diárias', () => {
     expect(hospedagem({ descricao: 2, valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
   });
 });
+
+describe('Casos de borda — viagem', () => {
+  const hotel = { categoria: 'hospedagem', data: '2026-07-14', descricao: 'Hotel', fornecedor: 'Hotel', valor: 200 };
+  const alimentacao80 = { categoria: 'alimentacao', valor: 80 };
+
+  it('Borda › Alimentação em dia de viagem', () => {
+    const [, a] = rodar([hotel, { ...alimentacao80, data: '2026-07-14' }]);
+    expect(decisao(a)).toMatchObject({ status: 'APROVADO', reembolsavel: 8000n });
+    expect(a).toMatchObject({ limiteDiarioAplicado: 9000n, emViagem: true });
+  });
+
+  it('Borda › Transporte em dia de viagem', () => {
+    const [, t] = rodar([hotel, { categoria: 'transporte_urbano', data: '2026-07-14', valor: 130, tem_nota_fiscal: true }]);
+    expect(decisao(t)).toMatchObject({ status: 'PARCIAL', reembolsavel: 12000n });
+  });
+
+  it('Borda › Dia do check-out', () => {
+    const [, a] = rodar([hotel, { ...alimentacao80, data: '2026-07-15' }]);
+    expect(decisao(a)).toMatchObject({ status: 'PARCIAL', reembolsavel: 6000n });
+    expect(a?.emViagem).toBe(false);
+  });
+
+  it('Borda › Noite seguinte da estadia', () => {
+    const [, a] = rodar([{ ...hotel, descricao: 'Hotel 2 diarias' }, { ...alimentacao80, data: '2026-07-15' }]);
+    expect(decisao(a)).toMatchObject({ status: 'APROVADO', reembolsavel: 8000n });
+    expect(a?.emViagem).toBe(true);
+  });
+
+  it('Borda › Hospedagem recusada não gera viagem', () => {
+    const itens = rodar([
+      { ...hotel, valor: 690, tem_nota_fiscal: false },
+      { ...alimentacao80, data: '2026-07-14' },
+    ]);
+    expect(itens.map((i) => [decisao(i).status, decisao(i).reembolsavel])).toEqual([
+      ['RECUSADO', 0n],
+      ['PARCIAL', 6000n],
+    ]);
+  });
+
+  it('Borda › Viagem não altera o limiar de NF', () => {
+    const [, t] = rodar([hotel, { ...transporteSemNf, data: '2026-07-14', valor: 110 }]);
+    expect(decisao(t)).toMatchObject({ status: 'RECUSADO', codigo: 'NOTA_FISCAL_AUSENTE' });
+  });
+});
