@@ -100,10 +100,10 @@
   - **Aceite:** em `tests/nucleo/rn-007-duplicatas.test.ts` passam `RN-007 › d-006 segue e d-007 → DUPLICATA`, `RN-007 › duas alimentações de 40,00 sem fornecedor na mesma data → a 2ª DUPLICATA`, `RN-007 › só uma com fornecedor → as duas seguem`, `RN-007 › "Café" e "Cafe" são fornecedores diferentes (fornecedor não tira acento)`, `RN-007 › descricao e tem_nota_fiscal não entram no critério`, `RN-007 › recusa DUPLICATA traz o id da ocorrência aceita`, `RN-007 › fornecedor 123 e "123" são o mesmo fornecedor` e `RN-007 › fornecedor null é igual a fornecedor ausente`
   - **Commit:** `6036df0`
 
-- [ ] **T-016** — Etapa 7 em `src/nucleo/elegibilidade.ts`: `valorSolicitado > POLITICA.limiarNotaFiscal` (estritamente maior, sobre o valor arredondado) e sem nota → `Recusa(NOTA_FISCAL_AUSENTE)`
+- [x] **T-016** — Etapa 7 em `src/nucleo/elegibilidade.ts`: `valorSolicitado > POLITICA.limiarNotaFiscal` (estritamente maior, sobre o valor arredondado) e sem nota → `Recusa(NOTA_FISCAL_AUSENTE)`
   - **Atende:** RN-008, AMB-004, AMB-005, AMB-006
   - **Aceite:** em `tests/nucleo/rn-008-nota-fiscal.test.ts` passam `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-008 › 100.004 arredonda para 100,00 e não exige nota fiscal`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `cb1783a`
 
 - [ ] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`, registrando o `id` nos ids vistos com `registrarId` logo após a etapa 2) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
   - **Atende:** RN-003, RN-004, RN-007, RN-008, AMB-025 (seção 8)
