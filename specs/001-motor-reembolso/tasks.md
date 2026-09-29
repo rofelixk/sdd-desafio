@@ -105,10 +105,10 @@
   - **Aceite:** em `tests/nucleo/rn-008-nota-fiscal.test.ts` passam `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-008 › 100.004 arredonda para 100,00 e não exige nota fiscal`
   - **Commit:** `cb1783a`
 
-- [ ] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`, registrando o `id` nos ids vistos com `registrarId` logo após a etapa 2) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
+- [x] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`, registrando o `id` nos ids vistos com `registrarId` logo após a etapa 2) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
   - **Atende:** RN-003, RN-004, RN-007, RN-008, AMB-025 (seção 8)
   - **Aceite:** chamando o motor em memória, passam em `tests/nucleo/rn-003-validacao.test.ts` `RN-003 › despesa inválida não impede o processamento das outras` e `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`; em `tests/nucleo/rn-007-duplicatas.test.ts` `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)` e `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `07f9724`
 
 - [ ] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): recebe a `descricao` já em texto (`comoTexto`, T-007) e, na descrição normalizada, busca a primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição vazia (ausente ou nula) ou N = 0 → 1 (uma única diária)
   - **Atende:** RN-012, AMB-008, AMB-026
