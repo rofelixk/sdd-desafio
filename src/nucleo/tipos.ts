@@ -11,9 +11,16 @@ export type DataISO = string;
 /** Categorias reconhecidas: as chaves de `POLITICA.limites` (RN-006, plan §4). */
 export type Categoria = keyof typeof POLITICA.limites;
 
-/** Número como apareceu no arquivo, ex.: `{ texto: "33.333" }` (R-03). */
-export interface NumeroJson {
+/**
+ * Número como apareceu no arquivo, ex.: `{ texto: "33.333" }` (R-03).
+ * Classe para distinguir de um objeto `{"texto": ...}` vindo da entrada.
+ */
+export class NumeroJson {
   readonly texto: string;
+
+  constructor(texto: string) {
+    this.texto = texto;
+  }
 }
 
 /** Arquivo de entrada válido (RN-015). */
