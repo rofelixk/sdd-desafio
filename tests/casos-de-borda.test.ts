@@ -533,16 +533,16 @@ describe('Casos de borda — arquivo', () => {
 
   it('Borda › inicio depois de fim', () => {
     const stderr = cliComErro(JSON.stringify({ ...valido, periodo: { inicio: '2026-07-31', fim: '2026-07-01' } }));
-    expect(stderr).toMatch(/^erro: .*periodo.inicio/);
+    expect(stderr).toMatch(/^erro: .*periodo\.inicio/);
   });
 
   it('Borda › colaborador.id vazio', () => {
-    expect(cliComErro(JSON.stringify({ ...valido, colaborador: { id: '  ' } }))).toMatch(/^erro: .*colaborador.id/);
+    expect(cliComErro(JSON.stringify({ ...valido, colaborador: { id: '  ' } }))).toMatch(/^erro: .*colaborador\.id/);
   });
 
   it('Borda › periodo.inicio não textual', () => {
     const stderr = cliComErro('{"colaborador": {"id": "c-1"}, "periodo": {"inicio": 20260701, "fim": "2026-07-31"}, "despesas": []}');
-    expect(stderr).toMatch(/^erro: .*periodo.inicio/);
+    expect(stderr).toMatch(/^erro: .*periodo\.inicio/);
   });
 
   it('Borda › Arquivo que não é objeto', () => {
