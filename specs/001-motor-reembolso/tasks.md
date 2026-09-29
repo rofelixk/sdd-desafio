@@ -145,10 +145,10 @@
   - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel e contagens somam quantidade_itens`, `RN-014 › total_solicitado ignora valores não positivos e nulos`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel, exato em centavos` e `RN-014 › lista vazia → contagens 0 e totais 0,00`
   - **Commit:** `9ebda81`
 
-- [ ] **T-025** — [P] Criar `src/io/entrada.ts` com `validarEntrada(json)` → `Entrada` ou lança `ErroEntrada { mensagem }`: exige que o JSON seja objeto, `colaborador.id`, `periodo.inicio` e `periodo.fim` (datas válidas pela T-004, `inicio ≤ fim`) e `despesas` como lista; `colaborador.id`/`periodo.inicio`/`periodo.fim` vazios, só com espaços, nulos ou não textuais contam como ausentes, e `colaborador`/`periodo` que não são objeto têm todos os campos ausentes (AMB-027); a mensagem cita o campo ou o problema. `colaborador`/`periodo` guardados brutos para eco
+- [x] **T-025** — [P] Criar `src/io/entrada.ts` com `validarEntrada(json)` → `Entrada` ou lança `ErroEntrada { mensagem }`: exige que o JSON seja objeto, `colaborador.id`, `periodo.inicio` e `periodo.fim` (datas válidas pela T-004, `inicio ≤ fim`) e `despesas` como lista; `colaborador.id`/`periodo.inicio`/`periodo.fim` vazios, só com espaços, nulos ou não textuais contam como ausentes, e `colaborador`/`periodo` que não são objeto têm todos os campos ausentes (AMB-027); a mensagem cita o campo ou o problema. `colaborador`/`periodo` guardados brutos para eco
   - **Atende:** RN-015, AMB-018, AMB-027
   - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › sem periodo → erro cuja mensagem cita periodo`, `RN-015 › sem colaborador.id → erro cuja mensagem cita colaborador.id`, `RN-015 › periodo.inicio ou periodo.fim inválidos → erro`, `RN-015 › inicio depois de fim → erro`, `RN-015 › despesas ausente ou que não é lista → erro cuja mensagem cita despesas`, `RN-015 › texto que não é JSON → erro`, `RN-015 › despesas: [] é entrada válida`, `RN-015 › colaborador.id "", "  ", null ou 123 → erro cuja mensagem cita colaborador.id`, `RN-015 › periodo.inicio 20260701 ou null → erro cuja mensagem cita periodo.inicio`, `RN-015 › colaborador ou periodo que não é objeto → erro` e `RN-015 › JSON que não é objeto ([], 42, "x") → erro`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `358b59f`
 
 ## Fase 3 — Casos de borda
 
