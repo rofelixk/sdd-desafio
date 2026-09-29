@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { statusDe } from '../src/nucleo/status.ts';
 import type { ResultadoItem } from '../src/nucleo/tipos.ts';
-import { rodar } from './apoio.ts';
+import { calcular } from '../src/nucleo/motor.ts';
+import { entrada, rodar } from './apoio.ts';
 
 /** O que a seção 7 verifica em cada item. */
 function decisao(i: ResultadoItem | undefined) {
@@ -117,5 +118,47 @@ describe('Casos de borda — limite diário', () => {
       status: 'APROVADO',
       reembolsavel: 4720n,
     });
+  });
+});
+
+describe('Casos de borda — período, valor não positivo e categoria', () => {
+  it('Borda › Primeiro dia do período', () => {
+    expect(decisao(rodar([{ data: '2026-07-01' }])[0]).codigo).toBe('APROVADO_INTEGRAL');
+  });
+
+  it('Borda › Último dia do período', () => {
+    expect(decisao(rodar([{ data: '2026-07-31' }])[0]).codigo).toBe('APROVADO_INTEGRAL');
+  });
+
+  it('Borda › Dia seguinte ao período', () => {
+    expect(decisao(rodar([{ data: '2026-08-01' }])[0])).toMatchObject({ status: 'RECUSADO', codigo: 'FORA_DO_PERIODO' });
+  });
+
+  it('Borda › Estorno', () => {
+    const r = calcular(entrada([{ valor: -45 }, { valor: 10, fornecedor: 'Y' }]));
+    expect(decisao(r.itens[0])).toEqual({ status: 'RECUSADO', codigo: 'VALOR_NAO_POSITIVO', solicitado: -4500n, reembolsavel: 0n });
+    expect(r.resumo.totalSolicitado).toBe(1000n);
+  });
+
+  it('Borda › Valor zero', () => {
+    expect(decisao(rodar([{ valor: 0 }])[0])).toMatchObject({ status: 'RECUSADO', codigo: 'VALOR_NAO_POSITIVO' });
+  });
+
+  it('Borda › Categoria em maiúsculas', () => {
+    const [i] = rodar([{ categoria: 'ALIMENTACAO' }]);
+    expect(i?.categoria).toBe('alimentacao');
+    expect(i?.limiteDiarioAplicado).toBe(6000n);
+  });
+
+  it('Borda › Categoria com acento', () => {
+    const [i] = rodar([{ categoria: 'alimentação' }]);
+    expect(i?.categoria).toBe('alimentacao');
+    expect(decisao(i).codigo).toBe('APROVADO_INTEGRAL');
+  });
+
+  it('Borda › Categoria desconhecida', () => {
+    const [i] = rodar([{ categoria: 'coworking', valor: 89 }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CATEGORIA_NAO_REEMBOLSAVEL' });
+    expect(i?.categoria).toBe('coworking');
   });
 });
