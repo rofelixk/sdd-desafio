@@ -65,10 +65,10 @@
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco`, `RN-003 › id, data, categoria ou valor ausentes → DADO_INVALIDO`, `RN-003 › id, data ou categoria nulos, vazios ou só com espaços → DADO_INVALIDO`, `RN-003 › "categoria": "" e "categoria": 123 → DADO_INVALIDO, e não CATEGORIA_NAO_REEMBOLSAVEL`, `RN-003 › item que não é objeto (42, "x", null) → DADO_INVALIDO com ecos e valor_solicitado nulos` , `RN-003 › eco sai exatamente como veio (categoria 123 continua o NumeroJson "123")` e `RN-003 › "fornecedor": 123 e "descricao": null não recusam a despesa`
   - **Commit:** `9dec873`
 
-- [ ] **T-009** — Aceitar `valor` como texto no formato fechado em `src/nucleo/despesa.ts`: sem os espaços das bordas, casa `^-?\d+([.,]\d+)?$`; vírgula vira ponto e segue para `paraCentavos` (RN-001). Qualquer outro texto ou tipo (vazio, milhar, moeda, dois separadores, letras, booleano, lista, objeto, nulo) → `DADO_INVALIDO` com `valor_solicitado` nulo
+- [x] **T-009** — Aceitar `valor` como texto no formato fechado em `src/nucleo/despesa.ts`: sem os espaços das bordas, casa `^-?\d+([.,]\d+)?$`; vírgula vira ponto e segue para `paraCentavos` (RN-001). Qualquer outro texto ou tipo (vazio, milhar, moeda, dois separadores, letras, booleano, lista, objeto, nulo) → `DADO_INVALIDO` com `valor_solicitado` nulo
   - **Atende:** RN-003, AMB-021, AMB-023
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "45.00", "45,00" e 45.00 dão valor_solicitado 45,00`, `RN-003 › "1.234,56" e "R$ 45,00" → DADO_INVALIDO`, `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `RN-003 › "", "45.", ",5", "1,2,3", "abc", true, [], {} e null não são numéricos`, `RN-003 › " -45,00 " (espaços nas bordas) é numérico` e `RN-003 › recusa por outro campo mantém valor_solicitado arredondado quando o valor é numérico`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `32b515d`
 
 - [ ] **T-010** — Validar `tem_nota_fiscal` em `src/nucleo/despesa.ts`: só `true`/`false` são aceitos; ausente, nulo ou texto vazio/só espaços vale `false`; qualquer outro valor → `DADO_INVALIDO`
   - **Atende:** RN-003, AMB-022, AMB-018
