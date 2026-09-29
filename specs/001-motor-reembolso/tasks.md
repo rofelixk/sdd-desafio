@@ -125,10 +125,10 @@
   - **Aceite:** em `tests/nucleo/rn-011-viagem.test.ts` passam `RN-011 › hospedagem de 1 diária em D: só D é dia de viagem`, `RN-011 › hospedagem de 2 diárias em D: D e D+1 são dias de viagem` e `RN-011 › sem hospedagem elegível não há dia de viagem`
   - **Commit:** `d6a3445`
 
-- [ ] **T-021** — [P] Criar `src/nucleo/limites.ts` com `alocar(parcelas, diasDeViagem)`: saldo por `(data, categoria)` iniciado com `POLITICA.limites[cat].diario`, multiplicado por `fatorViagem` só se a data é de viagem **e** `ampliaEmViagem`; cada parcela, na ordem da entrada, recebe `min(valor, saldo)`; soma por `indiceDespesa`; devolve por despesa o reembolsável, o limite aplicado, o saldo disponível e o código (`APROVADO_INTEGRAL` / `LIMITE_DIARIO_EXCEDIDO` / `LIMITE_DIARIO_ESGOTADO`)
+- [x] **T-021** — [P] Criar `src/nucleo/limites.ts` com `alocar(parcelas, diasDeViagem)`: saldo por `(data, categoria)` iniciado com `POLITICA.limites[cat].diario`, multiplicado por `fatorViagem` só se a data é de viagem **e** `ampliaEmViagem`; cada parcela, na ordem da entrada, recebe `min(valor, saldo)`; soma por `indiceDespesa`; devolve por despesa o reembolsável, o limite aplicado, o saldo disponível e o código (`APROVADO_INTEGRAL` / `LIMITE_DIARIO_EXCEDIDO` / `LIMITE_DIARIO_ESGOTADO`)
   - **Atende:** RN-009, RN-010, AMB-001, AMB-002, AMB-003, AMB-015, AMB-016, AMB-020
   - **Aceite:** em `tests/nucleo/rn-009-limites.test.ts` passam `RN-009 › alimentação isolada de 60,00 → APROVADO 60,00`, `RN-009 › d-012 (sábado, 47,20) → APROVADO 47,20`, `RN-009 › categorias diferentes no mesmo dia têm limites independentes` e `RN-009 › em dia de viagem alimentação vai a 90,00 e transporte a 120,00, hospedagem fica em 250,00`; em `tests/nucleo/rn-010-parcial.test.ts` passam `RN-010 › d-001 e d-002 em 03/07: 1ª PARCIAL 60,00, 2ª ESGOTADO`, `RN-010 › d-014 (61,00) → PARCIAL 60,00` e `RN-010 › despesa que usa exatamente o saldo restante → APROVADO_INTEGRAL`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `388604d`
 
 - [ ] **T-022** — **Passada 2** em `src/nucleo/motor.ts`: com as elegíveis da passada 1, calcula `diasDeViagem`, gera parcelas e chama `alocar`; monta cada `ResultadoItem` com `limite_diario_aplicado`, `em_viagem`, `diarias` (só hospedagem alocada) e `status` **derivado** de (reembolsável, solicitado); recusadas saem com esses três campos nulos e reembolsável 0
   - **Atende:** RN-011, RN-012, RN-002, RN-004, RN-008, AMB-007, AMB-017, AMB-020
