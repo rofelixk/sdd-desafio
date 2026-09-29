@@ -135,10 +135,10 @@
   - **Aceite:** chamando o motor em memória, passam em `tests/nucleo/rn-011-viagem.test.ts` `RN-011 › alimentação de 80,00 na data de hospedagem elegível → APROVADO 80,00 (limite 90,00)`, `RN-011 › hospedagem de 1 diária em D e alimentação 80,00 em D+1 → PARCIAL 60,00`, `RN-011 › hospedagem de 2 diárias em D e alimentação 80,00 em D+1 → APROVADO 80,00` e `RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem`; em `tests/nucleo/rn-008-nota-fiscal.test.ts` `RN-008 › dia de viagem não amplia o limiar de nota fiscal`; em `tests/nucleo/rn-012-diarias.test.ts` `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00` e `RN-012 › diarias só é preenchido em hospedagem que chegou ao limite; limite e em_viagem nulos nas recusadas`; em `tests/nucleo/rn-002-categoria.test.ts` `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` `RN-004 › d-009 não afeta as despesas de transporte de 2026-07-11`
   - **Commit:** `b2f1c4d`
 
-- [ ] **T-023** — [P] Criar `src/nucleo/motivos.ts`: `montarMotivo(codigo, detalhes)` → `{ codigo, descricao }` com um modelo de texto por código da seção 4, valores via `formatarReais`; códigos de limite citam limite aplicado, saldo disponível e valor cortado; `DUPLICATA` cita o `id` aceito sem falar em fraude/suspeita. Ligar no `motor.ts`
+- [x] **T-023** — [P] Criar `src/nucleo/motivos.ts`: `montarMotivo(codigo, detalhes)` → `{ codigo, descricao }` com um modelo de texto por código da seção 4, valores via `formatarReais`; códigos de limite citam limite aplicado, saldo disponível e valor cortado; `DUPLICATA` cita o `id` aceito sem falar em fraude/suspeita. Ligar no `motor.ts`
   - **Atende:** RN-013, RN-007
   - **Aceite:** em `tests/nucleo/rn-013-motivos.test.ts` passam `RN-013 › todo código da seção 4 gera descrição não vazia`, `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › LIMITE_DIARIO_ESGOTADO cita o limite e o saldo zerado` e `RN-007 › descrição de DUPLICATA cita o id da ocorrência aceita`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `2761b61`
 
 - [ ] **T-024** — Criar `src/nucleo/resumo.ts` e ligá-lo no `motor.ts`: contagens por status; `total_solicitado` soma só `valor_solicitado` positivo e não nulo; `total_reembolsavel` soma todos os itens; `total_nao_reembolsado = total_solicitado − total_reembolsavel` em centavos
   - **Atende:** RN-014, AMB-012, AMB-023
