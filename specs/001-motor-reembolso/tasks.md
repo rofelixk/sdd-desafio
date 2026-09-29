@@ -234,10 +234,10 @@
   - **Aceite:** passam `Borda › Lista de despesas vazia`, `Borda › Arquivo sem periodo`, `Borda › inicio depois de fim`, `Borda › colaborador.id vazio`, `Borda › periodo.inicio não textual` e `Borda › Arquivo que não é objeto`
   - **Commit:** `247de37`
 
-- [ ] **T-041** — Criar `tests/rastreabilidade.test.ts` (DT-005): lê `specs/001-motor-reembolso/spec.md`, extrai todo `### RN-NNN` e a 1ª coluna da tabela da seção 7 (sem as crases), lê os títulos de teste em `tests/**/*.test.ts` e falha listando o que ficou sem teste; confere também que toda RN tem **exatamente um** arquivo `tests/**/rn-NNN-*.test.ts`
+- [x] **T-041** — Criar `tests/rastreabilidade.test.ts` (DT-005): lê `specs/001-motor-reembolso/spec.md`, extrai todo `### RN-NNN` e a 1ª coluna da tabela da seção 7 (sem as crases), lê os títulos de teste em `tests/**/*.test.ts` e falha listando o que ficou sem teste; confere também que toda RN tem **exatamente um** arquivo `tests/**/rn-NNN-*.test.ts`
   - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015 (seção 9, critérios 2 e 3)
   - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste` , `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; removendo temporariamente um `it` de borda, a suíte fica vermelha
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `65e8dc0`
 
 - [ ] **T-042** — Reescrever `README.md` com como instalar, rodar e testar (Node ≥ 24, `npm install`, `npm test`, `npm run typecheck`, comando `calcular`), apontando para `specs/001-motor-reembolso/` e `quickstart.md`
   - **Atende:** seção 9 (entrega: "como rodar e como testar", DESAFIO.md)
