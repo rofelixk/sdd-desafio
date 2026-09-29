@@ -75,10 +75,10 @@
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO`, `RN-003 › "tem_nota_fiscal": null vale false`, `RN-003 › tem_nota_fiscal ausente, "" ou "   " vale false` e `RN-003 › tem_nota_fiscal "true", 1, 0, [] ou {} → DADO_INVALIDO`
   - **Commit:** `90ea5f7`
 
-- [ ] **T-011** — Detectar `id` repetido em `src/nucleo/despesa.ts`: `validarDespesa` recebe o conjunto de ids vistos (ids normalizados com `normalizar`, T-007) e recusa com `DADO_INVALIDO` se o `id` normalizado já estiver nele; o eco do `id` sai como veio. O conjunto só recebe o `id` de despesas que **passaram pela validação** (resultado `DespesaValida`); uma `Recusa(DADO_INVALIDO)`, por qualquer motivo, inclusive o próprio `id` repetido, não reserva o `id` (AMB-025). Expor o helper `registrarId(idsVistos, resultado)` que só adiciona quando o resultado é `DespesaValida`
+- [x] **T-011** — Detectar `id` repetido em `src/nucleo/despesa.ts`: `validarDespesa` recebe o conjunto de ids vistos (ids normalizados com `normalizar`, T-007) e recusa com `DADO_INVALIDO` se o `id` normalizado já estiver nele; o eco do `id` sai como veio. O conjunto só recebe o `id` de despesas que **passaram pela validação** (resultado `DespesaValida`); uma `Recusa(DADO_INVALIDO)`, por qualquer motivo, inclusive o próprio `id` repetido, não reserva o `id` (AMB-025). Expor o helper `registrarId(idsVistos, resultado)` que só adiciona quando o resultado é `DespesaValida`
   - **Atende:** RN-003, AMB-024, AMB-025
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "D-001" depois de "d-001" → DADO_INVALIDO`, `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `RN-003 › a primeira ocorrência de "d-001" segue normalmente`, `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)` e `RN-003 › "d-001" inválido, "d-001" válido e outro "d-001" válido → 1º e 3º DADO_INVALIDO, 2º segue`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `2de0c2f`
 
 - [ ] **T-012** — [P] Criar `src/nucleo/elegibilidade.ts` com a etapa 3: `valorSolicitado ≤ 0` → `Recusa(VALOR_NAO_POSITIVO)`
   - **Atende:** RN-004, AMB-012
