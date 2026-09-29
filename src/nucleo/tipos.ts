@@ -87,6 +87,15 @@ export interface Recusa {
   readonly detalhes: Readonly<Record<string, unknown>>;
 }
 
+/** Recusa da RN-003: leva os ecos brutos e o valor, se numérico (AMB-023). */
+export interface RecusaDadoInvalido extends Recusa {
+  readonly codigo: 'DADO_INVALIDO';
+  readonly detalhes: { readonly campo: string; readonly problema: string };
+  /** Como vieram; ausente → `null`. */
+  readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown };
+  readonly valorSolicitado: Centavos | null;
+}
+
 /** Fatia de despesa elegível que consome limite de uma data (RN-012). */
 export interface Parcela {
   readonly indiceDespesa: number;
