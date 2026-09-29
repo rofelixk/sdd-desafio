@@ -115,10 +115,10 @@
   - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › "Hotel Rio - 2 diarias" → N = 2`, `RN-012 › "Airbnb 3 noites" → N = 3`, `RN-012 › "Hotel 5 estrelas" → N = 1`, `RN-012 › "Hotel 5 estrelas - 2 diarias" → N = 2`, `RN-012 › "Hotel 1.5 diarias" → N = 1 (e não 5)`, `RN-012 › "Pousada" e descrição ausente → N = 1`, `RN-012 › "0 diarias" → N = 1`, `RN-012 › "3 Diárias" → N = 3`, `RN-012 › "12 noites" → N = 12 (inteiro completo)`, `RN-012 › "2diarias" → N = 2 (sem espaço)`, `RN-012 › "2 noitadas" → N = 1` e `RN-012 › descricao nula ou 2 (número) → N = 1`
   - **Commit:** `94c9883`
 
-- [ ] **T-019** — `gerarParcelas(elegivel)` em `src/nucleo/diarias.ts` (DT-003): hospedagem com N diárias vira N `Parcela`s nas datas D…D+N−1 com `valor ÷ N` e o resto distribuído um centavo por vez nas primeiras noites; qualquer outra categoria vira uma parcela na própria data
+- [x] **T-019** — `gerarParcelas(elegivel)` em `src/nucleo/diarias.ts` (DT-003): hospedagem com N diárias vira N `Parcela`s nas datas D…D+N−1 com `valor ÷ N` e o resto distribuído um centavo por vez nas primeiras noites; qualquer outra categoria vira uma parcela na própria data
   - **Atende:** RN-012, AMB-008
   - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › d-010 (480,00, N = 2) → 240,00 em 14/07 e 240,00 em 15/07`, `RN-012 › 100,00 em 3 noites → 33,34 / 33,33 / 33,33`, `RN-012 › noites atravessam o fim do mês (31/07 → 01/08)` e `RN-012 › despesa que não é hospedagem gera uma parcela`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `47d672d`
 
 - [ ] **T-020** — Criar `src/nucleo/viagem.ts` com `diasDeViagem(elegiveis)` → conjunto de todas as noites (D…D+N−1) das hospedagens **elegíveis** recebidas; o check-out (D+N) não entra
   - **Atende:** RN-011, AMB-007
