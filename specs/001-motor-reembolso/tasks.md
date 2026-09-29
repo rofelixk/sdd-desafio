@@ -95,10 +95,10 @@
   - **Aceite:** em `tests/nucleo/rn-006-categorias.test.ts` passam `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL` e `RN-006 › alimentacao, transporte_urbano e hospedagem são reembolsáveis`
   - **Commit:** `a86a420`
 
-- [ ] **T-015** — Etapa 6 em `src/nucleo/elegibilidade.ts`: estado com chave `(data, categoria normalizada, normalizarFornecedor(fornecedor) — ausente/só espaços = "", valorSolicitado)` → `id` da primeira ocorrência; ocorrência seguinte com `id` diferente → `Recusa(DUPLICATA)` com `detalhes.idAceito`. `descricao` e `tem_nota_fiscal` fora da chave
+- [x] **T-015** — Etapa 6 em `src/nucleo/elegibilidade.ts`: estado com chave `(data, categoria normalizada, normalizarFornecedor(fornecedor) — ausente/só espaços = "", valorSolicitado)` → `id` da primeira ocorrência; ocorrência seguinte com `id` diferente → `Recusa(DUPLICATA)` com `detalhes.idAceito`. `descricao` e `tem_nota_fiscal` fora da chave
   - **Atende:** RN-007, AMB-011, AMB-026
   - **Aceite:** em `tests/nucleo/rn-007-duplicatas.test.ts` passam `RN-007 › d-006 segue e d-007 → DUPLICATA`, `RN-007 › duas alimentações de 40,00 sem fornecedor na mesma data → a 2ª DUPLICATA`, `RN-007 › só uma com fornecedor → as duas seguem`, `RN-007 › "Café" e "Cafe" são fornecedores diferentes (fornecedor não tira acento)`, `RN-007 › descricao e tem_nota_fiscal não entram no critério`, `RN-007 › recusa DUPLICATA traz o id da ocorrência aceita`, `RN-007 › fornecedor 123 e "123" são o mesmo fornecedor` e `RN-007 › fornecedor null é igual a fornecedor ausente`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `6036df0`
 
 - [ ] **T-016** — Etapa 7 em `src/nucleo/elegibilidade.ts`: `valorSolicitado > POLITICA.limiarNotaFiscal` (estritamente maior, sobre o valor arredondado) e sem nota → `Recusa(NOTA_FISCAL_AUSENTE)`
   - **Atende:** RN-008, AMB-004, AMB-005, AMB-006
