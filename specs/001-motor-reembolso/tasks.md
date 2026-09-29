@@ -167,10 +167,10 @@
   - **Aceite:** passam `Borda › Exatamente no limite diário`, `Borda › Um centavo acima do limite`, `Borda › Várias no mesmo dia`, `Borda › Recusada não consome limite`, `Borda › Mesmo dia, categorias diferentes` e `Borda › Fim de semana`
   - **Commit:** `7a4991c`
 
-- [ ] **T-028** — Casos de borda de período, valor não positivo e categoria em `tests/casos-de-borda.test.ts`
+- [x] **T-028** — Casos de borda de período, valor não positivo e categoria em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-002, RN-004, RN-005, RN-006, AMB-009, AMB-012, AMB-014, AMB-019
   - **Aceite:** passam `Borda › Primeiro dia do período`, `Borda › Último dia do período`, `Borda › Dia seguinte ao período`, `Borda › Estorno`, `Borda › Valor zero`, `Borda › Categoria em maiúsculas`, `Borda › Categoria com acento` e `Borda › Categoria desconhecida`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `3bf4d63`
 
 - [ ] **T-029** — Casos de borda de duplicatas em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-007, RN-003, AMB-011, AMB-026
