@@ -457,3 +457,34 @@ describe('Casos de borda — valor como texto', () => {
     expect(decisao(rodar([{ valor: true }])[0])).toMatchObject({ codigo: 'DADO_INVALIDO', solicitado: null });
   });
 });
+
+describe('Casos de borda — tem_nota_fiscal', () => {
+  const transporte150 = { categoria: 'transporte_urbano', valor: 150 };
+
+  it('Borda › tem_nota_fiscal ausente, valor 150,00', () => {
+    expect(codigos([{ ...transporte150, tem_nota_fiscal: undefined }])).toEqual(['NOTA_FISCAL_AUSENTE']);
+  });
+
+  it('Borda › tem_nota_fiscal nulo ou "", valor 150,00', () => {
+    expect(codigos([{ ...transporte150, tem_nota_fiscal: null }])).toEqual(['NOTA_FISCAL_AUSENTE']);
+    expect(codigos([{ ...transporte150, tem_nota_fiscal: '' }])).toEqual(['NOTA_FISCAL_AUSENTE']);
+  });
+
+  it('Borda › tem_nota_fiscal vazio, valor 50,00', () => {
+    expect(decisao(rodar([{ valor: 50, tem_nota_fiscal: null }])[0])).toMatchObject({
+      status: 'APROVADO',
+      codigo: 'APROVADO_INTEGRAL',
+      reembolsavel: 5000n,
+    });
+  });
+
+  it('Borda › tem_nota_fiscal texto', () => {
+    expect(codigos([{ valor: 50, tem_nota_fiscal: 'true' }])).toEqual(['DADO_INVALIDO']);
+    expect(codigos([{ valor: 50, tem_nota_fiscal: 'sim' }])).toEqual(['DADO_INVALIDO']);
+  });
+
+  it('Borda › tem_nota_fiscal número', () => {
+    expect(codigos([{ valor: 50, tem_nota_fiscal: 1 }])).toEqual(['DADO_INVALIDO']);
+    expect(codigos([{ valor: 50, tem_nota_fiscal: 0 }])).toEqual(['DADO_INVALIDO']);
+  });
+});
