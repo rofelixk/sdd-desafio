@@ -422,3 +422,38 @@ describe('Casos de borda — id, data, categoria e eco inválidos', () => {
     expect(i?.data).toBeNull();
   });
 });
+
+describe('Casos de borda — valor como texto', () => {
+  it('Borda › Valor como texto com ponto', () => {
+    expect(decisao(rodar([{ valor: '45.00' }])[0])).toEqual({
+      status: 'APROVADO',
+      codigo: 'APROVADO_INTEGRAL',
+      solicitado: 4500n,
+      reembolsavel: 4500n,
+    });
+  });
+
+  it('Borda › Valor como texto com vírgula', () => {
+    expect(decisao(rodar([{ valor: '45,00' }])[0])).toMatchObject({ status: 'APROVADO', solicitado: 4500n });
+  });
+
+  it('Borda › Valor texto com 3 casas', () => {
+    expect(decisao(rodar([{ valor: '33,333' }])[0])).toMatchObject({ solicitado: 3333n, reembolsavel: 3333n });
+  });
+
+  it('Borda › Valor texto negativo', () => {
+    expect(decisao(rodar([{ valor: '-45,00' }])[0])).toMatchObject({ status: 'RECUSADO', codigo: 'VALOR_NAO_POSITIVO' });
+  });
+
+  it('Borda › Separador de milhar', () => {
+    expect(decisao(rodar([{ valor: '1.234,56' }])[0])).toMatchObject({ codigo: 'DADO_INVALIDO', solicitado: null });
+  });
+
+  it('Borda › Símbolo de moeda', () => {
+    expect(decisao(rodar([{ valor: 'R$ 45,00' }])[0])).toMatchObject({ codigo: 'DADO_INVALIDO', solicitado: null });
+  });
+
+  it('Borda › Valor booleano', () => {
+    expect(decisao(rodar([{ valor: true }])[0])).toMatchObject({ codigo: 'DADO_INVALIDO', solicitado: null });
+  });
+});
