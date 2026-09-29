@@ -30,6 +30,13 @@ function lerValor(v: unknown): Centavos | null {
   return null;
 }
 
+/** `tem_nota_fiscal`: só booleano; vazio vale `false`; o resto é inválido (`null`) (RN-003, AMB-022). */
+function lerNotaFiscal(v: unknown): boolean | null {
+  if (typeof v === 'boolean') return v;
+  if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) return false;
+  return null;
+}
+
 export function validarDespesa(bruta: unknown, indice: number): DespesaValida | RecusaDadoInvalido {
   if (!ehObjeto(bruta)) {
     return recusar({ id: null, data: null, categoria: null }, null, 'despesa', 'nao_objeto');
@@ -44,6 +51,8 @@ export function validarDespesa(bruta: unknown, indice: number): DespesaValida | 
   if (!textoPreenchido(categoria)) return recusar(eco, valor, 'categoria', 'ausente');
   if (bruta.valor === undefined) return recusar(eco, valor, 'valor', 'ausente');
   if (valor === null) return recusar(eco, valor, 'valor', 'nao_numerico');
+  const temNotaFiscal = lerNotaFiscal(bruta.tem_nota_fiscal);
+  if (temNotaFiscal === null) return recusar(eco, valor, 'tem_nota_fiscal', 'nao_booleano');
 
   return {
     indice,
@@ -55,7 +64,7 @@ export function validarDespesa(bruta: unknown, indice: number): DespesaValida | 
     descricao: comoTexto(bruta.descricao),
     fornecedorChave: normalizarFornecedor(comoTexto(bruta.fornecedor)),
     valorSolicitado: valor,
-    temNotaFiscal: bruta.tem_nota_fiscal === true,
+    temNotaFiscal,
   };
 }
 

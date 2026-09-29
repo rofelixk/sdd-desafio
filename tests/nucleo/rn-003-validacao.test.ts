@@ -134,4 +134,28 @@ describe('RN-003 — Validação dos dados do item', () => {
     expect(recusada(validar(despesa({ id: 'null', valor: '10.005' }))).valorSolicitado).toBe(1000n);
     expect(recusada(validar(despesa({ categoria: '""', valor: '"10,015"' }))).valorSolicitado).toBe(1002n);
   });
+
+  it('RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO', () => {
+    expect(recusada(validar(despesa({ tem_nota_fiscal: '"sim"' }))).detalhes.campo).toBe('tem_nota_fiscal');
+  });
+
+  it('RN-003 › "tem_nota_fiscal": null vale false', () => {
+    expect(valida(validar(despesa({ tem_nota_fiscal: 'null' }))).temNotaFiscal).toBe(false);
+  });
+
+  it('RN-003 › tem_nota_fiscal ausente, "" ou "   " vale false', () => {
+    for (const tem_nota_fiscal of [undefined, '""', '"   "']) {
+      expect(valida(validar(despesa({ tem_nota_fiscal }))).temNotaFiscal, String(tem_nota_fiscal)).toBe(false);
+    }
+    expect(valida(validar(despesa({ tem_nota_fiscal: 'true' }))).temNotaFiscal).toBe(true);
+    expect(valida(validar(despesa({ tem_nota_fiscal: 'false' }))).temNotaFiscal).toBe(false);
+  });
+
+  it('RN-003 › tem_nota_fiscal "true", 1, 0, [] ou {} → DADO_INVALIDO', () => {
+    for (const tem_nota_fiscal of ['"true"', '1', '0', '[]', '{}', '"false"']) {
+      const r = recusada(validar(despesa({ tem_nota_fiscal })));
+      expect(r.detalhes.campo, tem_nota_fiscal).toBe('tem_nota_fiscal');
+      expect(r.valorSolicitado).toBe(4500n);
+    }
+  });
 });
