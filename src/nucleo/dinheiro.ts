@@ -23,3 +23,30 @@ export function formatarReais(c: Centavos): string {
   const milhar = inteiros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return `${sinal}R$ ${milhar},${centavos}`;
 }
+
+const NUMERO = /^(-?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/;
+
+/**
+ * Texto de número (sinal, dígitos, ponto decimal, expoente) → centavos,
+ * arredondando meio para o par sobre os dígitos, sem float (RN-001, DT-001).
+ * Devolve `null` se o texto não é um número nesse formato.
+ */
+export function paraCentavos(texto: string): Centavos | null {
+  const m = NUMERO.exec(texto);
+  if (!m) return null;
+  const [, sinal, inteiros, fracao = '', expoente = '0'] = m;
+  const digitos = BigInt(inteiros! + fracao);
+  // valor × 100 = digitos × 10^escala
+  const escala = Number(expoente) - fracao.length + 2;
+  let abs: bigint;
+  if (escala >= 0) {
+    abs = digitos * 10n ** BigInt(escala);
+  } else {
+    const divisor = 10n ** BigInt(-escala);
+    const quociente = digitos / divisor;
+    const dobroDoResto = (digitos % divisor) * 2n;
+    const sobe = dobroDoResto > divisor || (dobroDoResto === divisor && quociente % 2n === 1n);
+    abs = sobe ? quociente + 1n : quociente;
+  }
+  return sinal === '-' ? -abs : abs;
+}
