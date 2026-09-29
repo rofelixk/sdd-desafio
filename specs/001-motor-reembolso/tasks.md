@@ -90,10 +90,10 @@
   - **Aceite:** em `tests/nucleo/rn-005-periodo.test.ts` passam `RN-005 › d-008 (2026-04-15, período de julho) → FORA_DO_PERIODO`, `RN-005 › d-014 (2026-07-31 = fim) é elegível`, `RN-005 › data = inicio é elegível` e `RN-005 › competencia divergente de inicio/fim é ignorada`
   - **Commit:** `2da1238`
 
-- [ ] **T-014** — Etapa 5 em `src/nucleo/elegibilidade.ts`: categoria normalizada que não é chave de `POLITICA.limites` → `Recusa(CATEGORIA_NAO_REEMBOLSAVEL)`, sem reclassificar
+- [x] **T-014** — Etapa 5 em `src/nucleo/elegibilidade.ts`: categoria normalizada que não é chave de `POLITICA.limites` → `Recusa(CATEGORIA_NAO_REEMBOLSAVEL)`, sem reclassificar
   - **Atende:** RN-006, AMB-019
   - **Aceite:** em `tests/nucleo/rn-006-categorias.test.ts` passam `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL` e `RN-006 › alimentacao, transporte_urbano e hospedagem são reembolsáveis`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `a86a420`
 
 - [ ] **T-015** — Etapa 6 em `src/nucleo/elegibilidade.ts`: estado com chave `(data, categoria normalizada, normalizarFornecedor(fornecedor) — ausente/só espaços = "", valorSolicitado)` → `id` da primeira ocorrência; ocorrência seguinte com `id` diferente → `Recusa(DUPLICATA)` com `detalhes.idAceito`. `descricao` e `tem_nota_fiscal` fora da chave
   - **Atende:** RN-007, AMB-011, AMB-026
