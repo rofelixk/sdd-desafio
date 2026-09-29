@@ -120,10 +120,10 @@
   - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › d-010 (480,00, N = 2) → 240,00 em 14/07 e 240,00 em 15/07`, `RN-012 › 100,00 em 3 noites → 33,34 / 33,33 / 33,33`, `RN-012 › noites atravessam o fim do mês (31/07 → 01/08)` e `RN-012 › despesa que não é hospedagem gera uma parcela`
   - **Commit:** `47d672d`
 
-- [ ] **T-020** — Criar `src/nucleo/viagem.ts` com `diasDeViagem(elegiveis)` → conjunto de todas as noites (D…D+N−1) das hospedagens **elegíveis** recebidas; o check-out (D+N) não entra
+- [x] **T-020** — Criar `src/nucleo/viagem.ts` com `diasDeViagem(elegiveis)` → conjunto de todas as noites (D…D+N−1) das hospedagens **elegíveis** recebidas; o check-out (D+N) não entra
   - **Atende:** RN-011, AMB-007
   - **Aceite:** em `tests/nucleo/rn-011-viagem.test.ts` passam `RN-011 › hospedagem de 1 diária em D: só D é dia de viagem`, `RN-011 › hospedagem de 2 diárias em D: D e D+1 são dias de viagem` e `RN-011 › sem hospedagem elegível não há dia de viagem`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `d6a3445`
 
 - [ ] **T-021** — [P] Criar `src/nucleo/limites.ts` com `alocar(parcelas, diasDeViagem)`: saldo por `(data, categoria)` iniciado com `POLITICA.limites[cat].diario`, multiplicado por `fatorViagem` só se a data é de viagem **e** `ampliaEmViagem`; cada parcela, na ordem da entrada, recebe `min(valor, saldo)`; soma por `indiceDespesa`; devolve por despesa o reembolsável, o limite aplicado, o saldo disponível e o código (`APROVADO_INTEGRAL` / `LIMITE_DIARIO_EXCEDIDO` / `LIMITE_DIARIO_ESGOTADO`)
   - **Atende:** RN-009, RN-010, AMB-001, AMB-002, AMB-003, AMB-015, AMB-016, AMB-020
