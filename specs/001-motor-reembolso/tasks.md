@@ -224,10 +224,10 @@
   - **Aceite:** em `tests/cli.test.ts` (processo filho) passam `RN-015 › CLI: arquivo sem periodo → código 1, stderr cita periodo, nenhum arquivo de saída`, `RN-015 › CLI: arquivo de entrada inexistente → código 1, nenhum arquivo de saída`, `RN-015 › CLI: arquivo que não é JSON → código 1`, `RN-015 › CLI: em erro, arquivo de saída pré-existente não é alterado`, `RN-003 › CLI: despesa inválida não aborta (código 0)`, `Infra › CLI: exemplo → código 0, resumo no stdout, JSON indentado com \n final` e `Infra › CLI: subcomando ou opção ausente → código 2 com "uso:"`
   - **Commit:** `3feda6b`
 
-- [ ] **T-039** — Teste de determinismo em `tests/cli.test.ts`
+- [x] **T-039** — Teste de determinismo em `tests/cli.test.ts`
   - **Atende:** seção 9 (critério "duas execuções geram saídas idênticas")
   - **Aceite:** passa `Infra › CLI: duas execuções com a mesma entrada geram bytes idênticos`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `45f2d25`
 
 - [ ] **T-040** — Casos de borda de arquivo em `tests/casos-de-borda.test.ts`: lista vazia pelo motor; os casos de RN-015 pelo CLI (processo filho), conferindo que o arquivo de saída não existe e que o `stderr` cita o campo
   - **Atende:** RN-014, RN-015, AMB-027
