@@ -14,6 +14,7 @@ import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
 import { montarMotivo } from './motivos.ts';
+import { calcularResumo } from './resumo.ts';
 import type {
   Categoria,
   DespesaElegivel,
@@ -21,6 +22,7 @@ import type {
   Entrada,
   Recusa,
   RecusaDadoInvalido,
+  Resultado,
   ResultadoItem,
 } from './tipos.ts';
 import { diasDeViagem } from './viagem.ts';
@@ -110,3 +112,9 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
 
 /** Recusada antes da etapa de limite (seção 4). */
 const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null } as const;
+
+/** Resultado completo: ecos, itens na ordem da entrada e resumo (RN-014). */
+export function calcular(entrada: Entrada): Resultado {
+  const itens = calcularItens(entrada);
+  return { colaborador: entrada.colaborador, periodo: entrada.periodo, itens, resumo: calcularResumo(itens) };
+}
