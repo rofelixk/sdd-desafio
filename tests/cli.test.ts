@@ -78,7 +78,7 @@ describe('CLI', () => {
     expect(json.itens.map((i: { motivo: { codigo: string } }) => i.motivo.codigo)).toEqual(['DADO_INVALIDO', 'DADO_INVALIDO']);
   });
 
-  it('Infra › CLI: exemplo → código 0, resumo no stdout, JSON indentado com \n final', () => {
+  it('Infra › CLI: exemplo → código 0, resumo no stdout, JSON indentado com \\n final', () => {
     const saida = arquivo();
     const r = calcular('exemplos/despesas-exemplo.json', saida);
     expect(r.codigo).toBe(0);
