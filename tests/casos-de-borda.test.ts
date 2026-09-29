@@ -72,3 +72,50 @@ describe('Casos de borda — nota fiscal e arredondamento', () => {
     });
   });
 });
+
+describe('Casos de borda — limite diário', () => {
+  it('Borda › Exatamente no limite diário', () => {
+    expect(decisao(rodar([{ valor: 60 }])[0])).toMatchObject({ status: 'APROVADO', reembolsavel: 6000n });
+  });
+
+  it('Borda › Um centavo acima do limite', () => {
+    expect(decisao(rodar([{ valor: 60.01 }])[0])).toMatchObject({ status: 'PARCIAL', reembolsavel: 6000n });
+  });
+
+  it('Borda › Várias no mesmo dia', () => {
+    const itens = rodar([
+      { valor: 72.5, fornecedor: 'Tavola' },
+      { valor: 38, fornecedor: 'Porto' },
+    ]);
+    expect(itens.map(decisao)).toEqual([
+      { status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', solicitado: 7250n, reembolsavel: 6000n },
+      { status: 'RECUSADO', codigo: 'LIMITE_DIARIO_ESGOTADO', solicitado: 3800n, reembolsavel: 0n },
+    ]);
+  });
+
+  it('Borda › Recusada não consome limite', () => {
+    const itens = rodar([
+      { ...transporteSemNf, valor: 100.01 },
+      { ...transporteSemNf, valor: 100 },
+    ]);
+    expect(itens.map(decisao)).toEqual([
+      { status: 'RECUSADO', codigo: 'NOTA_FISCAL_AUSENTE', solicitado: 10001n, reembolsavel: 0n },
+      { status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', solicitado: 10000n, reembolsavel: 8000n },
+    ]);
+  });
+
+  it('Borda › Mesmo dia, categorias diferentes', () => {
+    const itens = rodar([
+      { categoria: 'alimentacao', valor: 60 },
+      { categoria: 'transporte_urbano', valor: 80 },
+    ]);
+    expect(itens.map((i) => decisao(i).status)).toEqual(['APROVADO', 'APROVADO']);
+  });
+
+  it('Borda › Fim de semana', () => {
+    expect(decisao(rodar([{ data: '2026-07-18', valor: 47.2 }])[0])).toMatchObject({
+      status: 'APROVADO',
+      reembolsavel: 4720n,
+    });
+  });
+});
