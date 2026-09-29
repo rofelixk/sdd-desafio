@@ -1,7 +1,8 @@
 // Etapas 3 a 7 da seção 8. Cada função devolve a recusa da etapa ou `null`;
 // a ordem das etapas vive só no `motor.ts` (DT-002).
 
-import type { DataISO, DespesaValida, Recusa } from './tipos.ts';
+import { POLITICA } from './politica.ts';
+import type { Categoria, DataISO, DespesaValida, Recusa } from './tipos.ts';
 
 /** Etapa 3 (RN-004, AMB-012). */
 export function verificarValorPositivo(d: DespesaValida): Recusa | null {
@@ -15,4 +16,16 @@ export function verificarPeriodo(d: DespesaValida, inicio: DataISO, fim: DataISO
   return d.data < inicio || d.data > fim
     ? { codigo: 'FORA_DO_PERIODO', detalhes: { data: d.data, inicio, fim } }
     : null;
+}
+
+/** Categoria reconhecida: chave de `POLITICA.limites` (RN-006). */
+export function ehCategoria(categoria: string): categoria is Categoria {
+  return Object.hasOwn(POLITICA.limites, categoria);
+}
+
+/** Etapa 5 (RN-006, AMB-019): sem reclassificar. */
+export function verificarCategoria(d: DespesaValida): Recusa | null {
+  return ehCategoria(d.categoria)
+    ? null
+    : { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: d.categoriaOriginal } };
 }
