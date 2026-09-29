@@ -38,10 +38,10 @@
   - **Aceite:** em `tests/io/json.test.ts` passam `Infra › json: número vira NumeroJson com o texto original ("10.005", "1.00005e2")`, `Infra › json: números aninhados em objetos e listas também são embrulhados`, `Infra › json: NumeroJson é reemitido com o mesmo texto` e `Infra › json: JSON.rawJSON("45.00") sai como número 45.00, não como texto`
   - **Commit:** `cdcf3cc`
 
-- [ ] **T-004** — [P] Criar `src/nucleo/datas.ts` (R-05): `ehDataValida(texto)` (regex `^\d{4}-\d{2}-\d{2}$` + existência no calendário), `somarDias(data, k)` com `Date.UTC` e comparação por texto
+- [x] **T-004** — [P] Criar `src/nucleo/datas.ts` (R-05): `ehDataValida(texto)` (regex `^\d{4}-\d{2}-\d{2}$` + existência no calendário), `somarDias(data, k)` com `Date.UTC` e comparação por texto
   - **Atende:** (infraestrutura) — R-05
   - **Aceite:** em `tests/nucleo/datas.test.ts` passam `Infra › datas: 2026-02-30 e 2026-07-32 são inválidas e 2024-02-29 é válida`, `Infra › datas: formato diferente de AAAA-MM-DD é inválido ("2026-7-3", "03/07/2026")` e `Infra › datas: 2026-07-31 + 1 dia = 2026-08-01, independente do fuso`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `c356fd3`
 
 - [ ] **T-005** — Criar `src/nucleo/dinheiro.ts` com a formatação de centavos: `formatarDecimal(c)` (`4500n` → `"45.00"`, para a saída JSON) e `formatarReais(c)` (`6000n` → `"R$ 60,00"`, para `motivo.descricao`)
   - **Atende:** (infraestrutura) — R-02, R-04
