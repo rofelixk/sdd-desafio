@@ -229,10 +229,10 @@
   - **Aceite:** passa `Infra › CLI: duas execuções com a mesma entrada geram bytes idênticos`
   - **Commit:** `45f2d25`
 
-- [ ] **T-040** — Casos de borda de arquivo em `tests/casos-de-borda.test.ts`: lista vazia pelo motor; os casos de RN-015 pelo CLI (processo filho), conferindo que o arquivo de saída não existe e que o `stderr` cita o campo
+- [x] **T-040** — Casos de borda de arquivo em `tests/casos-de-borda.test.ts`: lista vazia pelo motor; os casos de RN-015 pelo CLI (processo filho), conferindo que o arquivo de saída não existe e que o `stderr` cita o campo
   - **Atende:** RN-014, RN-015, AMB-027
   - **Aceite:** passam `Borda › Lista de despesas vazia`, `Borda › Arquivo sem periodo`, `Borda › inicio depois de fim`, `Borda › colaborador.id vazio`, `Borda › periodo.inicio não textual` e `Borda › Arquivo que não é objeto`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `247de37`
 
 - [ ] **T-041** — Criar `tests/rastreabilidade.test.ts` (DT-005): lê `specs/001-motor-reembolso/spec.md`, extrai todo `### RN-NNN` e a 1ª coluna da tabela da seção 7 (sem as crases), lê os títulos de teste em `tests/**/*.test.ts` e falha listando o que ficou sem teste; confere também que toda RN tem **exatamente um** arquivo `tests/**/rn-NNN-*.test.ts`
   - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015 (seção 9, critérios 2 e 3)
