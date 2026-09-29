@@ -45,3 +45,10 @@ export function verificarDuplicata(d: DespesaValida, aceitas: ChavesDuplicata): 
   aceitas.set(chave, d.id);
   return null;
 }
+
+/** Etapa 7 (RN-008, AMB-004, AMB-005, AMB-006): estritamente acima do limiar, sem nota. */
+export function verificarNotaFiscal(d: DespesaValida): Recusa | null {
+  return d.valorSolicitado > POLITICA.limiarNotaFiscal && !d.temNotaFiscal
+    ? { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: d.valorSolicitado, limiar: POLITICA.limiarNotaFiscal } }
+    : null;
+}
