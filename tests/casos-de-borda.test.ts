@@ -235,3 +235,75 @@ describe('Casos de borda — duplicatas', () => {
     ]);
   });
 });
+
+describe('Casos de borda — hospedagem e diárias', () => {
+  const hotel = { categoria: 'hospedagem', data: '2026-07-14', fornecedor: 'Hotel' };
+
+  /** `[status, reembolsável, diarias]` de uma hospedagem isolada. */
+  function hospedagem(campos: Record<string, unknown>) {
+    const [i] = rodar([{ ...hotel, ...campos }]);
+    return [decisao(i).status, i?.valorReembolsavel, i?.diarias];
+  }
+
+  it('Borda › Diárias na descrição', () => {
+    const [i] = rodar([{ ...hotel, descricao: 'Hotel Rio - 2 diarias', valor: 480 }]);
+    expect(decisao(i)).toMatchObject({ status: 'APROVADO', reembolsavel: 48000n });
+    expect(i).toMatchObject({ diarias: 2, limiteDiarioAplicado: 25000n });
+  });
+
+  it('Borda › Diárias com acento e maiúscula', () => {
+    expect(hospedagem({ descricao: '3 Diárias', valor: 600 })).toEqual(['APROVADO', 60000n, 3]);
+  });
+
+  it('Borda › Duas hospedagens na mesma noite', () => {
+    const itens = rodar([
+      { ...hotel, id: 'h1', data: '2026-07-14', descricao: '2 diarias', valor: 480 },
+      { ...hotel, id: 'h2', data: '2026-07-15', descricao: '1 diaria', valor: 200, fornecedor: 'Pousada' },
+    ]);
+    expect(itens.map((i) => [decisao(i).status, i.valorReembolsavel])).toEqual([
+      ['APROVADO', 48000n],
+      ['PARCIAL', 1000n],
+    ]);
+  });
+
+  it('Borda › Diária média acima do limite', () => {
+    expect(hospedagem({ descricao: '2 diarias', valor: 600 })).toEqual(['PARCIAL', 50000n, 2]);
+  });
+
+  it('Borda › Divisão com centavos', () => {
+    expect(hospedagem({ descricao: '3 diarias', valor: 100 })).toEqual(['APROVADO', 10000n, 3]);
+  });
+
+  it('Borda › Noite fora do período', () => {
+    expect(hospedagem({ data: '2026-07-31', descricao: '2 diarias', valor: 400 })).toEqual(['APROVADO', 40000n, 2]);
+  });
+
+  it('Borda › Número que não é diária', () => {
+    expect(hospedagem({ descricao: 'Hotel 5 estrelas', valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+  });
+
+  it('Borda › Descrição sem número', () => {
+    expect(hospedagem({ descricao: 'Pousada', valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+  });
+
+  it('Borda › Zero diárias', () => {
+    expect(hospedagem({ descricao: '0 diarias', valor: 100 })).toEqual(['APROVADO', 10000n, 1]);
+  });
+
+  it('Borda › Número solto antes das diárias', () => {
+    expect(hospedagem({ descricao: 'Hotel 5 estrelas - 2 diarias', valor: 480 })).toEqual(['APROVADO', 48000n, 2]);
+  });
+
+  it('Borda › Diárias fracionárias', () => {
+    expect(hospedagem({ descricao: 'Hotel 1.5 diarias', valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+  });
+
+  it('Borda › Hospedagem sem descrição', () => {
+    expect(hospedagem({ descricao: undefined, valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+    expect(hospedagem({ descricao: null, valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+  });
+
+  it('Borda › Descrição não textual', () => {
+    expect(hospedagem({ descricao: 2, valor: 300 })).toEqual(['PARCIAL', 25000n, 1]);
+  });
+});
