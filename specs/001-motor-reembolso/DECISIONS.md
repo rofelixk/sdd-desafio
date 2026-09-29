@@ -59,7 +59,10 @@ recebe despesas validadas), T-032 (dois casos de borda novos) e a tabela de
 Cobertura (AMB-025). Nenhuma task estava concluída. Os ajustes entram pelo
 `/speckit-tasks`, que preserva a numeração.
 
-**Custo:** 2 arquivos (`spec.md`, `DECISIONS.md`), 9 trechos.
+**Custo:** 2 arquivos (`spec.md`, `DECISIONS.md`), 9 trechos. Depois, ajuste
+no plano sem rodar o `/speckit-plan` de novo: `plan.md` (v1.0 → 1.1, 4 trechos)
+e `data-model.md` (2 trechos). O conjunto de ids vistos passou para a etapa 2
+e só recebe despesas validadas.
 
 ---
 

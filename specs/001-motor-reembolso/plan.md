@@ -1,6 +1,6 @@
 # Plano Técnico — Motor de Cálculo de Reembolso
 
-**Versão:** 1.0 · **Baseado na spec:** 1.1 · **Branch:** `001-motor-reembolso` · **Data:** 2026-09-29
+**Versão:** 1.1 · **Baseado na spec:** 1.2 · **Branch:** `001-motor-reembolso` · **Data:** 2026-09-29
 
 > Aqui mora o COMO. Este arquivo pode e deve falar de linguagem, biblioteca e
 > arquitetura. O que ele **não** pode é introduzir regra de negócio nova — se
@@ -13,6 +13,10 @@ as alternativas descartadas), [`data-model.md`](data-model.md),
 Ao escrever este plano, três lacunas de regra foram encontradas e levadas à
 spec **antes** de qualquer decisão técnica (DECISIONS D-015: eco de item
 inválido, `id` normalizado e primeira ocorrência das diárias).
+
+**v1.1:** ajuste à spec 1.2 (D-017, AMB-025). O conjunto de ids vistos só
+recebe o `id` de despesas que passaram pela validação (etapa 2). Nenhuma
+decisão técnica mudou.
 
 ---
 
@@ -63,8 +67,8 @@ arquivo ─► io/json (parse com texto dos números) ─► io/entrada (RN-015)
           ┌─────────────────────── núcleo (puro, sem E/S) ─────────────────┘
           ▼
    motor: para cada despesa, na ordem
-     despesa.ts        etapas 1-2  RN-001, RN-002, RN-003
-     elegibilidade.ts  etapas 3-7  RN-004 … RN-008 (estado: ids vistos, chaves de duplicata)
+     despesa.ts        etapas 1-2  RN-001, RN-002, RN-003 (estado: ids vistos, só de validadas, AMB-025)
+     elegibilidade.ts  etapas 3-7  RN-004 … RN-008 (estado: chaves de duplicata)
           ▼  elegíveis
      viagem.ts         etapa 8     RN-011 (noites das hospedagens elegíveis)
      diarias.ts        etapa 9a    RN-012 (N e parcelas por noite)
@@ -168,7 +172,9 @@ avaliação. A etapa 6 (duplicata) depende do que passou das etapas 1 a 5, e a
 etapa 8 (viagem) depende de todas as hospedagens elegíveis.
 **Decisão:** `motor.ts` faz duas passadas. A **passada 1** percorre as
 despesas na ordem e aplica as etapas 1 a 7 (validação e elegibilidade), com
-o estado acumulado de ids vistos e chaves de duplicata. A **passada 2** usa as
+o estado acumulado de ids vistos e chaves de duplicata. Um `id` só entra nos
+ids vistos quando a despesa passa da etapa 2, mesmo que seja recusada numa
+etapa posterior (AMB-025). A **passada 2** usa as
 elegíveis: calcula os dias de viagem, gera as parcelas e consome os saldos.
 **Alternativa descartada:** um pipeline genérico de "regras plugáveis".
 Com uma ordem fixa e conhecida, seria abstração sem uso, e o FAQ alerta para

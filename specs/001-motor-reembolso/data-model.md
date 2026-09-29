@@ -1,6 +1,6 @@
 # Modelo de dados — Motor de Cálculo de Reembolso
 
-**Fase 1 do `/speckit-plan`** · Base: `spec.md` v1.1
+**Fase 1 do `/speckit-plan`** · Base: `spec.md` v1.2
 
 Estruturas internas do núcleo. Os tipos são TypeScript, mas as regras de
 validação são só **referências** à spec. Nenhuma regra nova nasce aqui.
@@ -56,7 +56,7 @@ Alocada(APROVADO_INTEGRAL | LIMITE_DIARIO_EXCEDIDO | LIMITE_DIARIO_ESGOTADO)
 |---|---|---|
 | `indice` | inteiro | posição na entrada. É a ordem da RN-007 e da RN-010 |
 | `id` | texto | como veio (para a saída) |
-| `idNormalizado` | texto | AMB-024. Usado só na detecção de `id` repetido |
+| `idNormalizado` | texto | AMB-024. Usado só na detecção de `id` repetido. Só uma `DespesaValida` entra no conjunto de ids vistos. Uma `Recusa(DADO_INVALIDO)` não reserva o `id` (AMB-025) |
 | `data` | `DataISO` | RN-003 |
 | `categoriaOriginal` | texto | como veio |
 | `categoria` | texto normalizado | RN-002. Ainda pode ser desconhecida (a recusa vem na RN-006) |
