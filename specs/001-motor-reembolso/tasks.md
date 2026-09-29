@@ -182,10 +182,10 @@
   - **Aceite:** passam `Borda › Diárias na descrição` (conferindo `limite_diario_aplicado` 250,00), `Borda › Diárias com acento e maiúscula`, `Borda › Duas hospedagens na mesma noite`, `Borda › Diária média acima do limite`, `Borda › Divisão com centavos`, `Borda › Noite fora do período`, `Borda › Número que não é diária`, `Borda › Descrição sem número`, `Borda › Zero diárias`, `Borda › Número solto antes das diárias`, `Borda › Diárias fracionárias`, `Borda › Hospedagem sem descrição` e `Borda › Descrição não textual`
   - **Commit:** `68e7db7`
 
-- [ ] **T-031** — Casos de borda de viagem em `tests/casos-de-borda.test.ts`
+- [x] **T-031** — Casos de borda de viagem em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-011, RN-008, AMB-007, AMB-017, AMB-020
   - **Aceite:** passam `Borda › Alimentação em dia de viagem`, `Borda › Transporte em dia de viagem`, `Borda › Dia do check-out`, `Borda › Noite seguinte da estadia`, `Borda › Hospedagem recusada não gera viagem` e `Borda › Viagem não altera o limiar de NF`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `e8d5dec`
 
 - [ ] **T-032** — Casos de borda de `id`, `data`, `categoria` e eco inválidos em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-014, AMB-018, AMB-023, AMB-024, AMB-025
