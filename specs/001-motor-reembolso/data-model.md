@@ -1,6 +1,6 @@
 # Modelo de dados — Motor de Cálculo de Reembolso
 
-**Fase 1 do `/speckit-plan`** · Base: `spec.md` v1.2
+**Fase 1 do `/speckit-plan`** · Base: `spec.md` v1.3
 
 Estruturas internas do núcleo. Os tipos são TypeScript, mas as regras de
 validação são só **referências** à spec. Nenhuma regra nova nasce aqui.
@@ -60,8 +60,8 @@ Alocada(APROVADO_INTEGRAL | LIMITE_DIARIO_EXCEDIDO | LIMITE_DIARIO_ESGOTADO)
 | `data` | `DataISO` | RN-003 |
 | `categoriaOriginal` | texto | como veio |
 | `categoria` | texto normalizado | RN-002. Ainda pode ser desconhecida (a recusa vem na RN-006) |
-| `descricao` | texto ou vazio | só ecoado. Na hospedagem, fonte do N (RN-012) |
-| `fornecedorChave` | texto | RN-007: `trim` + minúsculas. Ausente = `""` |
+| `descricao` | texto | RN-003/AMB-026: qualquer valor vira texto, ausente ou nulo = `""`. Na hospedagem, fonte do N (RN-012) |
+| `fornecedorChave` | texto | RN-003/AMB-026: qualquer valor vira texto. RN-007: `trim` + minúsculas. Ausente ou nulo = `""` |
 | `valorSolicitado` | `Centavos` | RN-003 → RN-001 (meio para o par) |
 | `temNotaFiscal` | booleano | RN-003: vazio vale `false` |
 

@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 1.2 · **Status:** rascunho · **Última alteração:** `2026-09-29`
+**Versão:** 1.3 · **Status:** rascunho · **Última alteração:** `2026-09-29`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -37,6 +37,9 @@ decisão com um motivo padronizado.
 - Q: Em "Hotel 5 estrelas - 2 diarias", N é 2 ou 1? → A: 2. Vale a primeira ocorrência do padrão completo "<inteiro> diária(s)/noite(s)". Números soltos antes dela são ignorados (RN-012, AMB-008).
 - Q: `"d-001"`, `" d-001 "` e `"D-001"` são o mesmo `id` para a RN-003? → A: Sim. O `id` é normalizado como a categoria (maiúsculas/minúsculas, espaços nas bordas, acentos) antes de comparar (RN-003, AMB-024).
 - Q: Uma despesa com o mesmo `id` de uma anterior que foi recusada com `DADO_INVALIDO` também é `DADO_INVALIDO`? → A: Não. Ela é tratada como a correção da anterior e segue normalmente. Só uma despesa que passou pela validação reserva o `id`. Recusas de etapas posteriores (período, duplicata, nota fiscal...) continuam reservando o `id` (RN-003, AMB-025).
+- Q: `fornecedor` ou `descricao` com valor que não é texto (`123`, `true`, lista, `null`) são aceitos? → A: Sim, qualquer valor é aceito e tratado como texto. Nulo vale vazio. Uma hospedagem sem descrição que declare diárias vale uma única diária (RN-003, RN-007, RN-012, AMB-026).
+- Q: `colaborador.id`, `periodo.inicio` ou `periodo.fim` vazios, nulos ou de tipo errado são o mesmo que ausentes? → A: Sim, com o mesmo critério da RN-003. O arquivo é recusado pela RN-015 (AMB-027).
+- Q: Em "Diárias na descrição" (2 diárias, 480,00), qual é o `limite_diario_aplicado`? → A: 250,00, o limite por diária. O limite da estadia inteira (500,00) não aparece na saída (seção 4).
 
 ## 3. Fora de escopo
 
@@ -76,8 +79,8 @@ decisão com um motivo padronizado.
 | `despesas[].id` | texto | Identificador único da despesa no arquivo | sim |
 | `despesas[].data` | data `AAAA-MM-DD` | Data em que a despesa ocorreu | sim |
 | `despesas[].categoria` | texto | Categoria declarada (ver RN-002) | sim |
-| `despesas[].descricao` | texto | Texto livre. Em hospedagem, é de onde se extrai o número de diárias (RN-012). Ausente = 1 diária | não |
-| `despesas[].fornecedor` | texto | Fornecedor, usado na detecção de duplicata. Ausente equivale a vazio (RN-007) | não |
+| `despesas[].descricao` | qualquer valor, tratado como texto | Texto livre. Em hospedagem, é de onde se extrai o número de diárias (RN-012). Ausente ou nulo = vazio = 1 diária (RN-003) | não |
+| `despesas[].fornecedor` | qualquer valor, tratado como texto | Fornecedor, usado na detecção de duplicata. Ausente ou nulo equivale a vazio (RN-003, RN-007) | não |
 | `despesas[].valor` | número ou texto numérico | Valor solicitado em reais, pode ter qualquer número de casas decimais. Também é aceito como texto no formato fechado da RN-003 (`"45.00"`, `"45,00"`) | sim |
 | `despesas[].tem_nota_fiscal` | booleano | Se há nota fiscal. Vazio (ausente, nulo ou texto vazio) equivale a `false`. Qualquer outro valor não booleano é `DADO_INVALIDO` (RN-003) | não |
 
@@ -231,7 +234,13 @@ nulos ou com tipo diferente de texto contam como **ausentes** →
 ausente, nulo, ou texto vazio ou só com espaços) vale `false`. Qualquer outro
 valor (textos como `"true"` ou `"sim"`, números como `1` ou `0`, listas,
 objetos) é `DADO_INVALIDO`.
-**Origem:** ausente na política (AMB-018, AMB-021, AMB-022, AMB-023, AMB-024, AMB-025)
+
+`fornecedor` e `descricao` nunca causam `DADO_INVALIDO`: qualquer valor é
+aceito e tratado como texto. Ausente ou nulo vale texto **vazio**. Texto é
+usado como veio. Número e booleano viram o texto com que aparecem no arquivo
+(`123` → `"123"`, `true` → `"true"`). Lista e objeto viram o seu texto JSON
+compacto, sem espaços (AMB-026).
+**Origem:** ausente na política (AMB-018, AMB-021, AMB-022, AMB-023, AMB-024, AMB-025, AMB-026)
 **Aceite:** uma despesa com `"data": "2026-07-32"` sai RECUSADO/`DADO_INVALIDO`
 com `data` `"2026-07-32"` na saída, e as outras despesas do arquivo têm o
 resultado de sempre. `"valor": "R$ 45,00"` sai com `valor_solicitado` nulo.
@@ -244,7 +253,8 @@ a 2ª segue normalmente e a 3ª RECUSADO/`DADO_INVALIDO`. `"45.00"`,
 `"tem_nota_fiscal": "sim"` → RECUSADO/`DADO_INVALIDO`.
 `"tem_nota_fiscal": null` vale `false`.
 `"categoria": ""` e `"categoria": 123` → RECUSADO/`DADO_INVALIDO`, e não
-`CATEGORIA_NAO_REEMBOLSAVEL`.
+`CATEGORIA_NAO_REEMBOLSAVEL`. `"fornecedor": 123` e `"descricao": null`
+não recusam a despesa.
 
 ### RN-004 — Valores não positivos
 
@@ -277,8 +287,8 @@ integralmente com `CATEGORIA_NAO_REEMBOLSAVEL`.
 **Regra:** Duas despesas são duplicatas quando têm a mesma `data`, a mesma
 categoria normalizada, o mesmo `fornecedor` (comparado sem diferenciar
 maiúsculas de minúsculas e sem espaços nas bordas) e o mesmo
-`valor_solicitado`, com `id` diferente. `fornecedor` ausente ou só com espaços
-vale como fornecedor **vazio**, que é comparado como qualquer outro valor:
+`valor_solicitado`, com `id` diferente. `fornecedor` é tratado como texto
+(RN-003). Ausente, nulo ou só com espaços vale como fornecedor **vazio**, que é comparado como qualquer outro valor:
 vazio é igual a vazio, e um fornecedor preenchido nunca é igual a vazio.
 `descricao` e `tem_nota_fiscal` não entram no critério.
 Num grupo de duplicatas, **só a primeira ocorrência na ordem da entrada**
@@ -289,7 +299,8 @@ descrição do motivo cita o `id` da ocorrência aceita e não pressupõe má-f�
 `d-006` segue normalmente (APROVADO 54,90) e `d-007` → RECUSADO/`DUPLICATA`.
 Duas despesas de alimentação de 40,00 na mesma data, as duas sem fornecedor →
 a 2ª RECUSADO/`DUPLICATA`. Se só uma delas tiver fornecedor, as duas seguem
-normalmente.
+normalmente. `"fornecedor": 123` e `"fornecedor": "123"` são o mesmo
+fornecedor, e `"fornecedor": null` é igual a fornecedor ausente.
 
 ### RN-008 — Nota fiscal obrigatória
 
@@ -361,7 +372,9 @@ palavras são ignorados. Número **fracionário** (dígitos, separador `.` ou `,
 e mais dígitos, como `1.5` ou `1,5`) também é ignorado, mesmo seguido de
 diária/noite, e nenhum pedaço dele conta como inteiro. A comparação não diferencia
 maiúsculas de minúsculas nem acentos, então "diária" e "Diárias" também
-contam. Se não houver esse padrão, ou se `N` = 0, vale `N` = 1.
+contam. A `descricao` é tratada como texto (RN-003). Se ela está ausente,
+nula ou vazia, ou se não tem esse padrão, a hospedagem vale **uma única
+diária** (`N` = 1). Se `N` = 0, também vale `N` = 1.
 
 Uma hospedagem com data D e N diárias ocupa as noites **D, D+1, …, D+N−1**. O
 valor é **dividido igualmente entre as noites**, em centavos. Quando a divisão
@@ -373,11 +386,11 @@ caem na mesma noite dividem o mesmo limite, consumido na ordem da entrada
 status sai dessa soma (APROVADO / PARCIAL / RECUSADO por limite esgotado).
 Noites fora do período contam normalmente, porque a elegibilidade (RN-005) é
 decidida pela data da despesa.
-**Origem:** política do RH, item 3 (AMB-008)
+**Origem:** política do RH, item 3 (AMB-008, AMB-026)
 **Aceite:** "Hotel Rio - 2 diarias" → N = 2. "Airbnb 3 noites" → N = 3.
 "Hotel 5 estrelas" → N = 1 (5 não vem seguido de diária/noite).
 "Hotel 5 estrelas - 2 diarias" → N = 2. "Hotel 1.5 diarias" → N = 1
-(e não 5). "Pousada" → N = 1. `d-010` (480,00, N = 2) → 240,00 na noite de 14/07 e
+(e não 5). "Pousada" → N = 1. `descricao` ausente, nula ou `2` (número) → N = 1. `d-010` (480,00, N = 2) → 240,00 na noite de 14/07 e
 240,00 na de 15/07 → APROVADO 480,00. Exemplo de sobreposição, com
 `h1` = 14/07 "2 diarias" 480,00 e depois `h2` = 15/07 "1 diaria" 200,00:
 `h1` → 240 + 240 = APROVADO 480,00; `h2` → só restam 10,00 na noite de 15/07
@@ -403,14 +416,21 @@ centavos.
 
 ### RN-015 — Arquivo de entrada inválido
 
-**Regra:** Se o arquivo de entrada não existe, não é JSON válido ou não tem
-`colaborador.id`, `periodo.inicio`, `periodo.fim` (datas válidas, com
-`inicio` ≤ `fim`) ou a lista `despesas`, a execução termina **com indicação de
-erro**, com mensagem que aponta o problema, e **nenhum arquivo de saída é
-gerado**.
-**Origem:** interface fixa do desafio
+**Regra:** Se o arquivo de entrada não existe, não é JSON válido, não é um
+objeto ou não tem `colaborador.id`, `periodo.inicio`, `periodo.fim` (datas
+válidas, com `inicio` ≤ `fim`) ou a lista `despesas`, a execução termina
+**com indicação de erro**, com mensagem que aponta o problema, e **nenhum
+arquivo de saída é gerado**.
+
+Vale o mesmo critério da RN-003: `colaborador.id`, `periodo.inicio` e
+`periodo.fim` que vêm vazios (texto vazio ou só com espaços), nulos ou com
+tipo diferente de texto contam como **ausentes**. Um `colaborador` ou
+`periodo` que não é objeto tem todos os seus campos ausentes (AMB-027).
+**Origem:** interface fixa do desafio (AMB-027)
 **Aceite:** executar com um arquivo sem `periodo` resulta em erro, mensagem que
-cita `periodo` e nenhum arquivo de saída.
+cita `periodo` e nenhum arquivo de saída. `"colaborador": {"id": ""}` ou
+`{"id": 123}` → erro que cita `colaborador.id`. `"inicio": 20260701` → erro
+que cita `periodo.inicio`. Um arquivo cujo conteúdo é uma lista (`[]`) → erro.
 
 ---
 
@@ -766,6 +786,38 @@ lançamento com identificador repetido. A leitura (c) foi descartada porque
 deixaria reusar o `id` de uma despesa recusada por período ou nota fiscal.
 **Regra afetada:** RN-003
 
+### AMB-026 — `fornecedor` e `descricao` que não são texto
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a entrada declara `fornecedor` e `descricao` como
+texto, mas pode trazer `123`, `true`, uma lista ou `null`. Leituras
+possíveis: (a) `DADO_INVALIDO`; (b) valor que não é texto vale vazio;
+(c) qualquer valor é aceito e tratado como texto.
+**Decisão:** (c). Nulo vale vazio. Número e booleano viram o texto com que
+aparecem no arquivo, e lista e objeto viram seu texto JSON compacto. Na
+duplicata (RN-007), `123` e `"123"` são o mesmo fornecedor. Na hospedagem
+(RN-012), uma descrição que não declara diárias vale uma única diária.
+**Justificativa:** decisão do usuário. Os dois campos são opcionais e não
+decidem sozinhos se a despesa é paga, então recusar a despesa pelo tipo deles
+puniria o colaborador por formatação. Tratar como vazio (b) esconderia um
+fornecedor que foi informado e juntaria na duplicata despesas de fornecedores
+diferentes.
+**Regra afetada:** RN-003, RN-007, RN-012
+
+### AMB-027 — Campos obrigatórios do arquivo vazios ou de tipo errado
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a RN-015 recusa o arquivo sem `colaborador.id`,
+`periodo.inicio` ou `periodo.fim`, mas não diz se `""`, `null` ou `123`
+contam como ausentes, nem o que acontece quando o arquivo é uma lista.
+**Decisão:** o mesmo critério da RN-003. Vazio, nulo ou de tipo diferente de
+texto conta como ausente, e o arquivo é recusado. Um arquivo que não é objeto
+também é recusado.
+**Justificativa:** decisão do usuário, por coerência com a RN-003. Sem
+colaborador ou período não há como calcular nenhuma despesa, então o erro é
+do arquivo inteiro, e não de um item.
+**Regra afetada:** RN-015
+
 ---
 
 ## 7. Casos de borda
@@ -801,7 +853,9 @@ deixaria reusar o `id` de uma despesa recusada por período ou nota fiscal.
 | Ambas sem fornecedor | mesma data/categoria/valor, `fornecedor` ausente nas duas | 1ª segue; 2ª RECUSADO `DUPLICATA` | RN-007 |
 | Só uma com fornecedor | mesma data/categoria/valor, "Tavola" vs `fornecedor` ausente | não são duplicatas; as duas seguem | RN-007 |
 | Fornecedor vazio | mesma data/categoria/valor, `""` vs `"   "` vs ausente | 1ª segue; 2ª e 3ª RECUSADO `DUPLICATA` | RN-007 |
-| Diárias na descrição | hospedagem "Hotel Rio - 2 diarias", 480,00 | N = 2, limite 500,00 → APROVADO 480,00 | RN-012 |
+| Fornecedor numérico | mesma data/categoria/valor, `123` vs `"123"` | 1ª segue; 2ª RECUSADO `DUPLICATA` | RN-003, RN-007 |
+| Fornecedor nulo | mesma data/categoria/valor, `null` vs ausente | 1ª segue; 2ª RECUSADO `DUPLICATA` | RN-003, RN-007 |
+| Diárias na descrição | hospedagem "Hotel Rio - 2 diarias", 480,00 | N = 2, 240,00 por noite, `limite_diario_aplicado` 250,00 (por diária) → APROVADO 480,00 | RN-012 |
 | Diárias com acento e maiúscula | "3 Diárias" | N = 3 | RN-012 |
 | Duas hospedagens na mesma noite | `h1` 14/07 "2 diarias" 480,00; depois `h2` 15/07 "1 diaria" 200,00 | `h1` APROVADO 480,00 (240 + 240); `h2` PARCIAL 10,00 | RN-012 |
 | Diária média acima do limite | 14/07 "2 diarias" 600,00 | 300 + 300 → 250 + 250 → PARCIAL 500,00 | RN-012 |
@@ -810,6 +864,8 @@ deixaria reusar o `id` de uma despesa recusada por período ou nota fiscal.
 | Número que não é diária | "Hotel 5 estrelas", 300,00 | N = 1 → PARCIAL 250,00 | RN-012 |
 | Descrição sem número | "Pousada", 300,00 | N = 1 → PARCIAL 250,00 | RN-012 |
 | Zero diárias | "0 diarias", 100,00 | N = 1 → APROVADO 100,00 | RN-012 |
+| Hospedagem sem descrição | `descricao` ausente ou nula, 300,00 | uma única diária, N = 1 → PARCIAL 250,00 | RN-012 |
+| Descrição não textual | hospedagem, `"descricao": 2`, 300,00 | aceita, vira `"2"`, N = 1 → PARCIAL 250,00 | RN-003, RN-012 |
 | Alimentação em dia de viagem | hospedagem elegível + alimentação 80,00, mesma data | alimentação APROVADO 80,00 (limite 90,00) | RN-011 |
 | Transporte em dia de viagem | hospedagem elegível + transporte 130,00 com NF, mesma data | PARCIAL 120,00 | RN-011 |
 | Dia do check-out | hospedagem de 1 diária em D; alimentação 80,00 em D+1 | PARCIAL 60,00 (não é dia de viagem) | RN-011 |
@@ -845,6 +901,9 @@ deixaria reusar o `id` de uma despesa recusada por período ou nota fiscal.
 | Lista de despesas vazia | `despesas: []` | saída com `itens` vazio e totais 0,00 | RN-014 |
 | Arquivo sem `periodo` | — | erro, nenhuma saída gerada | RN-015 |
 | `inicio` depois de `fim` | — | erro, nenhuma saída gerada | RN-015 |
+| `colaborador.id` vazio | `"colaborador": {"id": "  "}` | erro que cita `colaborador.id`, nenhuma saída gerada | RN-015 |
+| `periodo.inicio` não textual | `"inicio": 20260701` | erro que cita `periodo.inicio`, nenhuma saída gerada | RN-015 |
+| Arquivo que não é objeto | conteúdo `[]` | erro, nenhuma saída gerada | RN-015 |
 
 ## 8. Ordem de aplicação das regras
 

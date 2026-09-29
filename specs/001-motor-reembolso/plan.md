@@ -1,6 +1,6 @@
 # Plano Técnico — Motor de Cálculo de Reembolso
 
-**Versão:** 1.1 · **Baseado na spec:** 1.2 · **Branch:** `001-motor-reembolso` · **Data:** 2026-09-29
+**Versão:** 1.2 · **Baseado na spec:** 1.3 · **Branch:** `001-motor-reembolso` · **Data:** 2026-09-29
 
 > Aqui mora o COMO. Este arquivo pode e deve falar de linguagem, biblioteca e
 > arquitetura. O que ele **não** pode é introduzir regra de negócio nova — se
@@ -17,6 +17,12 @@ inválido, `id` normalizado e primeira ocorrência das diárias).
 **v1.1:** ajuste à spec 1.2 (D-017, AMB-025). O conjunto de ids vistos só
 recebe o `id` de despesas que passaram pela validação (etapa 2). Nenhuma
 decisão técnica mudou.
+
+**v1.2:** ajuste à spec 1.3 (D-018, AMB-026, AMB-027). `texto.ts` ganha a
+conversão de `fornecedor`/`descricao` de qualquer tipo para texto, e
+`io/entrada.ts` aplica à RN-015 o critério de ausente da RN-003. Os testes
+passam a ter **um arquivo por RN**: os testes do motor em memória vão para o
+arquivo da RN que verificam, e não existe `motor.test.ts`.
 
 ---
 
@@ -99,7 +105,11 @@ src/
     despesa.ts  elegibilidade.ts  viagem.ts  diarias.ts  limites.ts
     motivos.ts  resumo.ts  motor.ts
 tests/
-  nucleo/rn-001-arredondamento.test.ts … rn-015-*.test.ts
+  infra.test.ts               # runtime (rawJSON, context.source)
+  nucleo/rn-001-arredondamento.test.ts … rn-014-resumo.test.ts   # um arquivo por RN
+  nucleo/politica.test.ts  datas.test.ts  dinheiro.test.ts        # Infra › (sem regra)
+  io/rn-015-entrada.test.ts   # a RN-015 vive em io/entrada.ts
+  io/json.test.ts  io/saida.test.ts
   casos-de-borda.test.ts      # uma linha da seção 7 = um teste
   exemplo.test.ts             # tabela da seção 9
   contrato-saida.test.ts      # saida.schema.json
@@ -222,8 +232,13 @@ deixa a suíte vermelha até ganhar teste. Isso é intencional.
   com despesas montadas no teste); ~15% ponta a ponta do motor (exemplo,
   contrato); ~5% CLI por processo filho (sucesso, RN-015, determinismo,
   códigos de saída).
-- **Cada `RN-NNN` tem teste?** Sim, um arquivo por RN em `tests/nucleo/`,
-  com `describe('RN-00X — <título da spec>')`. Os critérios de **Aceite** da
+- **Cada `RN-NNN` tem teste?** Sim, **exatamente um arquivo por RN**,
+  `rn-0NN-<tema>.test.ts` (em `tests/nucleo/`, ou em `tests/io/` para a
+  RN-015), com `describe('RN-0NN — <título da spec>')`. Todo teste de unidade
+  ou do motor em memória cujo título começa por `RN-0NN ›` fica no arquivo
+  dessa RN, inclusive os que montam várias despesas e chamam o motor. Só os
+  testes ponta a ponta (`exemplo`, `contrato-saida`, `cli`, `io/saida`) citam
+  RNs fora do arquivo delas. Os critérios de **Aceite** da
   spec viram testes literais. O `rastreabilidade.test.ts` garante isso.
 - **Casos de borda da seção 7:** `casos-de-borda.test.ts`, com um `it` por
   linha da tabela e o título **idêntico** à coluna "Caso"

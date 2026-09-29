@@ -8,7 +8,7 @@
 
 **Formato do commit:** `feat(T-003): <descrição>` · `test(T-003): <descrição>`
 
-**Base:** `spec.md` v1.2 · `plan.md` v1.1 · `data-model.md` · `research.md` · `contracts/`
+**Base:** `spec.md` v1.3 · `plan.md` v1.2 · `data-model.md` · `research.md` · `contracts/`
 
 **Convenções que valem para todas as tasks** (do `plan.md` §2 e §6 e do `CLAUDE.md`):
 
@@ -16,7 +16,7 @@
 - Só sintaxe apagável (`erasableSyntaxOnly`): sem `enum`/`namespace`/parameter properties; imports relativos com `.ts`.
 - Dinheiro é `Centavos = bigint` em todo o núcleo. Nunca `number` para dinheiro. Nenhum número da política fora de `src/nucleo/politica.ts`.
 - Título de teste começa pelo ID: `RN-010 › ...`, ou `Borda › <Caso>` com o texto **exato** da coluna "Caso" da seção 7 da spec, sem as crases do markdown (ex.: `` `id` repetido `` → `Borda › id repetido`). Testes que não verificam regra de negócio usam `Infra › ...`.
-- Um arquivo de teste por RN em `tests/nucleo/rn-0NN-<tema>.test.ts`, com `describe('RN-0NN — <título da spec>')`.
+- **Exatamente um arquivo de teste por RN**: `tests/nucleo/rn-0NN-<tema>.test.ts` (a RN-015 em `tests/io/rn-015-entrada.test.ts`), com `describe('RN-0NN — <título da spec>')`. Todo teste de unidade ou do motor em memória com título `RN-0NN › ...` fica no arquivo **dessa** RN, mesmo que a task seja de outro módulo (não existe `motor.test.ts`). Só os testes ponta a ponta (`exemplo`, `contrato-saida`, `cli`, `io/saida`) citam RNs fora do arquivo delas (plan §6).
 - "Aceite" = os testes listados passam em `npm test` **e** `npm run typecheck` fica sem erros.
 
 ---
@@ -55,14 +55,14 @@
   - **Aceite:** em `tests/nucleo/rn-001-arredondamento.test.ts` passam `RN-001 › 33.333 → 33.33`, `RN-001 › 10.005 → 10.00 (meio, 0 é par)`, `RN-001 › 10.015 → 10.02 (meio, 2 é par)`, `RN-001 › 33.345 → 33.34`, `RN-001 › 33.3451 → 33.35 (fora do meio)`, `RN-001 › 100.004 → 100.00`, `RN-001 › -45.005 → -45.00 (meio para o par também no negativo)` e `RN-001 › expoente 1.00005e2 → 100.00`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-007** — [P] Criar `src/nucleo/texto.ts` (R-06): `normalizar(texto)` = `trim` → minúsculas → `NFD` → remove `\p{M}`; e `normalizarFornecedor(texto)` = só `trim` + minúsculas (a RN-007 não manda tirar acento do fornecedor)
-  - **Atende:** RN-002, AMB-014
-  - **Aceite:** em `tests/nucleo/rn-002-categoria.test.ts` passam `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao` e `RN-002 › "Transporte_Urbano" e "HOSPEDAGEM" viram transporte_urbano e hospedagem`
+- [ ] **T-007** — [P] Criar `src/nucleo/texto.ts` (R-06): `normalizar(texto)` = `trim` → minúsculas → `NFD` → remove `\p{M}`; e `normalizarFornecedor(texto)` = só `trim` + minúsculas (a RN-007 não manda tirar acento do fornecedor); e `comoTexto(bruto)` (AMB-026): ausente/`null` → `""`, texto como veio, `NumeroJson` → o seu texto, booleano → `"true"`/`"false"`, lista/objeto → texto JSON compacto (`NumeroJson` reemitido com o texto original)
+  - **Atende:** RN-002, AMB-014, RN-003, AMB-026
+  - **Aceite:** em `tests/nucleo/rn-002-categoria.test.ts` passam `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao` e `RN-002 › "Transporte_Urbano" e "HOSPEDAGEM" viram transporte_urbano e hospedagem`; em `tests/nucleo/rn-003-validacao.test.ts` passa `RN-003 › fornecedor/descricao como texto: ausente e null → "", 123 → "123", true → "true", [1, 2] → "[1,2]"`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-008** — Criar `src/nucleo/despesa.ts` com `validarDespesa(bruta, indice)` → `DespesaValida | Recusa(DADO_INVALIDO)`: item que não é objeto; `id`, `data`, `categoria` ausentes, nulos, vazios/só espaços ou não textuais; `data` inválida (T-004); `valor` ausente. A `Recusa` carrega os ecos **brutos** de `id`/`data`/`categoria` (ausente → `null`) e o `valor_solicitado` arredondado quando o `valor` é um `NumeroJson` (neste passo só `NumeroJson` é aceito como valor; texto vem na T-009). Aplica `normalizar` na categoria (RN-002) sem recusar categoria desconhecida
-  - **Atende:** RN-003, AMB-018, AMB-023
-  - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco`, `RN-003 › id, data, categoria ou valor ausentes → DADO_INVALIDO`, `RN-003 › id, data ou categoria nulos, vazios ou só com espaços → DADO_INVALIDO`, `RN-003 › "categoria": "" e "categoria": 123 → DADO_INVALIDO, e não CATEGORIA_NAO_REEMBOLSAVEL`, `RN-003 › item que não é objeto (42, "x", null) → DADO_INVALIDO com ecos e valor_solicitado nulos` e `RN-003 › eco sai exatamente como veio (categoria 123 continua o NumeroJson "123")`
+- [ ] **T-008** — Criar `src/nucleo/despesa.ts` com `validarDespesa(bruta, indice)` → `DespesaValida | Recusa(DADO_INVALIDO)`: item que não é objeto; `id`, `data`, `categoria` ausentes, nulos, vazios/só espaços ou não textuais; `data` inválida (T-004); `valor` ausente. A `Recusa` carrega os ecos **brutos** de `id`/`data`/`categoria` (ausente → `null`) e o `valor_solicitado` arredondado quando o `valor` é um `NumeroJson` (neste passo só `NumeroJson` é aceito como valor; texto vem na T-009). Aplica `normalizar` na categoria (RN-002) sem recusar categoria desconhecida. Preenche `descricao` e `fornecedorChave` com `comoTexto` (T-007); esses dois campos nunca recusam a despesa (AMB-026)
+  - **Atende:** RN-003, AMB-018, AMB-023, AMB-026
+  - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco`, `RN-003 › id, data, categoria ou valor ausentes → DADO_INVALIDO`, `RN-003 › id, data ou categoria nulos, vazios ou só com espaços → DADO_INVALIDO`, `RN-003 › "categoria": "" e "categoria": 123 → DADO_INVALIDO, e não CATEGORIA_NAO_REEMBOLSAVEL`, `RN-003 › item que não é objeto (42, "x", null) → DADO_INVALIDO com ecos e valor_solicitado nulos` , `RN-003 › eco sai exatamente como veio (categoria 123 continua o NumeroJson "123")` e `RN-003 › "fornecedor": 123 e "descricao": null não recusam a despesa`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-009** — Aceitar `valor` como texto no formato fechado em `src/nucleo/despesa.ts`: sem os espaços das bordas, casa `^-?\d+([.,]\d+)?$`; vírgula vira ponto e segue para `paraCentavos` (RN-001). Qualquer outro texto ou tipo (vazio, milhar, moeda, dois separadores, letras, booleano, lista, objeto, nulo) → `DADO_INVALIDO` com `valor_solicitado` nulo
@@ -96,23 +96,23 @@
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-015** — Etapa 6 em `src/nucleo/elegibilidade.ts`: estado com chave `(data, categoria normalizada, normalizarFornecedor(fornecedor) — ausente/só espaços = "", valorSolicitado)` → `id` da primeira ocorrência; ocorrência seguinte com `id` diferente → `Recusa(DUPLICATA)` com `detalhes.idAceito`. `descricao` e `tem_nota_fiscal` fora da chave
-  - **Atende:** RN-007, AMB-011
-  - **Aceite:** em `tests/nucleo/rn-007-duplicatas.test.ts` passam `RN-007 › d-006 segue e d-007 → DUPLICATA`, `RN-007 › duas alimentações de 40,00 sem fornecedor na mesma data → a 2ª DUPLICATA`, `RN-007 › só uma com fornecedor → as duas seguem`, `RN-007 › "Café" e "Cafe" são fornecedores diferentes (fornecedor não tira acento)`, `RN-007 › descricao e tem_nota_fiscal não entram no critério` e `RN-007 › recusa DUPLICATA traz o id da ocorrência aceita`
+  - **Atende:** RN-007, AMB-011, AMB-026
+  - **Aceite:** em `tests/nucleo/rn-007-duplicatas.test.ts` passam `RN-007 › d-006 segue e d-007 → DUPLICATA`, `RN-007 › duas alimentações de 40,00 sem fornecedor na mesma data → a 2ª DUPLICATA`, `RN-007 › só uma com fornecedor → as duas seguem`, `RN-007 › "Café" e "Cafe" são fornecedores diferentes (fornecedor não tira acento)`, `RN-007 › descricao e tem_nota_fiscal não entram no critério`, `RN-007 › recusa DUPLICATA traz o id da ocorrência aceita`, `RN-007 › fornecedor 123 e "123" são o mesmo fornecedor` e `RN-007 › fornecedor null é igual a fornecedor ausente`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-016** — Etapa 7 em `src/nucleo/elegibilidade.ts`: `valorSolicitado > POLITICA.limiarNotaFiscal` (estritamente maior, sobre o valor arredondado) e sem nota → `Recusa(NOTA_FISCAL_AUSENTE)`
   - **Atende:** RN-008, AMB-004, AMB-005, AMB-006
-  - **Aceite:** em `tests/nucleo/rn-008-nota-fiscal.test.ts` passam `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-001 › 100.004 → 100,00 e não exige nota fiscal`
+  - **Aceite:** em `tests/nucleo/rn-008-nota-fiscal.test.ts` passam `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-008 › 100.004 arredonda para 100,00 e não exige nota fiscal`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`, registrando o `id` nos ids vistos com `registrarId` logo após a etapa 2) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
   - **Atende:** RN-003, RN-004, RN-007, RN-008, AMB-025 (seção 8)
-  - **Aceite:** em `tests/nucleo/motor.test.ts` passam `RN-003 › despesa inválida não impede o processamento das outras`, `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`, `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)`, `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)` e `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
+  - **Aceite:** chamando o motor em memória, passam em `tests/nucleo/rn-003-validacao.test.ts` `RN-003 › despesa inválida não impede o processamento das outras` e `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`; em `tests/nucleo/rn-007-duplicatas.test.ts` `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)` e `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): na descrição normalizada, primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição ausente ou N = 0 → 1
-  - **Atende:** RN-012, AMB-008
-  - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › "Hotel Rio - 2 diarias" → N = 2`, `RN-012 › "Airbnb 3 noites" → N = 3`, `RN-012 › "Hotel 5 estrelas" → N = 1`, `RN-012 › "Hotel 5 estrelas - 2 diarias" → N = 2`, `RN-012 › "Hotel 1.5 diarias" → N = 1 (e não 5)`, `RN-012 › "Pousada" e descrição ausente → N = 1`, `RN-012 › "0 diarias" → N = 1`, `RN-012 › "3 Diárias" → N = 3`, `RN-012 › "12 noites" → N = 12 (inteiro completo)`, `RN-012 › "2diarias" → N = 2 (sem espaço)` e `RN-012 › "2 noitadas" → N = 1`
+- [ ] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): recebe a `descricao` já em texto (`comoTexto`, T-007) e, na descrição normalizada, busca a primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição vazia (ausente ou nula) ou N = 0 → 1 (uma única diária)
+  - **Atende:** RN-012, AMB-008, AMB-026
+  - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › "Hotel Rio - 2 diarias" → N = 2`, `RN-012 › "Airbnb 3 noites" → N = 3`, `RN-012 › "Hotel 5 estrelas" → N = 1`, `RN-012 › "Hotel 5 estrelas - 2 diarias" → N = 2`, `RN-012 › "Hotel 1.5 diarias" → N = 1 (e não 5)`, `RN-012 › "Pousada" e descrição ausente → N = 1`, `RN-012 › "0 diarias" → N = 1`, `RN-012 › "3 Diárias" → N = 3`, `RN-012 › "12 noites" → N = 12 (inteiro completo)`, `RN-012 › "2diarias" → N = 2 (sem espaço)`, `RN-012 › "2 noitadas" → N = 1` e `RN-012 › descricao nula ou 2 (número) → N = 1`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-019** — `gerarParcelas(elegivel)` em `src/nucleo/diarias.ts` (DT-003): hospedagem com N diárias vira N `Parcela`s nas datas D…D+N−1 com `valor ÷ N` e o resto distribuído um centavo por vez nas primeiras noites; qualquer outra categoria vira uma parcela na própria data
@@ -132,7 +132,7 @@
 
 - [ ] **T-022** — **Passada 2** em `src/nucleo/motor.ts`: com as elegíveis da passada 1, calcula `diasDeViagem`, gera parcelas e chama `alocar`; monta cada `ResultadoItem` com `limite_diario_aplicado`, `em_viagem`, `diarias` (só hospedagem alocada) e `status` **derivado** de (reembolsável, solicitado); recusadas saem com esses três campos nulos e reembolsável 0
   - **Atende:** RN-011, RN-012, RN-002, RN-004, RN-008, AMB-007, AMB-017, AMB-020
-  - **Aceite:** em `tests/nucleo/motor.test.ts` passam `RN-011 › alimentação de 80,00 na data de hospedagem elegível → APROVADO 80,00 (limite 90,00)`, `RN-011 › hospedagem de 1 diária em D e alimentação 80,00 em D+1 → PARCIAL 60,00`, `RN-011 › hospedagem de 2 diárias em D e alimentação 80,00 em D+1 → APROVADO 80,00`, `RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem`, `RN-008 › dia de viagem não amplia o limiar de nota fiscal`, `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00`, `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário`, `RN-004 › d-009 não afeta as despesas de transporte de 2026-07-11` e `RN-012 › diarias só é preenchido em hospedagem que chegou ao limite; limite e em_viagem nulos nas recusadas`
+  - **Aceite:** chamando o motor em memória, passam em `tests/nucleo/rn-011-viagem.test.ts` `RN-011 › alimentação de 80,00 na data de hospedagem elegível → APROVADO 80,00 (limite 90,00)`, `RN-011 › hospedagem de 1 diária em D e alimentação 80,00 em D+1 → PARCIAL 60,00`, `RN-011 › hospedagem de 2 diárias em D e alimentação 80,00 em D+1 → APROVADO 80,00` e `RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem`; em `tests/nucleo/rn-008-nota-fiscal.test.ts` `RN-008 › dia de viagem não amplia o limiar de nota fiscal`; em `tests/nucleo/rn-012-diarias.test.ts` `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00` e `RN-012 › diarias só é preenchido em hospedagem que chegou ao limite; limite e em_viagem nulos nas recusadas`; em `tests/nucleo/rn-002-categoria.test.ts` `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` `RN-004 › d-009 não afeta as despesas de transporte de 2026-07-11`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-023** — [P] Criar `src/nucleo/motivos.ts`: `montarMotivo(codigo, detalhes)` → `{ codigo, descricao }` com um modelo de texto por código da seção 4, valores via `formatarReais`; códigos de limite citam limite aplicado, saldo disponível e valor cortado; `DUPLICATA` cita o `id` aceito sem falar em fraude/suspeita. Ligar no `motor.ts`
@@ -140,14 +140,14 @@
   - **Aceite:** em `tests/nucleo/rn-013-motivos.test.ts` passam `RN-013 › todo código da seção 4 gera descrição não vazia`, `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › LIMITE_DIARIO_ESGOTADO cita o limite e o saldo zerado` e `RN-007 › descrição de DUPLICATA cita o id da ocorrência aceita`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-024** — [P] Criar `src/nucleo/resumo.ts` e ligá-lo no `motor.ts`: contagens por status; `total_solicitado` soma só `valor_solicitado` positivo e não nulo; `total_reembolsavel` soma todos os itens; `total_nao_reembolsado = total_solicitado − total_reembolsavel` em centavos
+- [ ] **T-024** — Criar `src/nucleo/resumo.ts` e ligá-lo no `motor.ts`: contagens por status; `total_solicitado` soma só `valor_solicitado` positivo e não nulo; `total_reembolsavel` soma todos os itens; `total_nao_reembolsado = total_solicitado − total_reembolsavel` em centavos
   - **Atende:** RN-014, AMB-012, AMB-023
   - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel e contagens somam quantidade_itens`, `RN-014 › total_solicitado ignora valores não positivos e nulos`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel, exato em centavos` e `RN-014 › lista vazia → contagens 0 e totais 0,00`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-025** — [P] Criar `src/io/entrada.ts` com `validarEntrada(json)` → `Entrada` ou lança `ErroEntrada { mensagem }`: exige `colaborador.id`, `periodo.inicio` e `periodo.fim` (datas válidas pela T-004, `inicio ≤ fim`) e `despesas` como lista; a mensagem cita o campo ou o problema. `colaborador`/`periodo` guardados brutos para eco
-  - **Atende:** RN-015, AMB-018
-  - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › sem periodo → erro cuja mensagem cita periodo`, `RN-015 › sem colaborador.id → erro cuja mensagem cita colaborador.id`, `RN-015 › periodo.inicio ou periodo.fim inválidos → erro`, `RN-015 › inicio depois de fim → erro`, `RN-015 › despesas ausente ou que não é lista → erro cuja mensagem cita despesas`, `RN-015 › texto que não é JSON → erro` e `RN-015 › despesas: [] é entrada válida`
+- [ ] **T-025** — [P] Criar `src/io/entrada.ts` com `validarEntrada(json)` → `Entrada` ou lança `ErroEntrada { mensagem }`: exige que o JSON seja objeto, `colaborador.id`, `periodo.inicio` e `periodo.fim` (datas válidas pela T-004, `inicio ≤ fim`) e `despesas` como lista; `colaborador.id`/`periodo.inicio`/`periodo.fim` vazios, só com espaços, nulos ou não textuais contam como ausentes, e `colaborador`/`periodo` que não são objeto têm todos os campos ausentes (AMB-027); a mensagem cita o campo ou o problema. `colaborador`/`periodo` guardados brutos para eco
+  - **Atende:** RN-015, AMB-018, AMB-027
+  - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › sem periodo → erro cuja mensagem cita periodo`, `RN-015 › sem colaborador.id → erro cuja mensagem cita colaborador.id`, `RN-015 › periodo.inicio ou periodo.fim inválidos → erro`, `RN-015 › inicio depois de fim → erro`, `RN-015 › despesas ausente ou que não é lista → erro cuja mensagem cita despesas`, `RN-015 › texto que não é JSON → erro`, `RN-015 › despesas: [] é entrada válida`, `RN-015 › colaborador.id "", "  ", null ou 123 → erro cuja mensagem cita colaborador.id`, `RN-015 › periodo.inicio 20260701 ou null → erro cuja mensagem cita periodo.inicio`, `RN-015 › colaborador ou periodo que não é objeto → erro` e `RN-015 › JSON que não é objeto ([], 42, "x") → erro`
   - **Commit:** `<hash preenchido depois>`
 
 ## Fase 3 — Casos de borda
@@ -173,13 +173,13 @@
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-029** — Casos de borda de duplicatas em `tests/casos-de-borda.test.ts`
-  - **Atende:** RN-007, AMB-011
-  - **Aceite:** passam `Borda › Mesmo fornecedor, datas diferentes`, `Borda › Duplicata com e sem NF`, `Borda › Três cópias idênticas`, `Borda › Fornecedor com grafia diferente`, `Borda › Fornecedores diferentes`, `Borda › Ambas sem fornecedor`, `Borda › Só uma com fornecedor` e `Borda › Fornecedor vazio`
+  - **Atende:** RN-007, RN-003, AMB-011, AMB-026
+  - **Aceite:** passam `Borda › Mesmo fornecedor, datas diferentes`, `Borda › Duplicata com e sem NF`, `Borda › Três cópias idênticas`, `Borda › Fornecedor com grafia diferente`, `Borda › Fornecedores diferentes`, `Borda › Ambas sem fornecedor`, `Borda › Só uma com fornecedor`, `Borda › Fornecedor vazio`, `Borda › Fornecedor numérico` e `Borda › Fornecedor nulo`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-030** — Casos de borda de hospedagem e diárias em `tests/casos-de-borda.test.ts`
-  - **Atende:** RN-012, RN-005, AMB-008
-  - **Aceite:** passam `Borda › Diárias na descrição`, `Borda › Diárias com acento e maiúscula`, `Borda › Duas hospedagens na mesma noite`, `Borda › Diária média acima do limite`, `Borda › Divisão com centavos`, `Borda › Noite fora do período`, `Borda › Número que não é diária`, `Borda › Descrição sem número`, `Borda › Zero diárias`, `Borda › Número solto antes das diárias` e `Borda › Diárias fracionárias`
+  - **Atende:** RN-012, RN-005, RN-003, AMB-008, AMB-026
+  - **Aceite:** passam `Borda › Diárias na descrição` (conferindo `limite_diario_aplicado` 250,00), `Borda › Diárias com acento e maiúscula`, `Borda › Duas hospedagens na mesma noite`, `Borda › Diária média acima do limite`, `Borda › Divisão com centavos`, `Borda › Noite fora do período`, `Borda › Número que não é diária`, `Borda › Descrição sem número`, `Borda › Zero diárias`, `Borda › Número solto antes das diárias`, `Borda › Diárias fracionárias`, `Borda › Hospedagem sem descrição` e `Borda › Descrição não textual`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-031** — Casos de borda de viagem em `tests/casos-de-borda.test.ts`
@@ -229,14 +229,14 @@
   - **Aceite:** passa `Infra › CLI: duas execuções com a mesma entrada geram bytes idênticos`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-040** — Casos de borda de arquivo em `tests/casos-de-borda.test.ts`: lista vazia pelo motor; `periodo` ausente e `inicio > fim` pelo CLI (processo filho), conferindo que o arquivo de saída não existe
-  - **Atende:** RN-014, RN-015
-  - **Aceite:** passam `Borda › Lista de despesas vazia`, `Borda › Arquivo sem periodo` e `Borda › inicio depois de fim`
+- [ ] **T-040** — Casos de borda de arquivo em `tests/casos-de-borda.test.ts`: lista vazia pelo motor; os casos de RN-015 pelo CLI (processo filho), conferindo que o arquivo de saída não existe e que o `stderr` cita o campo
+  - **Atende:** RN-014, RN-015, AMB-027
+  - **Aceite:** passam `Borda › Lista de despesas vazia`, `Borda › Arquivo sem periodo`, `Borda › inicio depois de fim`, `Borda › colaborador.id vazio`, `Borda › periodo.inicio não textual` e `Borda › Arquivo que não é objeto`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-041** — Criar `tests/rastreabilidade.test.ts` (DT-005): lê `specs/001-motor-reembolso/spec.md`, extrai todo `### RN-NNN` e a 1ª coluna da tabela da seção 7 (sem as crases), lê os títulos de teste em `tests/**/*.test.ts` e falha listando o que ficou sem teste
+- [ ] **T-041** — Criar `tests/rastreabilidade.test.ts` (DT-005): lê `specs/001-motor-reembolso/spec.md`, extrai todo `### RN-NNN` e a 1ª coluna da tabela da seção 7 (sem as crases), lê os títulos de teste em `tests/**/*.test.ts` e falha listando o que ficou sem teste; confere também que toda RN tem **exatamente um** arquivo `tests/**/rn-NNN-*.test.ts`
   - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015 (seção 9, critérios 2 e 3)
-  - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste` e `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>`; removendo temporariamente um `it` de borda, a suíte fica vermelha
+  - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste` , `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; removendo temporariamente um `it` de borda, a suíte fica vermelha
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-042** — Reescrever `README.md` com como instalar, rodar e testar (Node ≥ 24, `npm install`, `npm test`, `npm run typecheck`, comando `calcular`), apontando para `specs/001-motor-reembolso/` e `quickstart.md`
@@ -260,9 +260,9 @@ exatamente a matriz que a correção vai montar.
 
 | Regra da spec | Task | Teste |
 |---|---|---|
-| RN-001 | T-006, T-016, T-026, T-033, T-035 | `RN-001 › 10.005 → 10.00 (meio, 0 é par)` (+ demais `RN-001 ›`), `Borda › Arredondamento meio-para-o-par no limiar` |
+| RN-001 | T-006, T-026, T-033, T-035 | `RN-001 › 10.005 → 10.00 (meio, 0 é par)` (+ demais `RN-001 ›`), `Borda › Arredondamento meio-para-o-par no limiar` |
 | RN-002 | T-007, T-022, T-028 | `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao`, `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário` |
-| RN-003 | T-008, T-009, T-010, T-011, T-017, T-032, T-033, T-034, T-035, T-038 | `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco` (+ demais `RN-003 ›`), `Borda › Data impossível` |
+| RN-003 | T-007, T-008, T-009, T-010, T-011, T-017, T-029, T-030, T-032, T-033, T-034, T-035, T-038 | `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco` (+ demais `RN-003 ›`), `Borda › Data impossível` |
 | RN-004 | T-012, T-017, T-022, T-028 | `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `Borda › Estorno` |
 | RN-005 | T-013, T-028, T-030 | `RN-005 › d-008 (2026-04-15, período de julho) → FORA_DO_PERIODO`, `Borda › Último dia do período` |
 | RN-006 | T-014, T-028 | `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL`, `Borda › Categoria desconhecida` |
@@ -274,12 +274,12 @@ exatamente a matriz que a correção vai montar.
 | RN-012 | T-018, T-019, T-022, T-030 | `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00`, `Borda › Divisão com centavos` |
 | RN-013 | T-023, T-035, T-036, T-037 | `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › exemplo: nenhum item com motivo ausente ou vazio` |
 | RN-014 | T-024, T-032, T-036, T-040 | `RN-014 › total_solicitado ignora valores não positivos e nulos`, `Borda › Lista de despesas vazia` |
-| RN-015 | T-025, T-038, T-040 | `RN-015 › CLI: arquivo sem periodo → código 1, stderr cita periodo, nenhum arquivo de saída`, `Borda › inicio depois de fim` |
+| RN-015 | T-025, T-038, T-040 | `RN-015 › CLI: arquivo sem periodo → código 1, stderr cita periodo, nenhum arquivo de saída`, `Borda › inicio depois de fim`, `Borda › colaborador.id vazio` |
 | AMB-001 | T-021, T-027 | `RN-009 › categorias diferentes no mesmo dia têm limites independentes`, `Borda › Mesmo dia, categorias diferentes` |
 | AMB-002 | T-021, T-027 | `RN-010 › d-001 e d-002 em 03/07: 1ª PARCIAL 60,00, 2ª ESGOTADO` |
 | AMB-003 | T-021 | `RN-010 › d-014 (61,00) → PARCIAL 60,00` |
 | AMB-004 | T-016, T-026 | `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `Borda › Um centavo acima do limiar` |
-| AMB-005 | T-016 | `RN-001 › 100.004 → 100,00 e não exige nota fiscal` |
+| AMB-005 | T-016 | `RN-008 › 100.004 arredonda para 100,00 e não exige nota fiscal` |
 | AMB-006 | T-016 | `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` |
 | AMB-007 | T-020, T-022, T-031 | `RN-011 › alimentação de 80,00 na data de hospedagem elegível → APROVADO 80,00 (limite 90,00)`, `Borda › Hospedagem recusada não gera viagem` |
 | AMB-008 | T-018, T-019, T-030 | `RN-012 › "Hotel 5 estrelas - 2 diarias" → N = 2`, `Borda › Diárias fracionárias` |
@@ -300,10 +300,12 @@ exatamente a matriz que a correção vai montar.
 | AMB-023 | T-008, T-009, T-024, T-032, T-035 | `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `Borda › Eco de campo inválido` |
 | AMB-024 | T-011, T-032 | `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `Borda › id repetido com outra grafia` |
 | AMB-025 | T-011, T-017, T-032 | `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)`, `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação` |
+| AMB-026 | T-007, T-008, T-015, T-018, T-029, T-030 | `RN-007 › fornecedor 123 e "123" são o mesmo fornecedor`, `RN-012 › descricao nula ou 2 (número) → N = 1`, `Borda › Descrição não textual` |
+| AMB-027 | T-025, T-040 | `RN-015 › colaborador.id "", "  ", null ou 123 → erro cuja mensagem cita colaborador.id`, `Borda › Arquivo que não é objeto` |
 
 **IDs sem cobertura:** nenhum.
 
-**Casos de borda da seção 7:** 73 linhas → T-026 (7), T-027 (6), T-028 (8), T-029 (8), T-030 (11), T-031 (6), T-032 (12), T-033 (7), T-034 (5), T-040 (3).
+**Casos de borda da seção 7:** 80 linhas → T-026 (7), T-027 (6), T-028 (8), T-029 (10), T-030 (13), T-031 (6), T-032 (12), T-033 (7), T-034 (5), T-040 (6).
 
 ---
 
@@ -312,6 +314,12 @@ exatamente a matriz que a correção vai montar.
 - **T-011 (resolvido):** o ponto sobre `id` de despesa anterior já recusada
   foi decidido na spec 1.2 (AMB-025, D-017): só despesa validada reserva o
   `id`. T-011, T-017, T-032 e a Cobertura foram atualizadas sem renumeração.
+- **`/speckit-analyze` (D-018, spec 1.3):** fornecedor/descrição de qualquer
+  tipo viram texto (T-007, T-008, T-015, T-018, T-029, T-030); RN-015 com o
+  critério de ausente da RN-003 (T-025, T-040); `limite_diario_aplicado`
+  250,00 em "Diárias na descrição" (T-030); T-024 sem `[P]` (edita
+  `motor.ts`, como a T-023); um arquivo de teste por RN, sem
+  `motor.test.ts` (T-016, T-017, T-022, T-041). Sem renumeração.
 - **Dependências:** T-001 → (T-002, T-003, T-004 em paralelo) → T-005 → Fase 2.
   Dentro de `despesa.ts` (T-008 → T-011) e de `elegibilidade.ts`
   (T-012 → T-016) a ordem é sequencial. T-017 precisa de T-011 e T-016;

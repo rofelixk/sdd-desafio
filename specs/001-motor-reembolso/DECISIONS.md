@@ -17,6 +17,57 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-018 — Lacunas achadas no `/speckit-analyze` (RN-003, RN-007, RN-012, RN-015, AMB-026, AMB-027) · `2026-09-29`
+
+**Gatilho:** `/speckit-analyze`, depois das tasks. A análise cruzada apontou
+três pontos da spec que a implementação teria de decidir sozinha (I2, U1 e
+U2 do relatório) e dois problemas nas tasks (F1 e F2). O usuário decidiu
+cada um.
+
+**O que mudou na spec (versão 1.2 → 1.3):**
+- RN-003: `fornecedor` e `descricao` aceitam qualquer valor, tratado como
+  texto. Nulo vale vazio. Número e booleano viram o texto como aparecem no
+  arquivo, e lista e objeto viram o texto JSON compacto. Nenhum dos dois causa
+  `DADO_INVALIDO`. Seção 4 (tabela de entrada) atualizada.
+- RN-007: `fornecedor` nulo vale vazio, e `123` é igual a `"123"`.
+- RN-012: deixa explícito que hospedagem sem descrição (ausente, nula, vazia)
+  ou sem o padrão de diárias vale uma única diária.
+- RN-015: o mesmo critério da RN-003 para `colaborador.id`, `periodo.inicio`
+  e `periodo.fim` (vazio, nulo ou de outro tipo = ausente), e um arquivo que
+  não é objeto é recusado.
+- Novas AMB-026 (fornecedor/descrição que não são texto) e AMB-027 (campos
+  obrigatórios do arquivo vazios ou de outro tipo).
+- Seção 7: "Diárias na descrição" passa a dizer que `limite_diario_aplicado`
+  é 250,00 (por diária), e não "limite 500,00". Sete casos novos: "Fornecedor
+  numérico", "Fornecedor nulo", "Hospedagem sem descrição", "Descrição não
+  textual", "`colaborador.id` vazio", "`periodo.inicio` não textual" e
+  "Arquivo que não é objeto".
+- Três entradas em `Clarifications`.
+
+**Como se chegou lá:** o usuário respondeu ao relatório: "deixar explícito o
+limite diário sendo 250"; "fornecedor e descricao aceita qualquer valor, é
+tratado como string, nulo é vazio. categoria hospedagem sem descricao que
+declara diária é tratado como um único dia"; "estender RN-015 para o mesmo
+critério de RN-003". O Claude escolheu como lista e objeto viram texto (JSON
+compacto), porque "tratado como string" não dizia isso.
+
+**Por quê:** ver AMB-026 e AMB-027. Na I2, a linha de borda contradizia a
+seção 4 e poderia gerar um teste que verifica o limite errado.
+
+**O que isso invalidou:** nada implementado (nenhuma task concluída). Nenhum
+item do exemplo muda: todos têm `fornecedor` e `descricao` em texto.
+
+**Tasks afetadas:** T-007 e T-008 (conversão para texto), T-015 e T-018
+(testes), T-025 (aceite da RN-015), T-029, T-030 e T-040 (casos de borda
+novos), T-024 (sai o `[P]`, porque também edita `motor.ts`, igual à T-023) e
+a organização dos testes: um arquivo por RN, sem `motor.test.ts` (T-016,
+T-017, T-022, T-041). Numeração preservada.
+
+**Custo:** `spec.md` (15 trechos), `DECISIONS.md`, `plan.md` (v1.1 → 1.2),
+`data-model.md` e `tasks.md`.
+
+---
+
 ## D-017 — Correção de item inválido com o mesmo `id` (RN-003, AMB-025) · `2026-09-29`
 
 **Gatilho:** `/speckit-tasks`. Ao escrever a T-011 (detecção de `id`
