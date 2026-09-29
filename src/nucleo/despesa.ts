@@ -17,9 +17,16 @@ function textoPreenchido(v: unknown): v is string {
   return typeof v === 'string' && v.trim() !== '';
 }
 
-/** `valor` numérico → centavos (RN-001); não numérico ou ausente → `null`. */
+/** Formato fechado de `valor` em texto (RN-003, AMB-021). */
+const VALOR_TEXTO = /^-?\d+([.,]\d+)?$/;
+
+/** `valor` numérico → centavos (RN-001); não numérico ou ausente → `null` (AMB-023). */
 function lerValor(v: unknown): Centavos | null {
   if (v instanceof NumeroJson) return paraCentavos(v.texto);
+  if (typeof v === 'string') {
+    const texto = v.trim();
+    return VALOR_TEXTO.test(texto) ? paraCentavos(texto.replace(',', '.')) : null;
+  }
   return null;
 }
 

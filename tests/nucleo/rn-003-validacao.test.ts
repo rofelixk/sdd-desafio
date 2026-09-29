@@ -100,4 +100,38 @@ describe('RN-003 — Validação dos dados do item', () => {
     const d2 = valida(validar(despesa({ fornecedor: '[true, {"a": 1}]', descricao: undefined })));
     expect(d2.fornecedorChave).toBe('[true,{"a":1}]');
   });
+
+  it('RN-003 › "45.00", "45,00" e 45.00 dão valor_solicitado 45,00', () => {
+    for (const valor of ['"45.00"', '"45,00"', '45.00', '45', '"45"']) {
+      expect(valida(validar(despesa({ valor }))).valorSolicitado, valor).toBe(4500n);
+    }
+    expect(valida(validar(despesa({ valor: '"33,333"' }))).valorSolicitado).toBe(3333n);
+  });
+
+  it('RN-003 › "1.234,56" e "R$ 45,00" → DADO_INVALIDO', () => {
+    for (const valor of ['"1.234,56"', '"R$ 45,00"', '"1,234.56"']) {
+      expect(recusada(validar(despesa({ valor }))).detalhes.campo, valor).toBe('valor');
+    }
+  });
+
+  it('RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo', () => {
+    expect(recusada(validar(despesa({ valor: '"R$ 45,00"' }))).valorSolicitado).toBeNull();
+  });
+
+  it('RN-003 › "", "45.", ",5", "1,2,3", "abc", true, [], {} e null não são numéricos', () => {
+    for (const valor of ['""', '"45."', '",5"', '"1,2,3"', '"abc"', 'true', '[]', '{}', 'null', '"   "', '"4 5"', '"+45"', '"1e2"']) {
+      const r = recusada(validar(despesa({ valor })));
+      expect(r.detalhes.campo, valor).toBe('valor');
+      expect(r.valorSolicitado, valor).toBeNull();
+    }
+  });
+
+  it('RN-003 › " -45,00 " (espaços nas bordas) é numérico', () => {
+    expect(valida(validar(despesa({ valor: '" -45,00 "' }))).valorSolicitado).toBe(-4500n);
+  });
+
+  it('RN-003 › recusa por outro campo mantém valor_solicitado arredondado quando o valor é numérico', () => {
+    expect(recusada(validar(despesa({ id: 'null', valor: '10.005' }))).valorSolicitado).toBe(1000n);
+    expect(recusada(validar(despesa({ categoria: '""', valor: '"10,015"' }))).valorSolicitado).toBe(1002n);
+  });
 });
