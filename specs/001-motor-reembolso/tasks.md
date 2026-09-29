@@ -110,10 +110,10 @@
   - **Aceite:** chamando o motor em memória, passam em `tests/nucleo/rn-003-validacao.test.ts` `RN-003 › despesa inválida não impede o processamento das outras` e `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`; em `tests/nucleo/rn-007-duplicatas.test.ts` `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)` e `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
   - **Commit:** `07f9724`
 
-- [ ] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): recebe a `descricao` já em texto (`comoTexto`, T-007) e, na descrição normalizada, busca a primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição vazia (ausente ou nula) ou N = 0 → 1 (uma única diária)
+- [x] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): recebe a `descricao` já em texto (`comoTexto`, T-007) e, na descrição normalizada, busca a primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição vazia (ausente ou nula) ou N = 0 → 1 (uma única diária)
   - **Atende:** RN-012, AMB-008, AMB-026
   - **Aceite:** em `tests/nucleo/rn-012-diarias.test.ts` passam `RN-012 › "Hotel Rio - 2 diarias" → N = 2`, `RN-012 › "Airbnb 3 noites" → N = 3`, `RN-012 › "Hotel 5 estrelas" → N = 1`, `RN-012 › "Hotel 5 estrelas - 2 diarias" → N = 2`, `RN-012 › "Hotel 1.5 diarias" → N = 1 (e não 5)`, `RN-012 › "Pousada" e descrição ausente → N = 1`, `RN-012 › "0 diarias" → N = 1`, `RN-012 › "3 Diárias" → N = 3`, `RN-012 › "12 noites" → N = 12 (inteiro completo)`, `RN-012 › "2diarias" → N = 2 (sem espaço)`, `RN-012 › "2 noitadas" → N = 1` e `RN-012 › descricao nula ou 2 (número) → N = 1`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `94c9883`
 
 - [ ] **T-019** — `gerarParcelas(elegivel)` em `src/nucleo/diarias.ts` (DT-003): hospedagem com N diárias vira N `Parcela`s nas datas D…D+N−1 com `valor ÷ N` e o resto distribuído um centavo por vez nas primeiras noites; qualquer outra categoria vira uma parcela na própria data
   - **Atende:** RN-012, AMB-008
