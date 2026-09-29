@@ -157,10 +157,10 @@
 > por linha da tabela da seção 7, título `Borda › <Caso>`. Se um teste falhar,
 > o conserto no código faz parte da mesma task.
 
-- [ ] **T-026** — Casos de borda de nota fiscal e arredondamento em `tests/casos-de-borda.test.ts`
+- [x] **T-026** — Casos de borda de nota fiscal e arredondamento em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-001, RN-008, RN-010, AMB-004, AMB-013
   - **Aceite:** passam `Borda › Nota fiscal no limiar exato`, `Borda › Um centavo acima do limiar`, `Borda › Arredondamento que cruza o limiar`, `Borda › Arredondamento meio-para-o-par no limiar`, `Borda › Meio-para-o-par sobe`, `Borda › Fora do ponto médio` e `Borda › Três casas decimais`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `3f72db7`
 
 - [ ] **T-027** — Casos de borda de limite diário em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-009, RN-010, AMB-001, AMB-002, AMB-015, AMB-016
