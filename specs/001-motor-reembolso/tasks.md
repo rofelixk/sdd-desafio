@@ -187,10 +187,10 @@
   - **Aceite:** passam `Borda › Alimentação em dia de viagem`, `Borda › Transporte em dia de viagem`, `Borda › Dia do check-out`, `Borda › Noite seguinte da estadia`, `Borda › Hospedagem recusada não gera viagem` e `Borda › Viagem não altera o limiar de NF`
   - **Commit:** `e8d5dec`
 
-- [ ] **T-032** — Casos de borda de `id`, `data`, `categoria` e eco inválidos em `tests/casos-de-borda.test.ts`
+- [x] **T-032** — Casos de borda de `id`, `data`, `categoria` e eco inválidos em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-014, AMB-018, AMB-023, AMB-024, AMB-025
   - **Aceite:** passam `Borda › Data impossível`, `Borda › id repetido`, `Borda › id repetido com outra grafia`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação`, `Borda › Valor inválido na saída`, `Borda › Eco de campo inválido`, `Borda › Despesa que não é objeto`, `Borda › Categoria vazia`, `Borda › Categoria não textual`, `Borda › id vazio` e `Borda › data nula`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `d7ab5eb`
 
 - [ ] **T-033** — Casos de borda de `valor` como texto em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-001, RN-004, AMB-021
