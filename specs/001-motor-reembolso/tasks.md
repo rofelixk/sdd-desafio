@@ -80,10 +80,10 @@
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "D-001" depois de "d-001" → DADO_INVALIDO`, `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `RN-003 › a primeira ocorrência de "d-001" segue normalmente`, `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)` e `RN-003 › "d-001" inválido, "d-001" válido e outro "d-001" válido → 1º e 3º DADO_INVALIDO, 2º segue`
   - **Commit:** `2de0c2f`
 
-- [ ] **T-012** — [P] Criar `src/nucleo/elegibilidade.ts` com a etapa 3: `valorSolicitado ≤ 0` → `Recusa(VALOR_NAO_POSITIVO)`
+- [x] **T-012** — [P] Criar `src/nucleo/elegibilidade.ts` com a etapa 3: `valorSolicitado ≤ 0` → `Recusa(VALOR_NAO_POSITIVO)`
   - **Atende:** RN-004, AMB-012
   - **Aceite:** em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` passam `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `RN-004 › 0,00 → VALOR_NAO_POSITIVO` e `RN-004 › -0.004 arredonda para 0,00 → VALOR_NAO_POSITIVO`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `772e8b6`
 
 - [ ] **T-013** — Etapa 4 em `src/nucleo/elegibilidade.ts`: `data` fora de `[periodo.inicio, periodo.fim]` (inclusive) → `Recusa(FORA_DO_PERIODO)`; `periodo.competencia` nunca é lido
   - **Atende:** RN-005, AMB-009, AMB-010
