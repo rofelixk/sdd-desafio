@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { verificarDuplicata } from '../../src/nucleo/elegibilidade.ts';
 import type { ChavesDuplicata } from '../../src/nucleo/elegibilidade.ts';
-import { codigosPassada1, entrada, valida } from '../apoio.ts';
+import { codigosPassada1, entrada, rodar, valida } from '../apoio.ts';
 
 /** Códigos da etapa 6 para as despesas em sequência (`null` = segue). */
 function codigos(...campos: Record<string, unknown>[]): (string | null)[] {
@@ -88,5 +88,13 @@ describe('RN-007 — Duplicatas', () => {
       'NOTA_FISCAL_AUSENTE',
       'DUPLICATA',
     ]);
+  });
+
+  it('RN-007 › descrição de DUPLICATA cita o id da ocorrência aceita', () => {
+    const d006 = { id: 'd-006', data: '2026-07-09', fornecedor: 'Bistro Central', valor: 54.9 };
+    const [, d007] = rodar([d006, { ...d006, id: 'd-007' }]);
+    expect(d007?.motivo.codigo).toBe('DUPLICATA');
+    expect(d007?.motivo.descricao).toContain("'d-006'");
+    expect(d007?.motivo.descricao).not.toMatch(/fraude|suspeit|má-fé|irregular/i);
   });
 });

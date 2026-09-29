@@ -4,7 +4,7 @@ import { ehDataValida } from './datas.ts';
 import { paraCentavos } from './dinheiro.ts';
 import { comoTexto, normalizar, normalizarFornecedor } from './texto.ts';
 import { NumeroJson } from './tipos.ts';
-import type { Centavos, DespesaValida, RecusaDadoInvalido } from './tipos.ts';
+import type { Centavos, DespesaValida, ProblemaDado, RecusaDadoInvalido } from './tipos.ts';
 
 type Bruta = Readonly<Record<string, unknown>>;
 
@@ -87,7 +87,7 @@ function recusar(
   eco: RecusaDadoInvalido['eco'],
   valorSolicitado: Centavos | null,
   campo: string,
-  problema: string,
+  problema: ProblemaDado,
 ): RecusaDadoInvalido {
   return { codigo: 'DADO_INVALIDO', detalhes: { campo, problema }, eco, valorSolicitado };
 }

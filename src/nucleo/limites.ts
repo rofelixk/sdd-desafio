@@ -1,7 +1,7 @@
 // Etapa 9 da seção 8: limite diário por (data, categoria) (RN-009, RN-010).
 
 import { POLITICA } from './politica.ts';
-import type { Categoria, Centavos, CodigoMotivo, DataISO, Parcela } from './tipos.ts';
+import type { Categoria, Centavos, CodigoLimite, DataISO, Parcela } from './tipos.ts';
 
 /** Resultado do limite para uma despesa (soma das suas parcelas). */
 export interface Alocacao {
@@ -14,7 +14,7 @@ export interface Alocacao {
   readonly saldoDisponivel: Centavos;
   /** Saldo que as parcelas deixaram. */
   readonly saldoApos: Centavos;
-  readonly codigo: Extract<CodigoMotivo, 'APROVADO_INTEGRAL' | 'LIMITE_DIARIO_EXCEDIDO' | 'LIMITE_DIARIO_ESGOTADO'>;
+  readonly codigo: CodigoLimite;
 }
 
 /** Limite de (data, categoria): ampliado só em dia de viagem e se a categoria amplia (RN-009, RN-011, AMB-020). */

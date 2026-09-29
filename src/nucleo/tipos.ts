@@ -73,25 +73,47 @@ export type CodigoMotivo =
   | 'DUPLICATA'
   | 'NOTA_FISCAL_AUSENTE';
 
-/** Códigos de recusa das etapas 1 a 7 (seção 8 da spec). */
-export type CodigoRecusa = Exclude<
-  CodigoMotivo,
-  'APROVADO_INTEGRAL' | 'LIMITE_DIARIO_EXCEDIDO' | 'LIMITE_DIARIO_ESGOTADO'
->;
+/** Códigos da etapa de limite (seção 8, etapa 9). */
+export type CodigoLimite = 'APROVADO_INTEGRAL' | 'LIMITE_DIARIO_EXCEDIDO' | 'LIMITE_DIARIO_ESGOTADO';
 
-export interface Recusa {
-  readonly codigo: CodigoRecusa;
-  /** Dados para a descrição (ex.: `idAceito` da duplicata, datas do período). */
-  readonly detalhes: Readonly<Record<string, unknown>>;
-}
+/** Códigos de recusa das etapas 1 a 7 (seção 8 da spec). */
+export type CodigoRecusa = Exclude<CodigoMotivo, CodigoLimite>;
+
+/** Por que a RN-003 recusou. */
+export type ProblemaDado = 'nao_objeto' | 'ausente' | 'data_invalida' | 'nao_numerico' | 'nao_booleano' | 'repetido';
+
+/** Recusa de uma etapa, com os dados para a descrição do motivo (RN-013). */
+export type Recusa =
+  | { readonly codigo: 'DADO_INVALIDO'; readonly detalhes: { readonly campo: string; readonly problema: ProblemaDado } }
+  | { readonly codigo: 'VALOR_NAO_POSITIVO'; readonly detalhes: { readonly valor: Centavos } }
+  | {
+      readonly codigo: 'FORA_DO_PERIODO';
+      readonly detalhes: { readonly data: DataISO; readonly inicio: DataISO; readonly fim: DataISO };
+    }
+  | { readonly codigo: 'CATEGORIA_NAO_REEMBOLSAVEL'; readonly detalhes: { readonly categoria: string } }
+  | { readonly codigo: 'DUPLICATA'; readonly detalhes: { readonly idAceito: string } }
+  | { readonly codigo: 'NOTA_FISCAL_AUSENTE'; readonly detalhes: { readonly valor: Centavos; readonly limiar: Centavos } };
 
 /** Recusa da RN-003: leva os ecos brutos e o valor, se numérico (AMB-023). */
-export interface RecusaDadoInvalido extends Recusa {
-  readonly codigo: 'DADO_INVALIDO';
-  readonly detalhes: { readonly campo: string; readonly problema: string };
+export type RecusaDadoInvalido = Extract<Recusa, { codigo: 'DADO_INVALIDO' }> & {
   /** Como vieram; ausente → `null`. */
   readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown };
   readonly valorSolicitado: Centavos | null;
+};
+
+/** Decisão da etapa de limite, com os números para a descrição (RN-013). */
+export interface DecisaoLimite {
+  readonly codigo: CodigoLimite;
+  readonly detalhes: {
+    readonly categoria: Categoria;
+    readonly data: DataISO;
+    readonly diarias: number;
+    readonly limite: Centavos;
+    readonly saldoDisponivel: Centavos;
+    readonly saldoApos: Centavos;
+    readonly solicitado: Centavos;
+    readonly reembolsavel: Centavos;
+  };
 }
 
 /** Fatia de despesa elegível que consome limite de uma data (RN-012). */

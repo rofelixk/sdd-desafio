@@ -5,8 +5,7 @@ import { valida } from '../apoio.ts';
 describe('RN-006 — Categorias reembolsáveis', () => {
   it('RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL', () => {
     const r = verificarCategoria(valida({ id: 'd-005', categoria: 'coworking', valor: 89 }));
-    expect(r?.codigo).toBe('CATEGORIA_NAO_REEMBOLSAVEL');
-    expect(r?.detalhes.categoria).toBe('coworking');
+    expect(r).toEqual({ codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: 'coworking' } });
   });
 
   it('RN-006 › alimentacao, transporte_urbano e hospedagem são reembolsáveis', () => {

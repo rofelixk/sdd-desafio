@@ -13,13 +13,12 @@ import { ehCategoria } from './elegibilidade.ts';
 import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
+import { montarMotivo } from './motivos.ts';
 import type {
   Categoria,
-  CodigoMotivo,
   DespesaElegivel,
   DespesaValida,
   Entrada,
-  Motivo,
   Recusa,
   RecusaDadoInvalido,
   ResultadoItem,
@@ -66,7 +65,7 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
   return avaliacoes.map((a): ResultadoItem => {
     if (a.tipo === 'invalida') {
       const { eco, valorSolicitado } = a.recusa;
-      return { ...eco, valorSolicitado, valorReembolsavel: 0n, motivo: motivo('DADO_INVALIDO'), ...foraDoLimite };
+      return { ...eco, valorSolicitado, valorReembolsavel: 0n, motivo: montarMotivo(a.recusa), ...foraDoLimite };
     }
     if (a.tipo === 'recusada') {
       const d = a.despesa;
@@ -76,29 +75,38 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
         categoria: ehCategoria(d.categoria) ? d.categoria : d.categoriaOriginal,
         valorSolicitado: d.valorSolicitado,
         valorReembolsavel: 0n,
-        motivo: motivo(a.recusa.codigo),
+        motivo: montarMotivo(a.recusa),
         ...foraDoLimite,
       };
     }
     const d = a.despesa;
     const alocacao = alocacoes.get(d.indice)!;
+    const diarias = diariasDe(d);
     return {
       id: d.id,
       data: d.data,
       categoria: d.categoria,
       valorSolicitado: d.valorSolicitado,
       valorReembolsavel: alocacao.reembolsavel,
-      motivo: motivo(alocacao.codigo),
+      motivo: montarMotivo({
+        codigo: alocacao.codigo,
+        detalhes: {
+          categoria: d.categoria,
+          data: d.data,
+          diarias,
+          limite: alocacao.limiteAplicado,
+          saldoDisponivel: alocacao.saldoDisponivel,
+          saldoApos: alocacao.saldoApos,
+          solicitado: alocacao.solicitado,
+          reembolsavel: alocacao.reembolsavel,
+        },
+      }),
       limiteDiarioAplicado: alocacao.limiteAplicado,
       emViagem: viagem.has(d.data),
-      diarias: d.categoria === 'hospedagem' ? diariasDe(d) : null,
+      diarias: d.categoria === 'hospedagem' ? diarias : null,
     };
   });
 }
 
 /** Recusada antes da etapa de limite (seção 4). */
 const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null } as const;
-
-function motivo(codigo: CodigoMotivo): Motivo {
-  return { codigo, descricao: '' };
-}
