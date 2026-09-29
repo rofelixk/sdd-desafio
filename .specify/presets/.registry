@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "sdd-desafio": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:00306dcef23b49da40f7ecf477ca1ba3e0a80c4dc3b5b2b5493cc3f59013674c",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.tasks"
+        ]
+      },
+      "registered_skills": {
+        "claude": [
+          "speckit-tasks"
+        ]
+      },
+      "installed_at": "2026-09-29T13:17:54.273707+00:00"
+    }
+  }
+}

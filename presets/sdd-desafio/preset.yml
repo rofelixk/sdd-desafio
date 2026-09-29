@@ -1,0 +1,25 @@
+schema_version: "1.0"
+
+preset:
+  id: "sdd-desafio"
+  name: "SDD Desafio"
+  version: "1.0.0"
+  description: "Tasks no formato do desafio: T-NNN com Atende/Aceite/Commit, rastreáveis a RN-NNN/AMB-NNN"
+  author: "Rodrigo Felix"
+  repository: "https://github.com/github/spec-kit"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=1.0.0"
+
+provides:
+  templates:
+    - type: "command"
+      name: "speckit.tasks"
+      file: "commands/speckit.tasks.md"
+      description: "Tasks T-NNN rastreáveis a RN/AMB, com teste obrigatório"
+      replaces: "speckit.tasks"
+
+tags:
+  - "sdd"
+  - "traceability"
