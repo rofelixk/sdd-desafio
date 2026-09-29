@@ -209,10 +209,10 @@
   - **Aceite:** em `tests/io/saida.test.ts` passam `RN-001 › valores monetários saem com duas casas (60.00, não 60; 0.00, não 0)`, `RN-003 › eco de campo inválido sai como veio (categoria 123 → 123, "  " → "  ", ausente → null)`, `RN-003 › valor_solicitado nulo sai como null` e `Infra › saída: colaborador e periodo ecoados com os números no texto original`
   - **Commit:** `18fa1d1`
 
-- [ ] **T-036** — [P] Teste do arquivo oficial em `tests/exemplo.test.ts`: lê `exemplos/despesas-exemplo.json`, roda `validarEntrada` → motor → `montarSaida` e compara com a tabela da seção 9 da spec. Um `it` por despesa, com o ID da regra do código esperado
+- [x] **T-036** — [P] Teste do arquivo oficial em `tests/exemplo.test.ts`: lê `exemplos/despesas-exemplo.json`, roda `validarEntrada` → motor → `montarSaida` e compara com a tabela da seção 9 da spec. Um `it` por despesa, com o ID da regra do código esperado
   - **Atende:** RN-001, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014 (seção 9)
   - **Aceite:** passam `RN-010 › exemplo d-001: PARCIAL 60,00`, `RN-010 › exemplo d-002: RECUSADO LIMITE_DIARIO_ESGOTADO`, `RN-010 › exemplo d-003: PARCIAL 80,00`, `RN-008 › exemplo d-004: NOTA_FISCAL_AUSENTE`, `RN-006 › exemplo d-005: CATEGORIA_NAO_REEMBOLSAVEL`, `RN-009 › exemplo d-006: APROVADO 54,90`, `RN-007 › exemplo d-007: DUPLICATA`, `RN-005 › exemplo d-008: FORA_DO_PERIODO`, `RN-004 › exemplo d-009: VALOR_NAO_POSITIVO`, `RN-012 › exemplo d-010: APROVADO 480,00, diarias 2`, `RN-011 › exemplo d-011: APROVADO 33,33, em_viagem true, limite 90,00`, `RN-009 › exemplo d-012: APROVADO 47,20`, `RN-008 › exemplo d-013: NOTA_FISCAL_AUSENTE`, `RN-010 › exemplo d-014: PARCIAL 60,00`, `RN-014 › exemplo: resumo 1861.84 / 815.43 / 1046.41 · 4/3/7` e `RN-013 › exemplo: nenhum item com motivo ausente ou vazio`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `fadedb0`
 
 - [ ] **T-037** — [P] Teste de contrato em `tests/contrato-saida.test.ts`: valida a saída contra `contracts/saida.schema.json` com `ajv` (`multipleOfPrecision: 2`)
   - **Atende:** RN-013, RN-003 (seção 4)
