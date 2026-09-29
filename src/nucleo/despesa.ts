@@ -37,7 +37,15 @@ function lerNotaFiscal(v: unknown): boolean | null {
   return null;
 }
 
-export function validarDespesa(bruta: unknown, indice: number): DespesaValida | RecusaDadoInvalido {
+/**
+ * Valida uma despesa bruta. `idsVistos` tem os ids normalizados das despesas
+ * anteriores que passaram por esta validação (AMB-024, AMB-025).
+ */
+export function validarDespesa(
+  bruta: unknown,
+  indice: number,
+  idsVistos: ReadonlySet<string> = new Set(),
+): DespesaValida | RecusaDadoInvalido {
   if (!ehObjeto(bruta)) {
     return recusar({ id: null, data: null, categoria: null }, null, 'despesa', 'nao_objeto');
   }
@@ -53,11 +61,13 @@ export function validarDespesa(bruta: unknown, indice: number): DespesaValida | 
   if (valor === null) return recusar(eco, valor, 'valor', 'nao_numerico');
   const temNotaFiscal = lerNotaFiscal(bruta.tem_nota_fiscal);
   if (temNotaFiscal === null) return recusar(eco, valor, 'tem_nota_fiscal', 'nao_booleano');
+  const idNormalizado = normalizar(id);
+  if (idsVistos.has(idNormalizado)) return recusar(eco, valor, 'id', 'repetido');
 
   return {
     indice,
     id,
-    idNormalizado: normalizar(id),
+    idNormalizado,
     data,
     categoriaOriginal: categoria,
     categoria: normalizar(categoria),
@@ -66,6 +76,11 @@ export function validarDespesa(bruta: unknown, indice: number): DespesaValida | 
     valorSolicitado: valor,
     temNotaFiscal,
   };
+}
+
+/** Só a despesa que passou pela validação reserva o `id` (AMB-025). */
+export function registrarId(idsVistos: Set<string>, resultado: DespesaValida | RecusaDadoInvalido): void {
+  if (!('codigo' in resultado)) idsVistos.add(resultado.idNormalizado);
 }
 
 function recusar(

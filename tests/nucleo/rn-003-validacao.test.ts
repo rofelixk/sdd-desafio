@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lerJson } from '../../src/io/json.ts';
-import { validarDespesa } from '../../src/nucleo/despesa.ts';
+import { registrarId, validarDespesa } from '../../src/nucleo/despesa.ts';
 import { comoTexto } from '../../src/nucleo/texto.ts';
 import { NumeroJson } from '../../src/nucleo/tipos.ts';
 import type { DespesaValida, RecusaDadoInvalido } from '../../src/nucleo/tipos.ts';
@@ -157,5 +157,51 @@ describe('RN-003 — Validação dos dados do item', () => {
       expect(r.detalhes.campo, tem_nota_fiscal).toBe('tem_nota_fiscal');
       expect(r.valorSolicitado).toBe(4500n);
     }
+  });
+
+  /** Valida em sequência, registrando os ids como o motor faz. */
+  function emSequencia(...brutas: unknown[]): (DespesaValida | RecusaDadoInvalido)[] {
+    const idsVistos = new Set<string>();
+    return brutas.map((bruta, i) => {
+      const r = validarDespesa(bruta, i, idsVistos);
+      registrarId(idsVistos, r);
+      return r;
+    });
+  }
+
+  it('RN-003 › "D-001" depois de "d-001" → DADO_INVALIDO', () => {
+    const [, segunda] = emSequencia(despesa({ id: '"d-001"' }), despesa({ id: '"D-001"' }));
+    expect(recusada(segunda!).detalhes).toEqual({ campo: 'id', problema: 'repetido' });
+  });
+
+  it('RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco', () => {
+    const [, segunda] = emSequencia(despesa({ id: '"d-001"' }), despesa({ id: '" d-001 "' }));
+    expect(recusada(segunda!).eco.id).toBe(' d-001 ');
+  });
+
+  it('RN-003 › a primeira ocorrência de "d-001" segue normalmente', () => {
+    const [primeira] = emSequencia(despesa({ id: '"d-001"' }), despesa({ id: '"d-001"' }));
+    expect(valida(primeira!).id).toBe('d-001');
+  });
+
+  it('RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)', () => {
+    const [primeira, segunda] = emSequencia(despesa({ data: '"2026-07-32"' }), despesa());
+    recusada(primeira!);
+    valida(segunda!);
+  });
+
+  it('RN-003 › "d-001" inválido, "d-001" válido e outro "d-001" válido → 1º e 3º DADO_INVALIDO, 2º segue', () => {
+    const [a, b, c] = emSequencia(despesa({ data: '"2026-07-32"' }), despesa(), despesa({ id: '"D-001"' }));
+    expect(recusada(a!).detalhes.campo).toBe('data');
+    valida(b!);
+    expect(recusada(c!).detalhes.problema).toBe('repetido');
+  });
+
+  it('RN-003 › id repetido também não reserva o id', () => {
+    const idsVistos = new Set<string>();
+    registrarId(idsVistos, validarDespesa(despesa(), 0, idsVistos));
+    const repetida = validarDespesa(despesa(), 1, idsVistos);
+    registrarId(idsVistos, repetida);
+    expect([...idsVistos]).toEqual(['d-001']);
   });
 });
