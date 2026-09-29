@@ -24,6 +24,16 @@ Dado o conjunto de despesas de um colaborador num período, o sistema decide de
 forma determinística quanto de cada despesa é reembolsável e justifica cada
 decisão com um motivo padronizado.
 
+## Clarifications
+
+### Session 2026-09-29
+
+- Q: Duas despesas sem `fornecedor`, com mesma data, categoria e valor, são duplicatas? → A: Sim. Fornecedor ausente, vazio ou só com espaços vale como fornecedor **vazio**, que é um valor comparado como qualquer outro: vazio casa com vazio, e fornecedor preenchido nunca casa com vazio (RN-007, AMB-011).
+- Q: Quando uma despesa sem fornecedor casaria com duas outras de fornecedores diferentes, com quais ela é comparada? → A: O caso deixa de existir, porque vazio não casa com fornecedor preenchido. O fornecedor é sempre comparado, então a relação de duplicata é transitiva.
+- Q: Uma despesa com `valor` escrito como texto (`"45.00"`, `"45,00"`) deve ser aceita? → A: Sim, com ponto ou vírgula decimal, além de número direto. Formato fechado: sinal opcional, dígitos e no máximo um separador decimal. Separador de milhar e símbolo de moeda → `DADO_INVALIDO` (RN-003, AMB-021).
+- Q: Um `tem_nota_fiscal` não booleano (`"true"`, `"sim"`, `1`, `null`) conta como o quê? → A: Só booleanos são aceitos. Vazio (ausente, nulo, texto vazio) vale `false`. Qualquer outro valor → `DADO_INVALIDO` (RN-003, AMB-022).
+- Q: `id`, `categoria` ou `data` vazios, nulos ou de tipo errado são o mesmo que ausentes? → A: Sim. Sem essa informação não dá para calcular a despesa corretamente, então ela é recusada com `DADO_INVALIDO` (RN-003, AMB-018).
+
 ## 3. Fora de escopo
 
 - Não efetua pagamento nem integra com folha, ERP ou banco. Só calcula.
@@ -63,9 +73,9 @@ decisão com um motivo padronizado.
 | `despesas[].data` | data `AAAA-MM-DD` | Data em que a despesa ocorreu | sim |
 | `despesas[].categoria` | texto | Categoria declarada (ver RN-002) | sim |
 | `despesas[].descricao` | texto | Texto livre. Em hospedagem, é de onde se extrai o número de diárias (RN-012). Ausente = 1 diária | não |
-| `despesas[].fornecedor` | texto | Fornecedor, usado na detecção de duplicata | não |
-| `despesas[].valor` | número | Valor solicitado em reais, pode ter qualquer número de casas decimais | sim |
-| `despesas[].tem_nota_fiscal` | booleano | Se há nota fiscal. Ausente equivale a `false` | não |
+| `despesas[].fornecedor` | texto | Fornecedor, usado na detecção de duplicata. Ausente equivale a vazio (RN-007) | não |
+| `despesas[].valor` | número ou texto numérico | Valor solicitado em reais, pode ter qualquer número de casas decimais. Também é aceito como texto no formato fechado da RN-003 (`"45.00"`, `"45,00"`) | sim |
+| `despesas[].tem_nota_fiscal` | booleano | Se há nota fiscal. Vazio (ausente, nulo ou texto vazio) equivale a `false`. Qualquer outro valor não booleano é `DADO_INVALIDO` (RN-003) | não |
 
 **Saída:** definida por mim. Estrutura e significado de cada campo:
 
@@ -179,9 +189,32 @@ tratadas como `alimentacao` e somam no mesmo limite diário.
 `valor` não numérico, ou com `id` igual ao de uma despesa anterior no arquivo, é
 **RECUSADA** com `DADO_INVALIDO`. As demais despesas continuam sendo
 processadas normalmente.
-**Origem:** ausente na política (AMB-018)
+
+`valor` é numérico quando é um número ou um texto que, sem os espaços das
+bordas, tem sinal `-` opcional, um ou mais dígitos e, opcionalmente, **um**
+separador decimal (ponto `.` ou vírgula `,`) seguido de um ou mais dígitos. O
+texto é convertido para o número correspondente antes da RN-001. Qualquer
+outro texto (vazio, com separador de milhar, com símbolo de moeda, com dois
+separadores, com letras) e qualquer outro tipo (booleano, lista, objeto,
+nulo) não são numéricos.
+
+`id`, `data` e `categoria` que vêm vazios (texto vazio ou só com espaços),
+nulos ou com tipo diferente de texto contam como **ausentes** →
+`DADO_INVALIDO`.
+
+`tem_nota_fiscal` só aceita os booleanos `true` e `false`. Vazio (campo
+ausente, nulo, ou texto vazio ou só com espaços) vale `false`. Qualquer outro
+valor (textos como `"true"` ou `"sim"`, números como `1` ou `0`, listas,
+objetos) é `DADO_INVALIDO`.
+**Origem:** ausente na política (AMB-018, AMB-021, AMB-022)
 **Aceite:** uma despesa com `"data": "2026-07-32"` sai RECUSADO/`DADO_INVALIDO`
-e as outras despesas do arquivo têm o resultado de sempre.
+e as outras despesas do arquivo têm o resultado de sempre. `"45.00"`,
+`"45,00"` e `45.00` dão o mesmo resultado (`valor_solicitado` 45,00).
+`"1.234,56"` e `"R$ 45,00"` → RECUSADO/`DADO_INVALIDO`.
+`"tem_nota_fiscal": "sim"` → RECUSADO/`DADO_INVALIDO`.
+`"tem_nota_fiscal": null` vale `false`.
+`"categoria": ""` e `"categoria": 123` → RECUSADO/`DADO_INVALIDO`, e não
+`CATEGORIA_NAO_REEMBOLSAVEL`.
 
 ### RN-004 — Valores não positivos
 
@@ -213,14 +246,20 @@ integralmente com `CATEGORIA_NAO_REEMBOLSAVEL`.
 
 **Regra:** Duas despesas são duplicatas quando têm a mesma `data`, a mesma
 categoria normalizada, o mesmo `fornecedor` (comparado sem diferenciar
-maiúsculas de minúsculas e sem espaços nas bordas) e o mesmo `valor_solicitado`,
-com `id` diferente. `descricao` e `tem_nota_fiscal` não entram no critério.
+maiúsculas de minúsculas e sem espaços nas bordas) e o mesmo
+`valor_solicitado`, com `id` diferente. `fornecedor` ausente ou só com espaços
+vale como fornecedor **vazio**, que é comparado como qualquer outro valor:
+vazio é igual a vazio, e um fornecedor preenchido nunca é igual a vazio.
+`descricao` e `tem_nota_fiscal` não entram no critério.
 Num grupo de duplicatas, **só a primeira ocorrência na ordem da entrada**
 segue para as próximas regras. As demais são **RECUSADAS** com `DUPLICATA`. A
 descrição do motivo cita o `id` da ocorrência aceita e não pressupõe má-fé.
 **Origem:** política do RH, item 8 (AMB-011)
 **Aceite:** `d-006` e `d-007` (2026-07-09, alimentação, Bistro Central, 54,90):
 `d-006` segue normalmente (APROVADO 54,90) e `d-007` → RECUSADO/`DUPLICATA`.
+Duas despesas de alimentação de 40,00 na mesma data, as duas sem fornecedor →
+a 2ª RECUSADO/`DUPLICATA`. Se só uma delas tiver fornecedor, as duas seguem
+normalmente.
 
 ### RN-008 — Nota fiscal obrigatória
 
@@ -477,14 +516,19 @@ comportam períodos que não coincidem com o mês civil.
 **Texto original do RH:** "Duplicatas devem ser tratadas."
 **O que não está claro:** (1) o que é uma duplicata; (2) como ela é tratada.
 **Decisão:** (1) critério: mesma data, categoria normalizada, fornecedor e
-valor, com `id` diferente (RN-007). (2) Só a primeira ocorrência na ordem da
+valor, com `id` diferente. Fornecedor ausente vale como vazio, e vazio só é
+igual a vazio (RN-007). (2) Só a primeira ocorrência na ordem da
 entrada segue. As demais são recusadas com `DUPLICATA`, sem nenhuma marcação
 de suspeita de fraude.
 **Justificativa:** erros de cadastro acontecem, então nesta etapa não se
 presume má-fé. Paga-se o gasto real uma vez e a cópia é descartada. `id`
 diferente não prova que a despesa é outra, porque o mesmo gasto lançado duas
 vezes recebe dois ids. A descrição fica fora do critério porque é texto livre e
-varia à toa.
+varia à toa. Fornecedor vazio é tratado literalmente como vazio: duas
+despesas sem fornecedor e com o resto igual são indistinguíveis. Já uma
+despesa sem fornecedor não tem dado suficiente para ser declarada cópia de
+uma que tem fornecedor. Assim a relação de duplicata é transitiva, e o grupo
+de duplicatas não depende da ordem de comparação.
 **Regra afetada:** RN-007
 
 ### AMB-012 — Valores negativos (estorno) e zero
@@ -563,11 +607,15 @@ Estar em viagem não reduz a necessidade de comprovante.
 **O que não está claro:** uma despesa sem valor, com data inválida ou com id
 repetido invalida o arquivo inteiro ou só aquele item? E `tem_nota_fiscal`
 ausente?
-**Decisão:** só o item é recusado (`DADO_INVALIDO`). `tem_nota_fiscal` ausente
-equivale a "sem nota". Erro estrutural do arquivo interrompe a execução
+**Decisão:** só o item é recusado (`DADO_INVALIDO`). Obrigatório vazio, nulo
+ou de tipo errado conta como ausente. `tem_nota_fiscal` ausente equivale a
+"sem nota" (ver AMB-022). Erro estrutural do arquivo interrompe a execução
 (RN-015).
 **Justificativa:** um item mal preenchido não deve bloquear o reembolso das
-outras despesas. O ônus de comprovar a nota é de quem pede.
+outras despesas. Um campo obrigatório vazio não permite calcular a despesa
+corretamente, igual a um ausente. Recusar como `CATEGORIA_NAO_REEMBOLSAVEL`
+daria a entender que existe uma categoria. O ônus de comprovar a nota é de
+quem pede.
 **Regra afetada:** RN-003, RN-008, RN-015
 
 ### AMB-019 — Categoria fora da política: recusa total ou parcial?
@@ -592,6 +640,40 @@ urbano. A hospedagem fica sempre em R$ 250,00 por noite.
 hospedagem anularia o item 3 da política. Entre as duas leituras, fica a que
 mantém todos os itens da política com efeito.
 **Regra afetada:** RN-009, RN-011
+
+### AMB-021 — `valor` escrito como texto
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a RN-003 recusa "valor não numérico", mas um texto
+como `"45.00"` ou `"45,00"` pode ou não ser considerado numérico: (a) só o tipo
+número é aceito; (b) texto com ponto decimal é aceito; (c) texto com ponto ou
+vírgula decimal é aceito.
+**Decisão:** (c). Número e texto com ponto ou vírgula decimal são aceitos, no
+formato fechado da RN-003. Texto com separador de milhar, símbolo de moeda ou
+mais de um separador é `DADO_INVALIDO`.
+**Justificativa:** não se sabe quem gera o arquivo de entrada, e recusar
+`"45,00"` puniria o colaborador por um detalhe de formatação. O separador de
+milhar fica de fora porque `"1.234"` não tem leitura única (1234 ou 1,234), e
+ambiguidade em valor monetário não pode ser resolvida por adivinhação.
+**Regra afetada:** RN-003
+
+### AMB-022 — `tem_nota_fiscal` com valor não booleano
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a entrada pode trazer `"true"`, `"sim"`, `1` ou
+`null` em vez de um booleano. Leituras possíveis: (a) só `true` é "tem nota" e
+o resto vale "sem nota"; (b) aceitar um conjunto de textos e números
+afirmativos; (c) aceitar só booleano e recusar o resto.
+**Decisão:** (c), com uma exceção para o vazio: campo ausente, nulo, ou texto
+vazio ou só com espaços vale `false`. Qualquer outro valor não booleano é
+`DADO_INVALIDO`.
+**Justificativa:** a nota fiscal decide se uma despesa acima de R$ 100,00 é
+paga. Um valor fora do padrão não deve virar "sem nota" em silêncio (isso
+recusaria uma despesa legítima com o motivo errado), nem "tem nota" por
+adivinhação. O vazio segue a AMB-018: o ônus de informar a nota é de quem
+pede. Diferente do `valor` (AMB-021), aqui não há texto afirmativo com
+leitura única, então nenhum texto é aceito.
+**Regra afetada:** RN-003, RN-008
 
 ---
 
@@ -624,6 +706,10 @@ mantém todos os itens da política com efeito.
 | Duplicata com e sem NF | idênticas, só `tem_nota_fiscal` difere | continuam duplicatas; a 1ª segue, a 2ª RECUSADO `DUPLICATA` | RN-007 |
 | Três cópias idênticas | mesmo data/categoria/fornecedor/valor ×3 | 1ª segue; 2ª e 3ª RECUSADO `DUPLICATA` | RN-007 |
 | Fornecedor com grafia diferente | "Bistro Central" vs "bistro central " | são duplicatas | RN-007 |
+| Fornecedores diferentes | mesma data/categoria/valor, "Tavola" vs "Porto" | não são duplicatas | RN-007 |
+| Ambas sem fornecedor | mesma data/categoria/valor, `fornecedor` ausente nas duas | 1ª segue; 2ª RECUSADO `DUPLICATA` | RN-007 |
+| Só uma com fornecedor | mesma data/categoria/valor, "Tavola" vs `fornecedor` ausente | não são duplicatas; as duas seguem | RN-007 |
+| Fornecedor vazio | mesma data/categoria/valor, `""` vs `"   "` vs ausente | 1ª segue; 2ª e 3ª RECUSADO `DUPLICATA` | RN-007 |
 | Diárias na descrição | hospedagem "Hotel Rio - 2 diarias", 480,00 | N = 2, limite 500,00 → APROVADO 480,00 | RN-012 |
 | Diárias com acento e maiúscula | "3 Diárias" | N = 3 | RN-012 |
 | Duas hospedagens na mesma noite | `h1` 14/07 "2 diarias" 480,00; depois `h2` 15/07 "1 diaria" 200,00 | `h1` APROVADO 480,00 (240 + 240); `h2` PARCIAL 10,00 | RN-012 |
@@ -641,7 +727,22 @@ mantém todos os itens da política com efeito.
 | Viagem não altera o limiar de NF | dia de viagem, transporte 110,00 sem NF | RECUSADO `NOTA_FISCAL_AUSENTE` | RN-008 |
 | Data impossível | `2026-02-30` | RECUSADO `DADO_INVALIDO`, os outros itens seguem | RN-003 |
 | `id` repetido | dois itens com `id` "d-001" | o segundo RECUSADO `DADO_INVALIDO` | RN-003 |
+| Categoria vazia | `"categoria": "  "` | RECUSADO `DADO_INVALIDO` (não `CATEGORIA_NAO_REEMBOLSAVEL`) | RN-003 |
+| Categoria não textual | `"categoria": 123` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| `id` vazio | `"id": ""` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| `data` nula | `"data": null` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| Valor como texto com ponto | `"valor": "45.00"` | tratado como 45,00 | RN-003 |
+| Valor como texto com vírgula | `"valor": "45,00"` | tratado como 45,00 | RN-003 |
+| Valor texto com 3 casas | `"valor": "33,333"` | 33,333 → `valor_solicitado` 33,33 | RN-003, RN-001 |
+| Valor texto negativo | `"valor": "-45,00"` | RECUSADO `VALOR_NAO_POSITIVO` | RN-003, RN-004 |
+| Separador de milhar | `"valor": "1.234,56"` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| Símbolo de moeda | `"valor": "R$ 45,00"` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| Valor booleano | `"valor": true` | RECUSADO `DADO_INVALIDO` | RN-003 |
 | `tem_nota_fiscal` ausente, valor 150,00 | — | RECUSADO `NOTA_FISCAL_AUSENTE` | RN-008 |
+| `tem_nota_fiscal` nulo ou `""`, valor 150,00 | `null` / `""` | vale `false` → RECUSADO `NOTA_FISCAL_AUSENTE` | RN-003, RN-008 |
+| `tem_nota_fiscal` vazio, valor 50,00 | `null` | vale `false`, não exige NF → segue para o limite | RN-003, RN-008 |
+| `tem_nota_fiscal` texto | `"true"` ou `"sim"` | RECUSADO `DADO_INVALIDO` (mesmo com valor ≤ 100,00) | RN-003 |
+| `tem_nota_fiscal` número | `1` ou `0` | RECUSADO `DADO_INVALIDO` | RN-003 |
 | Lista de despesas vazia | `despesas: []` | saída com `itens` vazio e totais 0,00 | RN-014 |
 | Arquivo sem `periodo` | — | erro, nenhuma saída gerada | RN-015 |
 | `inicio` depois de `fim` | — | erro, nenhuma saída gerada | RN-015 |
@@ -733,6 +834,8 @@ porque `d-013` foi recusada.
   paga em período anterior, o sistema não compensa. Isso é tratado fora do
   motor.
 - **Critério de duplicata (AMB-011):** duas despesas legítimas e idênticas no
-  mesmo dia (ex.: dois cafés iguais no mesmo lugar) serão tratadas como
-  duplicata. O risco foi aceito porque o caso é raro e o colaborador pode
-  relançar a despesa com o fornecedor detalhado.
+  mesmo dia (ex.: dois cafés iguais no mesmo lugar, ou almoço e jantar de
+  mesmo valor no mesmo restaurante, ou ambos sem fornecedor) serão tratadas
+  como duplicata, porque a entrada não traz horário. O risco foi aceito porque
+  o caso é raro e o colaborador pode relançar a despesa com o fornecedor
+  detalhado.

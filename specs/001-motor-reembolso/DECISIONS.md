@@ -17,6 +17,132 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-014 — Obrigatório vazio conta como ausente (RN-003, AMB-018) · `2026-09-29`
+
+**Gatilho:** `/speckit-clarify`. O Claude perguntou se `id`, `categoria` ou
+`data` vazios, nulos ou de tipo errado equivalem a ausentes.
+
+**O que mudou na spec:**
+- RN-003: esses casos contam como ausentes → `DADO_INVALIDO`. Novo aceite:
+  `"categoria": ""` sai `DADO_INVALIDO`, não `CATEGORIA_NAO_REEMBOLSAVEL`.
+- AMB-018: a decisão e a justificativa foram ampliadas.
+- Entraram 4 casos de borda.
+
+**Por quê:** nas palavras do usuário, "não será possível calcular
+corretamente aquela despesa pela falta de informação". É a opção que o Claude
+tinha recomendado.
+
+**O que isso invalidou:** nada. Nenhum item do exemplo muda.
+
+**Tasks afetadas:** nenhuma (tasks ainda não existiam).
+
+**Custo:** 2 arquivos, 6 trechos.
+
+---
+
+## D-013 — `tem_nota_fiscal` só booleano (RN-003, AMB-022) · `2026-09-29`
+
+**Gatilho:** `/speckit-clarify`. O Claude perguntou como tratar
+`tem_nota_fiscal` não booleano (`"true"`, `"sim"`, `1`, `null`).
+
+**O que mudou na spec:**
+- RN-003: só `true`/`false` booleanos são aceitos. Vazio (ausente, nulo, ou
+  texto vazio ou só com espaços) vale `false`. Qualquer outro valor é
+  `DADO_INVALIDO`.
+- Seção 4: a descrição do campo foi atualizada.
+- Nova AMB-022. Entraram 4 casos de borda.
+
+**Por quê:** decisão do usuário: "vamos aceitar somente booleanos, vazio conta
+como false. Qualquer outro valor DADO_INVALIDO". O Claude tinha recomendado
+aceitar um conjunto fechado de textos e números (`"sim"`, `1`...), na mesma
+linha tolerante do `valor` (D-012). O usuário preferiu ser estrito. Incluir
+`null` e texto só com espaços em "vazio" foi interpretação do Claude,
+avisada ao usuário, para ficar coerente com o fornecedor vazio (D-011).
+
+**O que isso invalidou:** nada. "Ausente = `false`" (AMB-018) continua
+valendo e foi estendido ao nulo e ao texto vazio. Nenhum item do exemplo
+muda.
+
+**Tasks afetadas:** nenhuma (tasks ainda não existiam).
+
+**Custo:** 2 arquivos, 7 trechos.
+
+---
+
+## D-012 — `valor` aceito como texto (RN-003, AMB-021) · `2026-09-29`
+
+**Gatilho:** `/speckit-clarify`. O Claude perguntou se `"45.00"` (texto) conta
+como valor numérico na RN-003.
+
+**O que mudou na spec:**
+- RN-003: definição fechada de "valor numérico". Pode ser número ou texto com
+  sinal opcional, dígitos e no máximo um separador decimal (`.` ou `,`), sem
+  os espaços das bordas. Qualquer outro texto ou tipo é `DADO_INVALIDO`.
+- Seção 4: o tipo do campo `valor` passou a "número ou texto numérico".
+- Nova AMB-021. Entraram 7 casos de borda.
+
+**Por quê:** nas palavras do usuário, "não temos informação suficiente sobre
+quem gera o json de entrada, então vamos aceitar tanto 45.00 como 45,00 e
+número diretos". O Claude tinha recomendado aceitar só número. A exclusão do
+separador de milhar e do símbolo de moeda foi complemento do Claude, para
+manter o formato fechado (`"1.234"` é ambíguo). O usuário foi avisado.
+
+**O que isso invalidou:** nada. Nenhum item do exemplo muda, porque todos os
+valores são números.
+
+**Tasks afetadas:** nenhuma (tasks ainda não existiam).
+
+**Custo:** 2 arquivos, 6 trechos.
+
+---
+
+## D-011 — Duplicata com fornecedor ausente (RN-007, AMB-011) · `2026-09-29`
+
+**Gatilho:** `/speckit-clarify`. O Claude perguntou se duas despesas sem
+`fornecedor` (campo opcional), com mesma data, categoria e valor, são
+duplicatas.
+
+**O que mudou na spec:**
+- RN-007 e AMB-011: fornecedor ausente ou só com espaços vale como fornecedor
+  **vazio**, e vazio é comparado como qualquer outro valor. Duas despesas sem
+  fornecedor e com o resto igual são duplicatas. Uma despesa com fornecedor
+  preenchido nunca é duplicata de uma com fornecedor vazio.
+- Seção 4: a descrição do campo `fornecedor` diz que ausente equivale a vazio.
+- Casos de borda: entraram 3 casos (fornecedores diferentes, ambas sem
+  fornecedor, só uma com fornecedor) e 1 caso de vazio equivalente
+  (`""`, `"   "` e ausente).
+- Seção 10: o risco aceito agora inclui almoço e jantar de mesmo valor, porque
+  a entrada não traz horário.
+- Nova seção `Clarifications`.
+
+**Como se chegou lá (3 rodadas):** a primeira resposta do usuário ("como não
+tem nenhuma regra sobre fornecedor na política...") foi lida pelo Claude como
+"basta uma das duas não ter fornecedor para o critério ignorá-lo", e isso
+chegou a ser gravado. A pergunta seguinte do Claude mostrou o efeito dessa
+leitura: com `A` = Tavola, `B` = vazio e `C` = Porto, `B` casava com `A` e com
+`C`, mas `A` não casava com `C`. O usuário então esclareceu: "uma despesa com
+fornecedor vazio deve ser tratada como fornecedor exatamente isso, vazio [...]
+uma despesa com fornecedor preenchido nunca irá contar como duplicado de uma
+com fornecedor vazio". Essa é a opção que o Claude tinha recomendado na
+primeira pergunta.
+
+**Por quê:** fornecedor ausente é um dado desfalcado. Sem horário na entrada,
+ele não basta para declarar que uma despesa é cópia de outra que tem
+fornecedor. Duas despesas igualmente sem fornecedor, porém, são
+indistinguíveis. Além disso, a relação de duplicata fica transitiva, e o
+resultado não depende da ordem das comparações.
+
+**O que isso invalidou:** a leitura intermediária ("só uma com fornecedor" era
+duplicata), que ficou só na área de trabalho e nunca foi commitada. O critério
+da D-004 continua valendo, agora com o caso de fornecedor vazio explícito.
+Nenhum item do exemplo muda, porque todos têm fornecedor.
+
+**Tasks afetadas:** nenhuma (tasks ainda não existiam).
+
+**Custo:** 2 arquivos, 8 trechos.
+
+---
+
 ## D-010 — Arredondamento meio para o par (RN-001, AMB-013) · `2026-09-29`
 
 **Gatilho:** revisão da AMB-013 pelo usuário (D-009). O Claude perguntou qual
