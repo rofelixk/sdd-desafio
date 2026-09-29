@@ -17,6 +17,78 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-016 — Diárias fracionárias são ignoradas (RN-012, AMB-008) · `2026-09-29`
+
+**Gatilho:** revisão do `/speckit-plan`. O Claude apontou como risco que,
+pela leitura literal da RN-012, `"1.5 diarias"` resulta em N = 5, porque o
+`5` é um inteiro seguido de "diarias".
+
+**O que mudou na spec:**
+- RN-012: número fracionário (`1.5`, `1,5`) é ignorado, mesmo seguido de
+  diária/noite, e nenhum pedaço dele conta como inteiro. Novo aceite:
+  "Hotel 1.5 diarias" → N = 1.
+- AMB-008 e seção 10 atualizadas.
+- Novo caso de borda "Diárias fracionárias" (300,00 → N = 1 → PARCIAL 250,00).
+
+**Como se chegou lá (2 rodadas):** a primeira resposta do usuário ("não deve
+ser levado em consideração por não se tratar de algo habitual") foi lida pelo
+Claude como "não tratar de forma especial", e a seção 10 chegou a registrar
+N = 5. Ao relatar a mudança, o Claude avisou dessa leitura e perguntou se o
+usuário queria N = 1. O usuário esclareceu: "o significado era ignorar
+números fracionários e ler somente como 1". A versão com N = 5 ficou só na
+área de trabalho e nunca foi commitada.
+
+**Por quê:** diária fracionária não é habitual e não tem leitura segura.
+Tratar o `5` de `1.5` como cinco diárias pagaria até 5 × R$ 250 por um
+erro de digitação.
+
+**O que isso invalidou:** a leitura intermediária (N = 5) e o risco
+correspondente no `plan.md`, que foi removido.
+
+**Tasks afetadas:** nenhuma (`tasks.md` ainda é o template).
+
+**Custo:** 4 arquivos (`spec.md`, `DECISIONS.md`, `plan.md`, `research.md`), 7 trechos.
+
+---
+
+## D-015 — Lacunas achadas no `/speckit-plan` (seção 4, RN-003, RN-012, AMB-023, AMB-024) · `2026-09-29`
+
+**Gatilho:** `/speckit-plan`. Ao desenhar o modelo de dados, o Claude
+encontrou três pontos que a spec não fechava e que o plano teria de
+decidir sozinho. Parou e perguntou antes de escrever o plano.
+
+**O que mudou na spec (versão 1.0 → 1.1):**
+- Seção 4 e nova AMB-023: num item `DADO_INVALIDO`, `valor_solicitado` sai
+  nulo quando o `valor` não é numérico, e `id`, `data` e `categoria` saem
+  como vieram. O tipo de `valor_solicitado` passou a "número ou nulo".
+  `total_solicitado` ignora os nulos.
+- RN-003 e nova AMB-024: o `id` repetido é comparado com a normalização da
+  categoria (caixa, bordas, acentos). Também ficou escrito que uma despesa
+  que não é objeto tem todos os campos ausentes → `DADO_INVALIDO`. Isso é
+  consequência da AMB-018, explicitada pelo Claude e avisada ao usuário.
+- RN-012 e AMB-008: N vem da **primeira ocorrência do padrão completo**
+  "<inteiro> diária(s)/noite(s)". Números soltos antes dela são ignorados
+  ("Hotel 5 estrelas - 2 diarias" → N = 2).
+- Entraram 5 casos de borda e 3 entradas em `Clarifications`.
+
+**Por quê:**
+- Eco bruto: nas palavras do usuário, "para ficar claro na saída o motivo de
+  recusa". É a opção que o Claude tinha recomendado.
+- `id`: o usuário escolheu "o mesmo tratamento de categoria". O Claude tinha
+  recomendado ignorar só as bordas e diferenciar a caixa.
+- Diárias: a opção que o Claude tinha recomendado. É a leitura coerente com o
+  aceite "Hotel 5 estrelas" → N = 1.
+
+**O que isso invalidou:** nada. O texto anterior da RN-012 ("primeiro número
+inteiro seguido de...") admitia as duas leituras, e nenhum aceite dependia
+disso. Nenhum item do exemplo muda.
+
+**Tasks afetadas:** nenhuma (`tasks.md` ainda é o template).
+
+**Custo:** 2 arquivos, 12 trechos.
+
+---
+
 ## D-014 — Obrigatório vazio conta como ausente (RN-003, AMB-018) · `2026-09-29`
 
 **Gatilho:** `/speckit-clarify`. O Claude perguntou se `id`, `categoria` ou

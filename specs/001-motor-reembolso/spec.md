@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 1.0 · **Status:** rascunho · **Última alteração:** `2026-09-29`
+**Versão:** 1.1 · **Status:** rascunho · **Última alteração:** `2026-09-29`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -33,6 +33,9 @@ decisão com um motivo padronizado.
 - Q: Uma despesa com `valor` escrito como texto (`"45.00"`, `"45,00"`) deve ser aceita? → A: Sim, com ponto ou vírgula decimal, além de número direto. Formato fechado: sinal opcional, dígitos e no máximo um separador decimal. Separador de milhar e símbolo de moeda → `DADO_INVALIDO` (RN-003, AMB-021).
 - Q: Um `tem_nota_fiscal` não booleano (`"true"`, `"sim"`, `1`, `null`) conta como o quê? → A: Só booleanos são aceitos. Vazio (ausente, nulo, texto vazio) vale `false`. Qualquer outro valor → `DADO_INVALIDO` (RN-003, AMB-022).
 - Q: `id`, `categoria` ou `data` vazios, nulos ou de tipo errado são o mesmo que ausentes? → A: Sim. Sem essa informação não dá para calcular a despesa corretamente, então ela é recusada com `DADO_INVALIDO` (RN-003, AMB-018).
+- Q: Num item `DADO_INVALIDO` com `valor` não numérico ou ausente, o que sai em `valor_solicitado`? E `id`, `data` e `categoria` inválidos? → A: `valor_solicitado` sai nulo, e os campos de eco saem exatamente como vieram, para que a saída mostre o motivo da recusa (seção 4, AMB-023).
+- Q: Em "Hotel 5 estrelas - 2 diarias", N é 2 ou 1? → A: 2. Vale a primeira ocorrência do padrão completo "<inteiro> diária(s)/noite(s)". Números soltos antes dela são ignorados (RN-012, AMB-008).
+- Q: `"d-001"`, `" d-001 "` e `"D-001"` são o mesmo `id` para a RN-003? → A: Sim. O `id` é normalizado como a categoria (maiúsculas/minúsculas, espaços nas bordas, acentos) antes de comparar (RN-003, AMB-024).
 
 ## 3. Fora de escopo
 
@@ -84,10 +87,10 @@ decisão com um motivo padronizado.
 | `colaborador` | objeto | Eco do objeto de entrada |
 | `periodo` | objeto | Eco do objeto de entrada |
 | `itens` | lista | Um item por despesa de entrada, **na mesma ordem da entrada** |
-| `itens[].id` | texto | `id` da despesa |
+| `itens[].id` | texto | `id` da despesa, como veio |
 | `itens[].data` | texto | `data` da despesa, como veio |
-| `itens[].categoria` | texto | Categoria normalizada (RN-002), ou a original se não for reconhecida |
-| `itens[].valor_solicitado` | número | Valor da entrada arredondado para centavos (RN-001) |
+| `itens[].categoria` | texto | Categoria normalizada (RN-002), ou a original, como veio, se não for reconhecida |
+| `itens[].valor_solicitado` | número ou nulo | Valor da entrada arredondado para centavos (RN-001). Nulo se o `valor` é ausente ou não numérico (RN-003) |
 | `itens[].valor_reembolsavel` | número | Valor a reembolsar, em centavos, `0 ≤ valor_reembolsavel ≤ max(valor_solicitado, 0)` |
 | `itens[].status` | texto | `APROVADO` (reembolsável = solicitado), `PARCIAL` (0 < reembolsável < solicitado) ou `RECUSADO` (reembolsável = 0) |
 | `itens[].motivo.codigo` | texto | Código padronizado da decisão (tabela abaixo) |
@@ -97,12 +100,18 @@ decisão com um motivo padronizado.
 | `itens[].diarias` | inteiro ou nulo | Número de diárias considerado (RN-012). Só preenchido em hospedagem que chegou à etapa de limite; nulo nos demais casos |
 | `resumo.quantidade_itens` | inteiro | Total de despesas na entrada |
 | `resumo.aprovados` / `parciais` / `recusados` | inteiro | Contagem por status |
-| `resumo.total_solicitado` | número | Soma de `valor_solicitado` dos itens com valor **positivo** |
+| `resumo.total_solicitado` | número | Soma de `valor_solicitado` dos itens com valor **positivo** (nulo não entra) |
 | `resumo.total_reembolsavel` | número | Soma de `valor_reembolsavel` de todos os itens |
 | `resumo.total_nao_reembolsado` | número | `total_solicitado − total_reembolsavel` |
 
 Todo valor monetário da saída é um número em reais com no máximo duas casas
 decimais.
+
+Num item recusado com `DADO_INVALIDO`, os campos de eco (`id`, `data`,
+`categoria`) saem **exatamente como vieram**, inclusive nulos, vazios ou de
+outro tipo (um campo ausente sai nulo). Assim a própria saída mostra o dado
+que causou a recusa. O `valor_solicitado` é o valor arredondado quando o
+`valor` é numérico (a recusa veio de outro campo) e nulo quando não é (AMB-023).
 
 **Códigos de motivo** (exatamente um por item, o da primeira regra que decidiu
 o item, conforme a seção 8):
@@ -188,7 +197,13 @@ tratadas como `alimentacao` e somam no mesmo limite diário.
 `data` que não é uma data de calendário válida no formato `AAAA-MM-DD`, com
 `valor` não numérico, ou com `id` igual ao de uma despesa anterior no arquivo, é
 **RECUSADA** com `DADO_INVALIDO`. As demais despesas continuam sendo
-processadas normalmente.
+processadas normalmente. Uma despesa que não é um objeto (um número, um texto,
+nulo) tem todos os campos ausentes e também é `DADO_INVALIDO`.
+
+Para saber se o `id` repete, ele é comparado depois da mesma normalização da
+categoria (RN-002): sem diferenciar maiúsculas de minúsculas, sem espaços nas
+bordas e sem acentos. `"d-001"`, `" d-001 "` e `"D-001"` são o mesmo `id`
+(AMB-024).
 
 `valor` é numérico quando é um número ou um texto que, sem os espaços das
 bordas, tem sinal `-` opcional, um ou mais dígitos e, opcionalmente, **um**
@@ -206,9 +221,12 @@ nulos ou com tipo diferente de texto contam como **ausentes** →
 ausente, nulo, ou texto vazio ou só com espaços) vale `false`. Qualquer outro
 valor (textos como `"true"` ou `"sim"`, números como `1` ou `0`, listas,
 objetos) é `DADO_INVALIDO`.
-**Origem:** ausente na política (AMB-018, AMB-021, AMB-022)
+**Origem:** ausente na política (AMB-018, AMB-021, AMB-022, AMB-023, AMB-024)
 **Aceite:** uma despesa com `"data": "2026-07-32"` sai RECUSADO/`DADO_INVALIDO`
-e as outras despesas do arquivo têm o resultado de sempre. `"45.00"`,
+com `data` `"2026-07-32"` na saída, e as outras despesas do arquivo têm o
+resultado de sempre. `"valor": "R$ 45,00"` sai com `valor_solicitado` nulo.
+Uma despesa `"id": "D-001"` depois de uma `"id": "d-001"` →
+RECUSADO/`DADO_INVALIDO`. `"45.00"`,
 `"45,00"` e `45.00` dão o mesmo resultado (`valor_solicitado` 45,00).
 `"1.234,56"` e `"R$ 45,00"` → RECUSADO/`DADO_INVALIDO`.
 `"tem_nota_fiscal": "sim"` → RECUSADO/`DADO_INVALIDO`.
@@ -323,9 +341,13 @@ nota fiscal, então 2026-07-22 a 2026-07-24 **não** são dias de viagem.
 
 ### RN-012 — Hospedagem com mais de uma diária
 
-**Regra:** O número de diárias `N` de uma despesa de hospedagem é o **primeiro
-número inteiro** da `descricao` seguido (com ou sem espaço) de uma das
-palavras `diaria`, `diarias`, `noite` ou `noites`. A comparação não diferencia
+**Regra:** O número de diárias `N` de uma despesa de hospedagem é o número
+inteiro da **primeira ocorrência**, na `descricao`, de um inteiro seguido (com
+ou sem espaço) de uma das palavras `diaria`, `diarias`, `noite` ou `noites`.
+Números que aparecem antes dessa ocorrência sem ser seguidos de uma dessas
+palavras são ignorados. Número **fracionário** (dígitos, separador `.` ou `,`
+e mais dígitos, como `1.5` ou `1,5`) também é ignorado, mesmo seguido de
+diária/noite, e nenhum pedaço dele conta como inteiro. A comparação não diferencia
 maiúsculas de minúsculas nem acentos, então "diária" e "Diárias" também
 contam. Se não houver esse padrão, ou se `N` = 0, vale `N` = 1.
 
@@ -342,7 +364,8 @@ decidida pela data da despesa.
 **Origem:** política do RH, item 3 (AMB-008)
 **Aceite:** "Hotel Rio - 2 diarias" → N = 2. "Airbnb 3 noites" → N = 3.
 "Hotel 5 estrelas" → N = 1 (5 não vem seguido de diária/noite).
-"Pousada" → N = 1. `d-010` (480,00, N = 2) → 240,00 na noite de 14/07 e
+"Hotel 5 estrelas - 2 diarias" → N = 2. "Hotel 1.5 diarias" → N = 1
+(e não 5). "Pousada" → N = 1. `d-010` (480,00, N = 2) → 240,00 na noite de 14/07 e
 240,00 na de 15/07 → APROVADO 480,00. Exemplo de sobreposição, com
 `h1` = 14/07 "2 diarias" 480,00 e depois `h2` = 15/07 "1 diaria" 200,00:
 `h1` → 240 + 240 = APROVADO 480,00; `h2` → só restam 10,00 na noite de 15/07
@@ -476,7 +499,9 @@ não deve ampliar outros limites.
 ("Airbnb 3 noites", 690,00) cobrem várias noites numa só despesa, mas a
 entrada não tem campo com o número de noites. O limite é 250 × 1 ou 250 × N?
 **Decisão:** 250 × N, com N extraído de `descricao` pelo padrão fechado da
-RN-012 ("<inteiro> diária(s)/noite(s)"). Sem esse padrão, N = 1. O valor é
+RN-012 ("<inteiro> diária(s)/noite(s)"). Vale a primeira ocorrência do padrão
+completo, e números soltos antes dela são ignorados. Número fracionário
+("1.5 diarias") não conta. Sem esse padrão, N = 1. O valor é
 dividido igualmente entre as noites D…D+N−1, e cada noite disputa o limite de
 R$ 250 daquela data com as outras hospedagens que caem na mesma noite.
 **Justificativa:** limitar a uma diária uma estadia de várias noites paga numa
@@ -675,6 +700,37 @@ pede. Diferente do `valor` (AMB-021), aqui não há texto afirmativo com
 leitura única, então nenhum texto é aceito.
 **Regra afetada:** RN-003, RN-008
 
+### AMB-023 — O que a saída mostra num item com dado inválido
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a saída tem um item por despesa, com
+`valor_solicitado` numérico. Numa despesa `DADO_INVALIDO` com `valor`
+ausente ou não numérico (`"R$ 45,00"`), não há valor para arredondar. E
+`id`, `data` ou `categoria` inválidos (nulos, vazios, `123`): (a) saem
+normalizados ou convertidos; (b) saem vazios; (c) saem como vieram.
+**Decisão:** `valor_solicitado` sai **nulo** quando o `valor` não é numérico.
+`id`, `data` e `categoria` saem **exatamente como vieram**, e um campo
+ausente sai nulo. Um item com `valor_solicitado` nulo não entra em
+`total_solicitado`.
+**Justificativa:** nas palavras do usuário, é "para ficar claro na saída o
+motivo de recusa". Mostrar 0,00 daria a entender que existe um valor real, e
+converter o dado esconderia o erro de quem gerou o arquivo.
+**Regra afetada:** RN-003, RN-014
+
+### AMB-024 — Quando dois `id` são o mesmo
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a RN-003 recusa `id` repetido. `"d-001"`,
+`" d-001 "` e `"D-001"` são o mesmo `id`? (a) só texto idêntico; (b) sem
+espaços nas bordas; (c) com a normalização da categoria.
+**Decisão:** (c). O `id` é comparado sem diferenciar maiúsculas de
+minúsculas, sem espaços nas bordas e sem acentos (como a RN-002). Na saída,
+o `id` sai como veio.
+**Justificativa:** decisão do usuário, pelo mesmo motivo da AMB-014: grafia
+diferente é problema de digitação, e dois ids que só diferem na grafia
+provavelmente são o mesmo lançamento.
+**Regra afetada:** RN-003
+
 ---
 
 ## 7. Casos de borda
@@ -727,6 +783,12 @@ leitura única, então nenhum texto é aceito.
 | Viagem não altera o limiar de NF | dia de viagem, transporte 110,00 sem NF | RECUSADO `NOTA_FISCAL_AUSENTE` | RN-008 |
 | Data impossível | `2026-02-30` | RECUSADO `DADO_INVALIDO`, os outros itens seguem | RN-003 |
 | `id` repetido | dois itens com `id` "d-001" | o segundo RECUSADO `DADO_INVALIDO` | RN-003 |
+| `id` repetido com outra grafia | `"d-001"` e depois `" D-001 "` | o segundo RECUSADO `DADO_INVALIDO`, `id` sai `" D-001 "` | RN-003 |
+| Valor inválido na saída | `"valor": "R$ 45,00"` | RECUSADO `DADO_INVALIDO`, `valor_solicitado` nulo, fora do `total_solicitado` | RN-003, RN-014 |
+| Eco de campo inválido | `"categoria": 123` | `categoria` sai `123` na saída | RN-003 |
+| Despesa que não é objeto | um item `42` na lista `despesas` | RECUSADO `DADO_INVALIDO`, `id`/`data`/`categoria`/`valor_solicitado` nulos | RN-003 |
+| Número solto antes das diárias | "Hotel 5 estrelas - 2 diarias", 480,00 | N = 2 → APROVADO 480,00 | RN-012 |
+| Diárias fracionárias | "Hotel 1.5 diarias", 300,00 | fracionário ignorado, N = 1 → PARCIAL 250,00 | RN-012 |
 | Categoria vazia | `"categoria": "  "` | RECUSADO `DADO_INVALIDO` (não `CATEGORIA_NAO_REEMBOLSAVEL`) | RN-003 |
 | Categoria não textual | `"categoria": 123` | RECUSADO `DADO_INVALIDO` | RN-003 |
 | `id` vazio | `"id": ""` | RECUSADO `DADO_INVALIDO` | RN-003 |
@@ -826,7 +888,9 @@ porque `d-013` foi recusada.
   regra deve ser substituída, com registro em `DECISIONS.md`.
 - **Extração de diárias (AMB-008):** depende do colaborador escrever
   "N diárias" ou "N noites". Descrições como "estadia de dois dias" (número por
-  extenso) ou "15 a 17/07" resultam em N = 1.
+  extenso) ou "15 a 17/07" resultam em N = 1. Número fracionário de diárias
+  ("1.5 diarias") é ignorado e resulta em N = 1, porque não é habitual e meia
+  diária não tem leitura segura.
 - **Ordem de entrada como critério de distribuição (AMB-002):** a entrada não
   traz horário, então "ordem de entrada" é aproximação da ordem cronológica
   dentro do dia. Se um dia vier horário, a regra deve ser revista.
