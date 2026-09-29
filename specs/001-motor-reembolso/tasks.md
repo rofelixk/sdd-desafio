@@ -50,10 +50,10 @@
 
 ## Fase 2 — Regras de negócio
 
-- [ ] **T-006** — [P] Implementar `paraCentavos(texto)` em `src/nucleo/dinheiro.ts`: converte o texto de um número (sinal, dígitos, ponto decimal, expoente) em `Centavos` arredondando **meio para o par** sobre os dígitos, sem passar por float (DT-001)
+- [x] **T-006** — [P] Implementar `paraCentavos(texto)` em `src/nucleo/dinheiro.ts`: converte o texto de um número (sinal, dígitos, ponto decimal, expoente) em `Centavos` arredondando **meio para o par** sobre os dígitos, sem passar por float (DT-001)
   - **Atende:** RN-001, AMB-013
   - **Aceite:** em `tests/nucleo/rn-001-arredondamento.test.ts` passam `RN-001 › 33.333 → 33.33`, `RN-001 › 10.005 → 10.00 (meio, 0 é par)`, `RN-001 › 10.015 → 10.02 (meio, 2 é par)`, `RN-001 › 33.345 → 33.34`, `RN-001 › 33.3451 → 33.35 (fora do meio)`, `RN-001 › 100.004 → 100.00`, `RN-001 › -45.005 → -45.00 (meio para o par também no negativo)` e `RN-001 › expoente 1.00005e2 → 100.00`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `e089af9`
 
 - [ ] **T-007** — [P] Criar `src/nucleo/texto.ts` (R-06): `normalizar(texto)` = `trim` → minúsculas → `NFD` → remove `\p{M}`; e `normalizarFornecedor(texto)` = só `trim` + minúsculas (a RN-007 não manda tirar acento do fornecedor); e `comoTexto(bruto)` (AMB-026): ausente/`null` → `""`, texto como veio, `NumeroJson` → o seu texto, booleano → `"true"`/`"false"`, lista/objeto → texto JSON compacto (`NumeroJson` reemitido com o texto original)
   - **Atende:** RN-002, AMB-014, RN-003, AMB-026
