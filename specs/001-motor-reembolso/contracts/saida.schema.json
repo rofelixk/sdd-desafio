@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "saida.schema.json",
+  "title": "Resultado do motor de reembolso",
+  "description": "Formaliza a seção 4 da spec (v1.1). Em caso de divergência, a spec prevalece.",
+  "type": "object",
+  "required": ["colaborador", "periodo", "itens", "resumo"],
+  "additionalProperties": false,
+  "properties": {
+    "colaborador": { "type": "object", "description": "Eco do objeto de entrada" },
+    "periodo": { "type": "object", "description": "Eco do objeto de entrada" },
+    "itens": { "type": "array", "items": { "$ref": "#/$defs/item" } },
+    "resumo": { "$ref": "#/$defs/resumo" }
+  },
+  "$defs": {
+    "dinheiro": {
+      "type": "number",
+      "multipleOf": 0.01,
+      "description": "Reais com no máximo duas casas decimais"
+    },
+    "dinheiroNaoNegativo": { "allOf": [{ "$ref": "#/$defs/dinheiro" }, { "minimum": 0 }] },
+    "item": {
+      "type": "object",
+      "required": [
+        "id", "data", "categoria", "valor_solicitado", "valor_reembolsavel", "status",
+        "limite_diario_aplicado", "em_viagem", "diarias", "motivo"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "description": "Como veio; qualquer tipo em DADO_INVALIDO (AMB-023)" },
+        "data": { "description": "Como veio; qualquer tipo em DADO_INVALIDO (AMB-023)" },
+        "categoria": { "description": "Normalizada (RN-002) ou como veio (AMB-023)" },
+        "valor_solicitado": {
+          "oneOf": [{ "$ref": "#/$defs/dinheiro" }, { "type": "null" }],
+          "description": "Nulo só em DADO_INVALIDO com valor não numérico (AMB-023)"
+        },
+        "valor_reembolsavel": { "$ref": "#/$defs/dinheiroNaoNegativo" },
+        "status": { "enum": ["APROVADO", "PARCIAL", "RECUSADO"] },
+        "limite_diario_aplicado": {
+          "oneOf": [{ "$ref": "#/$defs/dinheiroNaoNegativo" }, { "type": "null" }]
+        },
+        "em_viagem": { "type": ["boolean", "null"] },
+        "diarias": { "type": ["integer", "null"], "minimum": 1 },
+        "motivo": {
+          "type": "object",
+          "required": ["codigo", "descricao"],
+          "additionalProperties": false,
+          "properties": {
+            "codigo": {
+              "enum": [
+                "APROVADO_INTEGRAL", "LIMITE_DIARIO_EXCEDIDO", "LIMITE_DIARIO_ESGOTADO",
+                "DADO_INVALIDO", "VALOR_NAO_POSITIVO", "FORA_DO_PERIODO",
+                "CATEGORIA_NAO_REEMBOLSAVEL", "DUPLICATA", "NOTA_FISCAL_AUSENTE"
+              ]
+            },
+            "descricao": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "resumo": {
+      "type": "object",
+      "required": [
+        "quantidade_itens", "aprovados", "parciais", "recusados",
+        "total_solicitado", "total_reembolsavel", "total_nao_reembolsado"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "quantidade_itens": { "type": "integer", "minimum": 0 },
+        "aprovados": { "type": "integer", "minimum": 0 },
+        "parciais": { "type": "integer", "minimum": 0 },
+        "recusados": { "type": "integer", "minimum": 0 },
+        "total_solicitado": { "$ref": "#/$defs/dinheiroNaoNegativo" },
+        "total_reembolsavel": { "$ref": "#/$defs/dinheiroNaoNegativo" },
+        "total_nao_reembolsado": { "$ref": "#/$defs/dinheiroNaoNegativo" }
+      }
+    }
+  }
+}

@@ -34,16 +34,20 @@ Se o que eu pedi não está coberto por nenhuma task, me avise em vez de impleme
 
 ## Stack e comandos
 
-- Linguagem: `<...>`
-- Rodar: `<comando>`
-- Testes: `<comando>`
-- Lint/format: `<comando>`
+- Linguagem: TypeScript em Node ≥ 24, rodando `.ts` direto (type stripping, sem build)
+- Rodar: `node src/cli.ts calcular --input <entrada.json> --output <saida.json>`
+- Testes: `npm test` (Vitest)
+- Lint/format: `npm run typecheck` (`tsc --noEmit`)
 
 ## Convenções de código
 
-- `<nomenclatura, estrutura de pastas, tratamento de erro, o que for relevante>`
-- Valores monetários: `<como são representados — decimal, centavos em inteiro, etc.>`
+- Estrutura e decisões técnicas: `specs/001-motor-reembolso/plan.md` e `research.md`.
+- `src/nucleo/` é puro (sem E/S, relógio ou ambiente); só `src/cli.ts` e `src/io/` tocam em arquivo/JSON.
+- Só sintaxe apagável (`erasableSyntaxOnly`): sem `enum`/`namespace`; imports relativos com `.ts`.
+- Números mágicos de política só em `src/nucleo/politica.ts`.
+- Nome de teste começa pelo ID: `RN-010 › ...` ou `Borda › <nome exato do caso da seção 7>`.
+- Valores monetários: centavos em `bigint`; entrada lida pelo texto do número, saída via `JSON.rawJSON`. Nunca `number` para dinheiro.
 
 ## Fora de escopo
 
-- `<o que este projeto explicitamente não faz — evita que o agente invente feature>`
+- Ver seção 3 da spec. Na dúvida, não implemente: pergunte.
