@@ -239,10 +239,10 @@
   - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste` , `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; removendo temporariamente um `it` de borda, a suíte fica vermelha
   - **Commit:** `65e8dc0`
 
-- [ ] **T-042** — Reescrever `README.md` com como instalar, rodar e testar (Node ≥ 24, `npm install`, `npm test`, `npm run typecheck`, comando `calcular`), apontando para `specs/001-motor-reembolso/` e `quickstart.md`
+- [x] **T-042** — Reescrever `README.md` com como instalar, rodar e testar (Node ≥ 24, `npm install`, `npm test`, `npm run typecheck`, comando `calcular`), apontando para `specs/001-motor-reembolso/` e `quickstart.md`
   - **Atende:** seção 9 (entrega: "como rodar e como testar", DESAFIO.md)
   - **Aceite:** seguir o README do zero num clone limpo reproduz as seções 1 a 4 do `quickstart.md` com o resultado esperado
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `d180c28`
 
 ---
 
