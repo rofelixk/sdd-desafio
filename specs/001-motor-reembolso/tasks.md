@@ -28,10 +28,10 @@
   - **Aceite:** `Infra › runtime oferece JSON.rawJSON e context.source no reviver do JSON.parse` passa; `npm run typecheck` sem erros
   - **Commit:** `48a4c76`
 
-- [ ] **T-002** — [P] Criar `src/nucleo/tipos.ts` (tipos do `data-model.md`: `Centavos`, `DataISO`, `Categoria`, `NumeroJson`, `Entrada`, `DespesaValida`, `DespesaElegivel`, `Recusa`, `Parcela`, `ResultadoItem`, `Motivo`, `Resumo`, `Resultado`, e a união de códigos de motivo da seção 4 da spec como tipo literal) e `src/nucleo/politica.ts` com o objeto `POLITICA` exatamente como no plan §4 (cada valor com o ID da RN em comentário)
+- [x] **T-002** — [P] Criar `src/nucleo/tipos.ts` (tipos do `data-model.md`: `Centavos`, `DataISO`, `Categoria`, `NumeroJson`, `Entrada`, `DespesaValida`, `DespesaElegivel`, `Recusa`, `Parcela`, `ResultadoItem`, `Motivo`, `Resumo`, `Resultado`, e a união de códigos de motivo da seção 4 da spec como tipo literal) e `src/nucleo/politica.ts` com o objeto `POLITICA` exatamente como no plan §4 (cada valor com o ID da RN em comentário)
   - **Atende:** (infraestrutura) — plan §3 e §4, data-model §5
   - **Aceite:** `Infra › política: categorias reconhecidas são exatamente as chaves de POLITICA.limites` passa (em `tests/nucleo/politica.test.ts`); `npm run typecheck` sem erros
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `053d39d`
 
 - [ ] **T-003** — [P] Criar `src/io/json.ts`: `lerJson(texto)` com `JSON.parse` + reviver que troca **todo** número por `NumeroJson { texto }` usando `context.source` (R-03); `serializarJson(valor)` com indentação de 2 espaços e `\n` final, reemitindo `NumeroJson` e valores monetários via `JSON.rawJSON` (R-04)
   - **Atende:** (infraestrutura) — R-03, R-04, contracts/cli.md
