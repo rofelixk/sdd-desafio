@@ -204,10 +204,10 @@
 
 ## Fase 4 — Saída e CLI
 
-- [ ] **T-035** — Criar `src/io/saida.ts` com `montarSaida(resultado, entrada)`: objeto na ordem de campos da seção 4 (`colaborador`, `periodo`, `itens`, `resumo`), `colaborador`/`periodo` ecoados brutos, dinheiro via `JSON.rawJSON(formatarDecimal(c))`, ecos brutos de item inválido reemitidos como vieram (`NumeroJson` com o mesmo texto, ausente → `null`)
+- [x] **T-035** — Criar `src/io/saida.ts` com `montarSaida(resultado, entrada)`: objeto na ordem de campos da seção 4 (`colaborador`, `periodo`, `itens`, `resumo`), `colaborador`/`periodo` ecoados brutos, dinheiro via `JSON.rawJSON(formatarDecimal(c))`, ecos brutos de item inválido reemitidos como vieram (`NumeroJson` com o mesmo texto, ausente → `null`)
   - **Atende:** RN-001, RN-003, RN-013, AMB-023
   - **Aceite:** em `tests/io/saida.test.ts` passam `RN-001 › valores monetários saem com duas casas (60.00, não 60; 0.00, não 0)`, `RN-003 › eco de campo inválido sai como veio (categoria 123 → 123, "  " → "  ", ausente → null)`, `RN-003 › valor_solicitado nulo sai como null` e `Infra › saída: colaborador e periodo ecoados com os números no texto original`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `18fa1d1`
 
 - [ ] **T-036** — [P] Teste do arquivo oficial em `tests/exemplo.test.ts`: lê `exemplos/despesas-exemplo.json`, roda `validarEntrada` → motor → `montarSaida` e compara com a tabela da seção 9 da spec. Um `it` por despesa, com o ID da regra do código esperado
   - **Atende:** RN-001, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014 (seção 9)
