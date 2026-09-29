@@ -162,10 +162,10 @@
   - **Aceite:** passam `Borda › Nota fiscal no limiar exato`, `Borda › Um centavo acima do limiar`, `Borda › Arredondamento que cruza o limiar`, `Borda › Arredondamento meio-para-o-par no limiar`, `Borda › Meio-para-o-par sobe`, `Borda › Fora do ponto médio` e `Borda › Três casas decimais`
   - **Commit:** `3f72db7`
 
-- [ ] **T-027** — Casos de borda de limite diário em `tests/casos-de-borda.test.ts`
+- [x] **T-027** — Casos de borda de limite diário em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-009, RN-010, AMB-001, AMB-002, AMB-015, AMB-016
   - **Aceite:** passam `Borda › Exatamente no limite diário`, `Borda › Um centavo acima do limite`, `Borda › Várias no mesmo dia`, `Borda › Recusada não consome limite`, `Borda › Mesmo dia, categorias diferentes` e `Borda › Fim de semana`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `7a4991c`
 
 - [ ] **T-028** — Casos de borda de período, valor não positivo e categoria em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-002, RN-004, RN-005, RN-006, AMB-009, AMB-012, AMB-014, AMB-019
