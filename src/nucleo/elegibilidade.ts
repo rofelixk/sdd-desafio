@@ -9,3 +9,10 @@ export function verificarValorPositivo(d: DespesaValida): Recusa | null {
     ? { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valor: d.valorSolicitado } }
     : null;
 }
+
+/** Etapa 4 (RN-005, AMB-009, AMB-010): `[inicio, fim]`, inclusive. */
+export function verificarPeriodo(d: DespesaValida, inicio: DataISO, fim: DataISO): Recusa | null {
+  return d.data < inicio || d.data > fim
+    ? { codigo: 'FORA_DO_PERIODO', detalhes: { data: d.data, inicio, fim } }
+    : null;
+}
