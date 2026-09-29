@@ -172,10 +172,10 @@
   - **Aceite:** passam `Borda › Primeiro dia do período`, `Borda › Último dia do período`, `Borda › Dia seguinte ao período`, `Borda › Estorno`, `Borda › Valor zero`, `Borda › Categoria em maiúsculas`, `Borda › Categoria com acento` e `Borda › Categoria desconhecida`
   - **Commit:** `3bf4d63`
 
-- [ ] **T-029** — Casos de borda de duplicatas em `tests/casos-de-borda.test.ts`
+- [x] **T-029** — Casos de borda de duplicatas em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-007, RN-003, AMB-011, AMB-026
   - **Aceite:** passam `Borda › Mesmo fornecedor, datas diferentes`, `Borda › Duplicata com e sem NF`, `Borda › Três cópias idênticas`, `Borda › Fornecedor com grafia diferente`, `Borda › Fornecedores diferentes`, `Borda › Ambas sem fornecedor`, `Borda › Só uma com fornecedor`, `Borda › Fornecedor vazio`, `Borda › Fornecedor numérico` e `Borda › Fornecedor nulo`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `8edd03e`
 
 - [ ] **T-030** — Casos de borda de hospedagem e diárias em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-012, RN-005, RN-003, AMB-008, AMB-026
