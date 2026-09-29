@@ -1,101 +1,106 @@
-# Desafio Prático — Spec Driven Development
+# Motor de Cálculo de Reembolso
 
-Aula bônus de SDD, fechando a trilha:
+CLI que lê um JSON com as despesas de um colaborador num período e grava um
+JSON com, para cada despesa, o valor reembolsável, o status e o motivo
+padronizado da decisão, mais um resumo com os totais. As regras vêm da
+Política de Reembolso v3 do RH, com as ambiguidades decididas e registradas
+na spec.
 
-`AI Fluency` → `Claude 101` → `Claude Code 101` → `Building with the Claude API` → `Claude Code in Action` → `Módulo SDD` → **Desafio**
+O projeto foi feito com Spec Driven Development. O enunciado do desafio está
+em [`DESAFIO.md`](DESAFIO.md).
 
-**Individual · 2 dias · Claude Code**
+## Requisitos
 
----
+- **Node ≥ 24.** O TypeScript roda direto no Node, sem etapa de build
+  (`node --version` para conferir).
+- npm (vem com o Node).
 
-## Comece por aqui
-
-1. **[`DESAFIO.md`](DESAFIO.md)** — o enunciado. Leia inteiro antes de escrever qualquer coisa.
-2. **[`RUBRICA.md`](RUBRICA.md)** — como você é avaliado. É pública de propósito; leia antes de começar.
-3. **[`exemplos/despesas-exemplo.json`](exemplos/despesas-exemplo.json)** — a entrada de referência. Não é decoração: percorra item por item antes de escrever a spec.
-4. **[`FAQ.md`](FAQ.md)** — travou? Comece por aqui. **O instrutor está fora durante o desafio**, então o FAQ é o canal de suporte.
-
----
-
-## Como participar
-
-**1. Faça um fork deste repositório.** Ele precisa ser público, ou você não conseguirá compartilhar depois.
-
-**2. Clone o seu fork e prepare a estrutura de trabalho:**
+## Instalar
 
 ```bash
-git clone https://github.com/<seu-usuario>/sdd-desafio.git
-cd sdd-desafio
-cp template/CLAUDE.md .
-cp -r template/specs .
-cp -r template/docs .
-git add -A && git commit -m "chore: estrutura inicial a partir do template"
+npm install
 ```
 
-<details>
-<summary>PowerShell</summary>
+Só instala as dependências de desenvolvimento (TypeScript, Vitest, Ajv). O
+motor não tem dependência de runtime.
 
-```powershell
-git clone https://github.com/<seu-usuario>/sdd-desafio.git
-cd sdd-desafio
-Copy-Item template\CLAUDE.md .
-Copy-Item template\specs . -Recurse
-Copy-Item template\docs . -Recurse
-git add -A; git commit -m "chore: estrutura inicial a partir do template"
-```
-</details>
+## Rodar
 
-Os arquivos em `template/` são esqueletos com as perguntas que cada documento precisa responder. Deixe a pasta `template/` onde está — ela serve de referência.
-
-**3. Trabalhe no seu fork**, seguindo as três regras do jogo descritas no [`DESAFIO.md`](DESAFIO.md):
-
-- Nenhum commit sem task
-- Explicação no chat que não está na spec é bug de spec
-- Interações exportadas (`/export`) e commitadas em `docs/sessions/`
-
-**4. No Dia 2, às 10h**, você recebe uma mudança de requisito pelo canal da turma. Ela é obrigatória e vale 20 pontos. Chegue nesse momento com o sistema base funcionando e testado.
-
-> Durante os dois dias o instrutor está de férias e não responde mensagens. Dúvida de processo: [`FAQ.md`](FAQ.md). Dúvida sobre o que a política do RH significa não tem resposta — decidir isso é o exercício.
-
-**5. Entregue** enviando o link do seu fork no formulário. Prazo: **Dia 2, 18h**.
-
----
-
-## O que o seu fork precisa conter ao final
-
-```
-seu-fork/
-├── CLAUDE.md                     # convenções do projeto para o agente
-├── README.md                     # como rodar e como testar o SEU projeto
-├── specs/
-│   └── 001-motor-reembolso/
-│       ├── spec.md               # o QUÊ e o PORQUÊ
-│       ├── plan.md               # o COMO
-│       ├── tasks.md              # T-001..T-0NN, com critério de aceite
-│       └── DECISIONS.md          # log de mudanças de spec
-├── src/
-├── tests/
-└── docs/
-    ├── sessions/                 # exports das suas conversas com o Claude
-    └── RELATORIO.md              # o relatório final
+```bash
+node src/cli.ts calcular --input exemplos/despesas-exemplo.json --output resultado.json
+# ou
+npm run reembolso -- calcular --input exemplos/despesas-exemplo.json --output resultado.json
 ```
 
-Sobre o `README.md`: substitua este arquivo pelo README do **seu** projeto — como rodar, como testar, o que você construiu. Um README que não permite rodar o projeto custa pontos.
+Saída esperada no terminal:
 
----
+```
+14 itens processados; total reembolsável R$ 815,43
+```
 
-## Antes de começar, confirme que o `/export` funciona
+| Situação | Código de saída | O que acontece |
+|---|---|---|
+| Sucesso | `0` | grava o arquivo de saída (JSON indentado, `\n` no fim) e imprime o resumo |
+| Entrada inválida: arquivo inexistente, JSON inválido, sem `colaborador.id`, `periodo` ou `despesas`, datas inválidas, `inicio` depois de `fim` (RN-015) | `1` | `erro: ...` no `stderr`; o arquivo de saída **não** é criado nem alterado |
+| Uso incorreto (subcomando ou opção ausente/desconhecida) | `2` | `uso: ...` no `stderr` |
 
-Abra o Claude Code, troque duas mensagens, rode `/export` e confirme que o arquivo foi gerado.
+Uma despesa com dado inválido **não** é erro de execução: ela sai recusada
+com `DADO_INVALIDO` e as outras seguem normalmente (RN-003).
 
-Faça isso **agora**, não no Dia 2. Sem `docs/sessions/`, o critério de relatório vale zero — e já aconteceu de gente que fez tudo certo descobrir no último dia que não tinha registro nenhum do trabalho.
+A interface completa está em
+[`contracts/cli.md`](specs/001-motor-reembolso/contracts/cli.md), e o formato
+da saída em
+[`contracts/saida.schema.json`](specs/001-motor-reembolso/contracts/saida.schema.json).
 
-Exporte ao final de **cada** sessão, nomeando `docs/sessions/01-descricao-curta.md`, `02-...`, e assim por diante.
+## Testar
 
----
+```bash
+npm test           # Vitest: regras, casos de borda, exemplo oficial, contrato, CLI e rastreabilidade
+npm run typecheck  # tsc --noEmit
+```
 
-## O resumo em um parágrafo
+A suíte cobre:
 
-Você vai receber uma política de reembolso escrita por um RH, com a redação ruim que uma política de RH real tem. Ela é ambígua em vários pontos, e você não tem acesso a ninguém para tirar dúvida. O trabalho não é implementar — é **especificar**: encontrar cada ambiguidade, decidir explicitamente, justificar e registrar. O produto funcionando vale **10 dos 100 pontos**. Os outros 90 estão na spec, na rastreabilidade `spec → tasks → commits → testes`, na resposta à mudança de requisito do Dia 2 e no relatório.
+- **Uma regra, um arquivo:** cada `RN-NNN` da spec tem o seu
+  `tests/**/rn-NNN-*.test.ts`, com títulos que começam pelo ID
+  (`RN-010 › ...`).
+- **Casos de borda:** cada linha da tabela da seção 7 da spec é um teste
+  `Borda › <Caso>` em `tests/casos-de-borda.test.ts`.
+- **Exemplo oficial:** `tests/exemplo.test.ts` confere
+  `exemplos/despesas-exemplo.json` item a item com a tabela da seção 9.
+- **Contrato:** `tests/contrato-saida.test.ts` valida a saída contra o JSON
+  Schema.
+- **CLI:** `tests/cli.test.ts` roda o comando num processo filho (códigos de
+  saída, nenhuma saída parcial em erro, determinismo).
+- **Rastreabilidade:** `tests/rastreabilidade.test.ts` lê a spec e falha se
+  alguma `RN-NNN` ou linha da seção 7 ficar sem teste.
 
-Isso é deliberado. Um projeto que roda perfeitamente com spec fraca tira nota baixa; um projeto com bug conhecido, spec impecável e trilha limpa tira nota alta.
+O roteiro de validação manual está em
+[`quickstart.md`](specs/001-motor-reembolso/quickstart.md).
+
+## Documentação
+
+| Arquivo | Conteúdo |
+|---|---|
+| [`spec.md`](specs/001-motor-reembolso/spec.md) | **o quê**: regras (`RN-NNN`), ambiguidades decididas (`AMB-NNN`), casos de borda e critérios de aceite |
+| [`plan.md`](specs/001-motor-reembolso/plan.md) | **como**: arquitetura, representação da política e decisões técnicas |
+| [`research.md`](specs/001-motor-reembolso/research.md) · [`data-model.md`](specs/001-motor-reembolso/data-model.md) | decisões técnicas detalhadas e modelo de dados |
+| [`tasks.md`](specs/001-motor-reembolso/tasks.md) | **em que ordem**: tasks `T-NNN`, cada uma com critério de aceite e o commit que a fechou |
+| [`DECISIONS.md`](specs/001-motor-reembolso/DECISIONS.md) | log das mudanças de spec |
+| [`docs/sessions/`](docs/sessions/) | exports das sessões com o Claude Code |
+
+## Estrutura
+
+```
+src/
+  cli.ts          # argumentos, leitura e gravação de arquivos, códigos de saída
+  io/             # JSON sem float (json.ts), validação do arquivo (entrada.ts), montagem da saída (saida.ts)
+  nucleo/         # regras em funções puras, sem E/S; a ordem da seção 8 da spec vive em motor.ts
+tests/            # um arquivo por RN, casos de borda, exemplo, contrato, CLI, rastreabilidade
+exemplos/         # arquivo de entrada de referência
+```
+
+Valores em dinheiro são centavos inteiros (`bigint`) do começo ao fim. A
+entrada é lida pelo texto de cada número e a saída é gravada com duas casas,
+sem passar por ponto flutuante. Todos os valores da política (limites, fator
+de viagem, limiar de nota fiscal) ficam em `src/nucleo/politica.ts`.
