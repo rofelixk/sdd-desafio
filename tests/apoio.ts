@@ -3,6 +3,9 @@
 import { expect } from 'vitest';
 import { lerJson } from '../src/io/json.ts';
 import { validarDespesa } from '../src/nucleo/despesa.ts';
+import { gerarParcelas } from '../src/nucleo/diarias.ts';
+import { alocar } from '../src/nucleo/limites.ts';
+import type { Alocacao } from '../src/nucleo/limites.ts';
 import { passada1 } from '../src/nucleo/motor.ts';
 import { POLITICA } from '../src/nucleo/politica.ts';
 import type { DespesaElegivel, DespesaValida, Entrada } from '../src/nucleo/tipos.ts';
@@ -72,4 +75,12 @@ export function elegivel(campos: Record<string, unknown> = {}, indice = 0): Desp
   const d = valida(campos, indice);
   expect(Object.hasOwn(POLITICA.limites, d.categoria), d.categoria).toBe(true);
   return d as DespesaElegivel;
+}
+
+/** Aloca o limite para despesas elegíveis montadas do padrão, na ordem dada. */
+export function alocarDespesas(despesas: Record<string, unknown>[], diasDeViagem: ReadonlySet<string> = new Set()): Alocacao[] {
+  return alocar(
+    despesas.flatMap((campos, i) => gerarParcelas(elegivel({ id: `e-${i + 1}`, ...campos }, i))),
+    diasDeViagem,
+  );
 }
