@@ -19,7 +19,11 @@ function arquivo(conteudo?: string): string {
 }
 
 function cli(...args: string[]) {
-  const r = spawnSync(process.execPath, ['src/cli.ts', ...args], { encoding: 'utf8' });
+  return cliCom({}, ...args);
+}
+
+function cliCom(env: Record<string, string>, ...args: string[]) {
+  const r = spawnSync(process.execPath, ['src/cli.ts', ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
   return { codigo: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 
@@ -103,5 +107,13 @@ describe('CLI', () => {
       expect(r.stderr, args.join(' ')).toMatch(/^uso: /);
     }
     expect(existsSync(saida)).toBe(false);
+  });
+
+  it('Infra › CLI: duas execuções com a mesma entrada geram bytes idênticos', () => {
+    const [a, b] = [arquivo(), arquivo()];
+    const entrada = 'exemplos/despesas-exemplo.json';
+    expect(cliCom({ TZ: 'UTC', LANG: 'C' }, 'calcular', '--input', entrada, '--output', a).codigo).toBe(0);
+    expect(cliCom({ TZ: 'Pacific/Kiritimati', LANG: 'pt_BR.UTF-8' }, 'calcular', '--input', entrada, '--output', b).codigo).toBe(0);
+    expect(readFileSync(b).equals(readFileSync(a))).toBe(true);
   });
 });
