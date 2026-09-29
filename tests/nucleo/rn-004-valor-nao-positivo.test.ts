@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { verificarValorPositivo } from '../../src/nucleo/elegibilidade.ts';
-import { codigosPassada1, entrada, valida } from '../apoio.ts';
+import { codigosPassada1, decisoes, entrada, valida } from '../apoio.ts';
 
 describe('RN-004 — Valores não positivos', () => {
   it('RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00', () => {
@@ -25,5 +25,20 @@ describe('RN-004 — Valores não positivos', () => {
   it('RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)', () => {
     expect(codigosPassada1(entrada([{ data: '2026-04-15', valor: -45 }]))).toEqual(['VALOR_NAO_POSITIVO']);
     expect(codigosPassada1(entrada([{ categoria: 'coworking', valor: 0 }]))).toEqual(['VALOR_NAO_POSITIVO']);
+  });
+
+  it('RN-004 › d-009 não afeta as despesas de transporte de 2026-07-11', () => {
+    const transporte = { categoria: 'transporte_urbano', data: '2026-07-11', tem_nota_fiscal: false };
+    expect(
+      decisoes([
+        { ...transporte, id: 'd-009', valor: -45 },
+        { ...transporte, valor: 80, fornecedor: 'A' },
+        { ...transporte, valor: 10, fornecedor: 'B' },
+      ]),
+    ).toEqual([
+      ['RECUSADO', 'VALOR_NAO_POSITIVO', 0n],
+      ['APROVADO', 'APROVADO_INTEGRAL', 8000n],
+      ['RECUSADO', 'LIMITE_DIARIO_ESGOTADO', 0n],
+    ]);
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { extrairDiarias, gerarParcelas } from '../../src/nucleo/diarias.ts';
 import { comoTexto } from '../../src/nucleo/texto.ts';
 import { NumeroJson } from '../../src/nucleo/tipos.ts';
-import { elegivel } from '../apoio.ts';
+import { decisoes, elegivel, rodar } from '../apoio.ts';
 
 describe('RN-012 — Hospedagem com mais de uma diária', () => {
   it('RN-012 › "Hotel Rio - 2 diarias" → N = 2', () => {
@@ -97,6 +97,32 @@ describe('RN-012 — Hospedagem com mais de uma diária', () => {
   it('RN-012 › despesa que não é hospedagem gera uma parcela', () => {
     expect(parcelas({ data: '2026-07-03', categoria: 'alimentacao', descricao: 'Almoco 2 diarias', valor: 72.5 })).toEqual([
       ['2026-07-03', 7250n],
+    ]);
+  });
+
+  it('RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00', () => {
+    const h1 = { id: 'h1', categoria: 'hospedagem', data: '2026-07-14', descricao: 'Hotel - 2 diarias', valor: 480 };
+    const h2 = { id: 'h2', categoria: 'hospedagem', data: '2026-07-15', descricao: 'Pousada - 1 diaria', valor: 200 };
+    expect(decisoes([h1, h2])).toEqual([
+      ['APROVADO', 'APROVADO_INTEGRAL', 48000n],
+      ['PARCIAL', 'LIMITE_DIARIO_EXCEDIDO', 1000n],
+    ]);
+  });
+
+  it('RN-012 › diarias só é preenchido em hospedagem que chegou ao limite; limite e em_viagem nulos nas recusadas', () => {
+    const itens = rodar([
+      { categoria: 'hospedagem', descricao: '3 noites', valor: 300 },
+      { categoria: 'hospedagem', descricao: '2 noites', valor: 690, tem_nota_fiscal: false },
+      { categoria: 'alimentacao', valor: 30 },
+      { categoria: 'coworking', valor: 30 },
+      { data: '2026-07-32' },
+    ]);
+    expect(itens.map((i) => [i.diarias, i.limiteDiarioAplicado, i.emViagem])).toEqual([
+      [3, 25000n, true],
+      [null, null, null],
+      [null, 9000n, true],
+      [null, null, null],
+      [null, null, null],
     ]);
   });
 });

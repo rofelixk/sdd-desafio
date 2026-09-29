@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { verificarNotaFiscal } from '../../src/nucleo/elegibilidade.ts';
-import { valida } from '../apoio.ts';
+import { decisoes, valida } from '../apoio.ts';
 
 const semNf = { categoria: 'transporte_urbano', tem_nota_fiscal: false };
 
@@ -23,5 +23,13 @@ describe('RN-008 — Nota fiscal obrigatória', () => {
     const d = valida({ ...semNf, valor: 100.004 });
     expect(d.valorSolicitado).toBe(10000n);
     expect(verificarNotaFiscal(d)).toBeNull();
+  });
+
+  it('RN-008 › dia de viagem não amplia o limiar de nota fiscal', () => {
+    const hotel = { categoria: 'hospedagem', valor: 200, descricao: 'Hotel', fornecedor: 'Hotel' };
+    expect(decisoes([hotel, { ...semNf, valor: 110 }, { ...semNf, valor: 100, fornecedor: 'Outro' }]).slice(1)).toEqual([
+      ['RECUSADO', 'NOTA_FISCAL_AUSENTE', 0n],
+      ['APROVADO', 'APROVADO_INTEGRAL', 10000n],
+    ]);
   });
 });

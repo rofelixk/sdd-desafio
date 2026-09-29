@@ -6,9 +6,10 @@ import { validarDespesa } from '../src/nucleo/despesa.ts';
 import { gerarParcelas } from '../src/nucleo/diarias.ts';
 import { alocar } from '../src/nucleo/limites.ts';
 import type { Alocacao } from '../src/nucleo/limites.ts';
-import { passada1 } from '../src/nucleo/motor.ts';
+import { calcularItens, passada1 } from '../src/nucleo/motor.ts';
+import { statusDe } from '../src/nucleo/status.ts';
 import { POLITICA } from '../src/nucleo/politica.ts';
-import type { DespesaElegivel, DespesaValida, Entrada } from '../src/nucleo/tipos.ts';
+import type { DespesaElegivel, DespesaValida, Entrada, ResultadoItem } from '../src/nucleo/tipos.ts';
 
 export const DESPESA_PADRAO = {
   id: 'd-001',
@@ -83,4 +84,17 @@ export function alocarDespesas(despesas: Record<string, unknown>[], diasDeViagem
     despesas.flatMap((campos, i) => gerarParcelas(elegivel({ id: `e-${i + 1}`, ...campos }, i))),
     diasDeViagem,
   );
+}
+
+/** Itens do motor para as despesas montadas do padrão (ver `entrada`). */
+export function rodar(
+  despesas: (Record<string, unknown> | Cru)[],
+  periodo?: { inicio: string; fim: string },
+): ResultadoItem[] {
+  return calcularItens(entrada(despesas, periodo));
+}
+
+/** `[status, código, reembolsável]` de cada item do motor. */
+export function decisoes(despesas: (Record<string, unknown> | Cru)[], periodo?: { inicio: string; fim: string }) {
+  return rodar(despesas, periodo).map((i) => [statusDe(i), i.motivo.codigo, i.valorReembolsavel] as const);
 }
