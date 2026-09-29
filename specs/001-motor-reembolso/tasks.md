@@ -23,10 +23,10 @@
 
 ## Fase 1 — Fundação
 
-- [ ] **T-001** — Criar o esqueleto do projeto: `package.json` (`"type": "module"`, `engines.node >= 24`, scripts `test` = `vitest run`, `typecheck` = `tsc --noEmit`, `reembolso` = `node src/cli.ts`; devDependencies `typescript@5.9`, `vitest@5`, `ajv`, `@types/node`), `tsconfig.json` (`strict`, `noEmit`, `erasableSyntaxOnly`, `allowImportingTsExtensions`, `verbatimModuleSyntax`, `target`/`lib` ES2024+, `module`/`moduleResolution` `nodenext`), `vitest.config.ts` e `tests/infra.test.ts`
+- [x] **T-001** — Criar o esqueleto do projeto: `package.json` (`"type": "module"`, `engines.node >= 24`, scripts `test` = `vitest run`, `typecheck` = `tsc --noEmit`, `reembolso` = `node src/cli.ts`; devDependencies `typescript@5.9`, `vitest@5`, `ajv`, `@types/node`), `tsconfig.json` (`strict`, `noEmit`, `erasableSyntaxOnly`, `allowImportingTsExtensions`, `verbatimModuleSyntax`, `target`/`lib` ES2024+, `module`/`moduleResolution` `nodenext`), `vitest.config.ts` e `tests/infra.test.ts`
   - **Atende:** (infraestrutura) — plan §0, R-01
   - **Aceite:** `Infra › runtime oferece JSON.rawJSON e context.source no reviver do JSON.parse` passa; `npm run typecheck` sem erros
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `48a4c76`
 
 - [ ] **T-002** — [P] Criar `src/nucleo/tipos.ts` (tipos do `data-model.md`: `Centavos`, `DataISO`, `Categoria`, `NumeroJson`, `Entrada`, `DespesaValida`, `DespesaElegivel`, `Recusa`, `Parcela`, `ResultadoItem`, `Motivo`, `Resumo`, `Resultado`, e a união de códigos de motivo da seção 4 da spec como tipo literal) e `src/nucleo/politica.ts` com o objeto `POLITICA` exatamente como no plan §4 (cada valor com o ID da RN em comentário)
   - **Atende:** (infraestrutura) — plan §3 e §4, data-model §5
