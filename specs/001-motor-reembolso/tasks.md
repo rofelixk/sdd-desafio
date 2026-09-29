@@ -55,10 +55,10 @@
   - **Aceite:** em `tests/nucleo/rn-001-arredondamento.test.ts` passam `RN-001 › 33.333 → 33.33`, `RN-001 › 10.005 → 10.00 (meio, 0 é par)`, `RN-001 › 10.015 → 10.02 (meio, 2 é par)`, `RN-001 › 33.345 → 33.34`, `RN-001 › 33.3451 → 33.35 (fora do meio)`, `RN-001 › 100.004 → 100.00`, `RN-001 › -45.005 → -45.00 (meio para o par também no negativo)` e `RN-001 › expoente 1.00005e2 → 100.00`
   - **Commit:** `e089af9`
 
-- [ ] **T-007** — [P] Criar `src/nucleo/texto.ts` (R-06): `normalizar(texto)` = `trim` → minúsculas → `NFD` → remove `\p{M}`; e `normalizarFornecedor(texto)` = só `trim` + minúsculas (a RN-007 não manda tirar acento do fornecedor); e `comoTexto(bruto)` (AMB-026): ausente/`null` → `""`, texto como veio, `NumeroJson` → o seu texto, booleano → `"true"`/`"false"`, lista/objeto → texto JSON compacto (`NumeroJson` reemitido com o texto original)
+- [x] **T-007** — [P] Criar `src/nucleo/texto.ts` (R-06): `normalizar(texto)` = `trim` → minúsculas → `NFD` → remove `\p{M}`; e `normalizarFornecedor(texto)` = só `trim` + minúsculas (a RN-007 não manda tirar acento do fornecedor); e `comoTexto(bruto)` (AMB-026): ausente/`null` → `""`, texto como veio, `NumeroJson` → o seu texto, booleano → `"true"`/`"false"`, lista/objeto → texto JSON compacto (`NumeroJson` reemitido com o texto original)
   - **Atende:** RN-002, AMB-014, RN-003, AMB-026
   - **Aceite:** em `tests/nucleo/rn-002-categoria.test.ts` passam `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao` e `RN-002 › "Transporte_Urbano" e "HOSPEDAGEM" viram transporte_urbano e hospedagem`; em `tests/nucleo/rn-003-validacao.test.ts` passa `RN-003 › fornecedor/descricao como texto: ausente e null → "", 123 → "123", true → "true", [1, 2] → "[1,2]"`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `6a5e1b4`
 
 - [ ] **T-008** — Criar `src/nucleo/despesa.ts` com `validarDespesa(bruta, indice)` → `DespesaValida | Recusa(DADO_INVALIDO)`: item que não é objeto; `id`, `data`, `categoria` ausentes, nulos, vazios/só espaços ou não textuais; `data` inválida (T-004); `valor` ausente. A `Recusa` carrega os ecos **brutos** de `id`/`data`/`categoria` (ausente → `null`) e o `valor_solicitado` arredondado quando o `valor` é um `NumeroJson` (neste passo só `NumeroJson` é aceito como valor; texto vem na T-009). Aplica `normalizar` na categoria (RN-002) sem recusar categoria desconhecida. Preenche `descricao` e `fornecedorChave` com `comoTexto` (T-007); esses dois campos nunca recusam a despesa (AMB-026)
   - **Atende:** RN-003, AMB-018, AMB-023, AMB-026
