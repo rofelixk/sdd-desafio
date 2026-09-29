@@ -1,0 +1,21 @@
+{
+  "name": "motor-reembolso",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Motor de cálculo de reembolso de despesas corporativas (CLI).",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "reembolso": "node src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "ajv": "^8.20.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.2"
+  }
+}
