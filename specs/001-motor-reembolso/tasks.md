@@ -219,10 +219,10 @@
   - **Aceite:** passam `RN-013 › saída do exemplo valida contra contracts/saida.schema.json` e `RN-013 › saída com itens DADO_INVALIDO (valor_solicitado nulo, ecos brutos) valida contra o schema`
   - **Commit:** `702de1c`
 
-- [ ] **T-038** — Criar `src/cli.ts` (R-08, DT-004, `contracts/cli.md`): `parseArgs` com subcomando `calcular` e `--input`/`--output` obrigatórios; lê, valida, calcula e serializa tudo em memória antes de `writeFile`; sucesso → código 0 e uma linha de resumo no `stdout`; `ErroEntrada`/falha de leitura → `erro: <mensagem>` no `stderr` e código 1, sem criar nem alterar a saída; uso incorreto → `uso: ...` e código 2
+- [x] **T-038** — Criar `src/cli.ts` (R-08, DT-004, `contracts/cli.md`): `parseArgs` com subcomando `calcular` e `--input`/`--output` obrigatórios; lê, valida, calcula e serializa tudo em memória antes de `writeFile`; sucesso → código 0 e uma linha de resumo no `stdout`; `ErroEntrada`/falha de leitura → `erro: <mensagem>` no `stderr` e código 1, sem criar nem alterar a saída; uso incorreto → `uso: ...` e código 2
   - **Atende:** RN-015, RN-003, AMB-018
   - **Aceite:** em `tests/cli.test.ts` (processo filho) passam `RN-015 › CLI: arquivo sem periodo → código 1, stderr cita periodo, nenhum arquivo de saída`, `RN-015 › CLI: arquivo de entrada inexistente → código 1, nenhum arquivo de saída`, `RN-015 › CLI: arquivo que não é JSON → código 1`, `RN-015 › CLI: em erro, arquivo de saída pré-existente não é alterado`, `RN-003 › CLI: despesa inválida não aborta (código 0)`, `Infra › CLI: exemplo → código 0, resumo no stdout, JSON indentado com \n final` e `Infra › CLI: subcomando ou opção ausente → código 2 com "uso:"`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `3feda6b`
 
 - [ ] **T-039** — Teste de determinismo em `tests/cli.test.ts`
   - **Atende:** seção 9 (critério "duas execuções geram saídas idênticas")
