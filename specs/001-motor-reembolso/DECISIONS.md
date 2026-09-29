@@ -17,6 +17,77 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-010 — Arredondamento meio para o par (RN-001, AMB-013) · `2026-09-29`
+
+**Gatilho:** revisão da AMB-013 pelo usuário (D-009). O Claude perguntou qual
+regra de desempate usar e explicou o arredondamento bancário.
+
+**O que mudou na spec:**
+- RN-001 e AMB-013: o desempate passa de "meio para cima" para **meio para o
+  par**. O aceite da RN-001 foi atualizado: `10.005` agora vira 10.00, e não
+  mais 10.01. Também entraram `10.015` → 10.02, `33.345` → 33.34 e
+  `33.3451` → 33.35.
+- Casos de borda: o caso "Arredondamento meio-para-cima" (100,005 vira
+  100,01 e é RECUSADO) foi substituído por três casos: 100,005 → 100,00, não
+  exige NF; 100,015 → 100,02, RECUSADO; 100,0051 → 100,01, RECUSADO.
+
+**Por quê:** nas palavras do usuário, "não sabemos o tamanho dos arquivos que
+serão utilizados fora o exemplo e seria interessante reduzir o viés num
+projeto em escala real". O Claude tinha recomendado manter meio para cima,
+porque o arredondamento acontece uma vez por item e é mais fácil de conferir
+à mão. O usuário preferiu a neutralidade estatística.
+
+**O que isso invalidou:** o aceite `10.005` → 10.01 e o caso de borda
+100,005 → RECUSADO. Nenhum item do exemplo muda: `d-011` (33,333) não cai no
+ponto médio.
+
+**Tasks afetadas:** nenhuma (tasks ainda não existiam).
+
+**Custo:** 1 arquivo, 3 trechos.
+
+---
+
+## D-009 — Revisão pelo usuário das ambiguidades decididas pelo Claude · `2026-09-29`
+
+**Gatilho:** revisão das 16 ambiguidades que o Claude decidiu sozinho na
+D-001 (todas, exceto AMB-007, AMB-008 e AMB-011, e a AMB-020 criada depois).
+
+**O que mudou na spec:** só a AMB-013 (registrada na D-010). As outras 15
+foram confirmadas como estavam. As justificativas do usuário estão abaixo
+porque às vezes o motivo é diferente do que está na spec:
+
+| AMB | Confirmação | Justificativa do usuário |
+|---|---|---|
+| 001 | limite por dia | a política diz "por dia", contar por despesa seria erro |
+| 002 | ordem da entrada | garante o mesmo resultado em execuções repetidas |
+| 003 | paga até o limite | falta regra clara para outro tratamento |
+| 004 | estritamente > 100,00 | "acima de R$ 100" é explícito: 100,00 não exige, 100,01 exige |
+| 005 | valor de cada despesa | toda despesa acima de 100 precisa de nota para ser reembolsada |
+| 006 | recusa integral | a nota é obrigatória pela política |
+| 009 | data fora de `inicio`/`fim` é recusada | fora do período é fora da competência |
+| 010 | valem `inicio`/`fim` | datas explícitas evitam ambiguidade de regras financeiras |
+| 012 | negativo e zero recusados | a política não trata esses valores |
+| 013 | arredondar antes das regras | consistência entre testes (desempate alterado na D-010) |
+| 014 | normalizar a categoria | ajuda a classificar cada despesa |
+| 015 | limite inclusivo | 60,00 cabe; 60,01 sai PARCIAL 60,00 (AMB-003) |
+| 016 | dia de calendário | a política não diferencia fim de semana nem feriado |
+| 017 | NF continua > 100 em viagem | a ampliação é de limites, não da exigência de nota |
+| 018 | recusa só o item; `tem_nota_fiscal` ausente = sem nota | a política não trata despesa lançada errado |
+| 019 | recusa integral | item 9 da política |
+
+Quatro pontos que a resposta do usuário não cobria foram confirmados
+explicitamente: `tem_nota_fiscal` ausente vale como "sem nota" (AMB-018);
+60,01 sai PARCIAL e não é recusado (AMB-015); valor zero é recusado como o
+negativo (AMB-012); e o desempate do arredondamento, que mudou (D-010).
+
+**O que isso invalidou:** nada.
+
+**Tasks afetadas:** nenhuma.
+
+**Custo:** 0 arquivos (a mudança está na D-010).
+
+---
+
 ## D-008 — Hospedagem fora da ampliação de viagem (AMB-020) · `2026-09-29`
 
 **Gatilho:** o Claude apontou que, com a viagem inferida pela própria

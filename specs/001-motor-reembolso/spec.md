@@ -153,11 +153,14 @@ Cada regra recebe um ID (`RN-001`, ...). As tasks vão referenciar esses IDs.
 ### RN-001 — Arredondamento de valores para centavos
 
 **Regra:** Antes de qualquer outra regra, todo `valor` de entrada é arredondado
-para duas casas decimais pelo arredondamento comercial (meio para cima, com
-0,005 → 0,01). Todas as comparações e cálculos seguintes usam o valor
-arredondado e são exatos em centavos, sem erro de representação.
+para duas casas decimais pelo arredondamento **meio para o par** (bancário):
+fora do ponto médio, vai para o centavo mais próximo; exatamente no meio
+(terceira casa 5 e nada depois), vai para o centavo **par**. Todas as
+comparações e cálculos seguintes usam o valor arredondado e são exatos em
+centavos, sem erro de representação.
 **Origem:** ausente na política (AMB-013)
-**Aceite:** `33.333` → `valor_solicitado` 33.33. `10.005` → 10.01.
+**Aceite:** `33.333` → `valor_solicitado` 33.33. `10.005` → 10.00.
+`10.015` → 10.02. `33.345` → 33.34. `33.3451` → 33.35 (fora do meio).
 `100.004` → 100.00 e não exige nota fiscal (RN-008).
 
 ### RN-002 — Normalização da categoria
@@ -501,10 +504,15 @@ segurança.
 **Texto original do RH:** a política não fala do assunto.
 **O que não está claro:** `d-011` vale 33,333. (a) arredonda; (b) trunca;
 (c) recusa como dado inválido. Em que momento, e com que regra de desempate?
-**Decisão:** arredonda para centavos, meio para cima, **antes** de qualquer
-outra regra (RN-001).
+**Decisão:** arredonda para centavos, **meio para o par** (bancário),
+**antes** de qualquer outra regra (RN-001).
 **Justificativa:** dinheiro só existe em centavos. Arredondar antes garante que
 todas as comparações (limite, nota fiscal) usem o mesmo valor que é exibido.
+O desempate meio para o par foi escolhido pelo usuário: o tamanho real dos
+arquivos é desconhecido, e subir sempre no meio acumula viés para cima em
+volume; alternando, o viés se anula. O custo aceito é que casos no ponto
+médio parecem menos intuitivos ao conferir à mão (33,325 → 33,32, mas
+33,335 → 33,34).
 **Regra afetada:** RN-001
 
 ### AMB-014 — Grafia da categoria
@@ -594,7 +602,9 @@ mantém todos os itens da política com efeito.
 | Nota fiscal no limiar exato | transporte 100,00, sem NF | não exige NF. Segue para o limite: PARCIAL 80,00 | RN-008, RN-010 |
 | Um centavo acima do limiar | transporte 100,01, sem NF | RECUSADO `NOTA_FISCAL_AUSENTE` | RN-008 |
 | Arredondamento que cruza o limiar | valor 100,004, sem NF | vira 100,00, não exige NF | RN-001, RN-008 |
-| Arredondamento meio-para-cima | valor 100,005, sem NF | vira 100,01, RECUSADO `NOTA_FISCAL_AUSENTE` | RN-001, RN-008 |
+| Arredondamento meio-para-o-par no limiar | valor 100,005, sem NF | vira 100,00 (0 é par), não exige NF | RN-001, RN-008 |
+| Meio-para-o-par sobe | valor 100,015, sem NF | vira 100,02 (2 é par), RECUSADO `NOTA_FISCAL_AUSENTE` | RN-001, RN-008 |
+| Fora do ponto médio | valor 100,0051, sem NF | vira 100,01, RECUSADO `NOTA_FISCAL_AUSENTE` | RN-001, RN-008 |
 | Três casas decimais | 33,333 | `valor_solicitado` 33,33 | RN-001 |
 | Exatamente no limite diário | alimentação 60,00 isolada | APROVADO 60,00 | RN-009 |
 | Um centavo acima do limite | alimentação 60,01 isolada | PARCIAL 60,00 | RN-010 |
