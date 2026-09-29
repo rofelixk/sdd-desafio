@@ -29,3 +29,19 @@ export function verificarCategoria(d: DespesaValida): Recusa | null {
     ? null
     : { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: d.categoriaOriginal } };
 }
+
+/** Chave da RN-007 → `id` da primeira ocorrência. */
+export type ChavesDuplicata = Map<string, string>;
+
+/**
+ * Etapa 6 (RN-007, AMB-011, AMB-026): mesma data, categoria normalizada,
+ * fornecedor (`trim` + minúsculas; vazio é um valor) e valor. A primeira
+ * ocorrência é registrada em `aceitas` e segue; as seguintes são recusadas.
+ */
+export function verificarDuplicata(d: DespesaValida, aceitas: ChavesDuplicata): Recusa | null {
+  const chave = JSON.stringify([d.data, d.categoria, d.fornecedorChave, d.valorSolicitado.toString()]);
+  const idAceito = aceitas.get(chave);
+  if (idAceito !== undefined) return { codigo: 'DUPLICATA', detalhes: { idAceito } };
+  aceitas.set(chave, d.id);
+  return null;
+}
