@@ -70,10 +70,10 @@
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "45.00", "45,00" e 45.00 dão valor_solicitado 45,00`, `RN-003 › "1.234,56" e "R$ 45,00" → DADO_INVALIDO`, `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `RN-003 › "", "45.", ",5", "1,2,3", "abc", true, [], {} e null não são numéricos`, `RN-003 › " -45,00 " (espaços nas bordas) é numérico` e `RN-003 › recusa por outro campo mantém valor_solicitado arredondado quando o valor é numérico`
   - **Commit:** `32b515d`
 
-- [ ] **T-010** — Validar `tem_nota_fiscal` em `src/nucleo/despesa.ts`: só `true`/`false` são aceitos; ausente, nulo ou texto vazio/só espaços vale `false`; qualquer outro valor → `DADO_INVALIDO`
+- [x] **T-010** — Validar `tem_nota_fiscal` em `src/nucleo/despesa.ts`: só `true`/`false` são aceitos; ausente, nulo ou texto vazio/só espaços vale `false`; qualquer outro valor → `DADO_INVALIDO`
   - **Atende:** RN-003, AMB-022, AMB-018
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO`, `RN-003 › "tem_nota_fiscal": null vale false`, `RN-003 › tem_nota_fiscal ausente, "" ou "   " vale false` e `RN-003 › tem_nota_fiscal "true", 1, 0, [] ou {} → DADO_INVALIDO`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `90ea5f7`
 
 - [ ] **T-011** — Detectar `id` repetido em `src/nucleo/despesa.ts`: `validarDespesa` recebe o conjunto de ids vistos (ids normalizados com `normalizar`, T-007) e recusa com `DADO_INVALIDO` se o `id` normalizado já estiver nele; o eco do `id` sai como veio. O conjunto só recebe o `id` de despesas que **passaram pela validação** (resultado `DespesaValida`); uma `Recusa(DADO_INVALIDO)`, por qualquer motivo, inclusive o próprio `id` repetido, não reserva o `id` (AMB-025). Expor o helper `registrarId(idsVistos, resultado)` que só adiciona quando o resultado é `DespesaValida`
   - **Atende:** RN-003, AMB-024, AMB-025
