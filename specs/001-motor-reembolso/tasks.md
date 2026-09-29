@@ -33,10 +33,10 @@
   - **Aceite:** `Infra › política: categorias reconhecidas são exatamente as chaves de POLITICA.limites` passa (em `tests/nucleo/politica.test.ts`); `npm run typecheck` sem erros
   - **Commit:** `053d39d`
 
-- [ ] **T-003** — [P] Criar `src/io/json.ts`: `lerJson(texto)` com `JSON.parse` + reviver que troca **todo** número por `NumeroJson { texto }` usando `context.source` (R-03); `serializarJson(valor)` com indentação de 2 espaços e `\n` final, reemitindo `NumeroJson` e valores monetários via `JSON.rawJSON` (R-04)
+- [x] **T-003** — [P] Criar `src/io/json.ts`: `lerJson(texto)` com `JSON.parse` + reviver que troca **todo** número por `NumeroJson { texto }` usando `context.source` (R-03); `serializarJson(valor)` com indentação de 2 espaços e `\n` final, reemitindo `NumeroJson` e valores monetários via `JSON.rawJSON` (R-04)
   - **Atende:** (infraestrutura) — R-03, R-04, contracts/cli.md
   - **Aceite:** em `tests/io/json.test.ts` passam `Infra › json: número vira NumeroJson com o texto original ("10.005", "1.00005e2")`, `Infra › json: números aninhados em objetos e listas também são embrulhados`, `Infra › json: NumeroJson é reemitido com o mesmo texto` e `Infra › json: JSON.rawJSON("45.00") sai como número 45.00, não como texto`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `cdcf3cc`
 
 - [ ] **T-004** — [P] Criar `src/nucleo/datas.ts` (R-05): `ehDataValida(texto)` (regex `^\d{4}-\d{2}-\d{2}$` + existência no calendário), `somarDias(data, k)` com `Date.UTC` e comparação por texto
   - **Atende:** (infraestrutura) — R-05
