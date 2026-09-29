@@ -17,6 +17,52 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-017 — Correção de item inválido com o mesmo `id` (RN-003, AMB-025) · `2026-09-29`
+
+**Gatilho:** `/speckit-tasks`. Ao escrever a T-011 (detecção de `id`
+repetido), o Claude notou que a RN-003 ("`id` igual ao de uma despesa
+anterior no arquivo") não dizia se uma despesa anterior **já recusada** conta.
+Parou, marcou a T-011 com um ponto a confirmar e levou a pergunta ao usuário,
+em vez de decidir na task.
+
+**O que mudou na spec (versão 1.1 → 1.2):**
+- RN-003: só reserva o `id` a despesa que passou pela validação. Uma despesa
+  `DADO_INVALIDO`, por qualquer motivo (inclusive o próprio `id` repetido),
+  não reserva, e a seguinte com o mesmo `id` segue como correção. Recusas de
+  etapas posteriores (período, categoria, duplicata, nota fiscal) reservam o
+  `id`. Novo aceite com três `"d-001"` em sequência.
+- Nova AMB-025, com as leituras (a) toda anterior, (b) só as validadas e
+  (c) só as reembolsadas.
+- Seção 4: o mesmo `id` pode aparecer em mais de um item da saída.
+- Seção 7: casos "Correção de item inválido" e "`id` de item recusado depois
+  da validação".
+- Uma entrada em `Clarifications`.
+
+**Como se chegou lá:** a leitura literal do texto anterior era (a), e foi a
+que o Claude deixou anotada na T-011. O usuário decidiu por (b): "dá pra
+assumir que um id duplicado onde o anterior foi recusado por dados inválidos
+foi uma tentativa de correção de input inserindo um segundo completo". O
+Claude propôs fechar três pontos junto com a decisão (quem reserva o `id`, as
+recusas posteriores continuam reservando, `id` repetido na saída), e o
+usuário confirmou os três.
+
+**Por quê:** recusar a correção puniria o colaborador duas vezes pelo mesmo
+erro de preenchimento. Uma despesa recusada depois da validação tinha dados
+completos, então repetir o `id` dela não é correção, é outro lançamento com
+identificador repetido.
+
+**O que isso invalidou:** a leitura (a), que só existia como nota na T-011 e
+nunca virou código. Nenhum item do exemplo muda (não há `id` repetido nele).
+
+**Tasks afetadas:** T-011 (descrição e aceite: o conjunto de ids vistos só
+recebe despesas validadas), T-032 (dois casos de borda novos) e a tabela de
+Cobertura (AMB-025). Nenhuma task estava concluída. Os ajustes entram pelo
+`/speckit-tasks`, que preserva a numeração.
+
+**Custo:** 2 arquivos (`spec.md`, `DECISIONS.md`), 9 trechos.
+
+---
+
 ## D-016 — Diárias fracionárias são ignoradas (RN-012, AMB-008) · `2026-09-29`
 
 **Gatilho:** revisão do `/speckit-plan`. O Claude apontou como risco que,

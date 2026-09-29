@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 1.1 · **Status:** rascunho · **Última alteração:** `2026-09-29`
+**Versão:** 1.2 · **Status:** rascunho · **Última alteração:** `2026-09-29`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -36,6 +36,7 @@ decisão com um motivo padronizado.
 - Q: Num item `DADO_INVALIDO` com `valor` não numérico ou ausente, o que sai em `valor_solicitado`? E `id`, `data` e `categoria` inválidos? → A: `valor_solicitado` sai nulo, e os campos de eco saem exatamente como vieram, para que a saída mostre o motivo da recusa (seção 4, AMB-023).
 - Q: Em "Hotel 5 estrelas - 2 diarias", N é 2 ou 1? → A: 2. Vale a primeira ocorrência do padrão completo "<inteiro> diária(s)/noite(s)". Números soltos antes dela são ignorados (RN-012, AMB-008).
 - Q: `"d-001"`, `" d-001 "` e `"D-001"` são o mesmo `id` para a RN-003? → A: Sim. O `id` é normalizado como a categoria (maiúsculas/minúsculas, espaços nas bordas, acentos) antes de comparar (RN-003, AMB-024).
+- Q: Uma despesa com o mesmo `id` de uma anterior que foi recusada com `DADO_INVALIDO` também é `DADO_INVALIDO`? → A: Não. Ela é tratada como a correção da anterior e segue normalmente. Só uma despesa que passou pela validação reserva o `id`. Recusas de etapas posteriores (período, duplicata, nota fiscal...) continuam reservando o `id` (RN-003, AMB-025).
 
 ## 3. Fora de escopo
 
@@ -112,6 +113,9 @@ Num item recusado com `DADO_INVALIDO`, os campos de eco (`id`, `data`,
 outro tipo (um campo ausente sai nulo). Assim a própria saída mostra o dado
 que causou a recusa. O `valor_solicitado` é o valor arredondado quando o
 `valor` é numérico (a recusa veio de outro campo) e nulo quando não é (AMB-023).
+
+O mesmo `id` pode aparecer em mais de um item da saída quando uma despesa
+`DADO_INVALIDO` é seguida pela sua correção, com o mesmo `id` (AMB-025).
 
 **Códigos de motivo** (exatamente um por item, o da primeira regra que decidiu
 o item, conforme a seção 8):
@@ -195,8 +199,8 @@ tratadas como `alimentacao` e somam no mesmo limite diário.
 
 **Regra:** Uma despesa com `id`, `data`, `categoria` ou `valor` ausente, com
 `data` que não é uma data de calendário válida no formato `AAAA-MM-DD`, com
-`valor` não numérico, ou com `id` igual ao de uma despesa anterior no arquivo, é
-**RECUSADA** com `DADO_INVALIDO`. As demais despesas continuam sendo
+`valor` não numérico, ou com `id` igual ao de uma despesa anterior no arquivo
+**que passou por esta validação**, é **RECUSADA** com `DADO_INVALIDO`. As demais despesas continuam sendo
 processadas normalmente. Uma despesa que não é um objeto (um número, um texto,
 nulo) tem todos os campos ausentes e também é `DADO_INVALIDO`.
 
@@ -204,6 +208,12 @@ Para saber se o `id` repete, ele é comparado depois da mesma normalização da
 categoria (RN-002): sem diferenciar maiúsculas de minúsculas, sem espaços nas
 bordas e sem acentos. `"d-001"`, `" d-001 "` e `"D-001"` são o mesmo `id`
 (AMB-024).
+
+Só reserva o `id` a despesa que passou por esta validação. Uma despesa
+recusada com `DADO_INVALIDO`, por qualquer motivo (inclusive o próprio `id`
+repetido), não reserva, e a seguinte com o mesmo `id` é tratada como a
+correção dela. Uma despesa recusada numa etapa posterior (período, categoria,
+duplicata, nota fiscal) passou por esta validação e reserva o `id` (AMB-025).
 
 `valor` é numérico quando é um número ou um texto que, sem os espaços das
 bordas, tem sinal `-` opcional, um ou mais dígitos e, opcionalmente, **um**
@@ -221,12 +231,14 @@ nulos ou com tipo diferente de texto contam como **ausentes** →
 ausente, nulo, ou texto vazio ou só com espaços) vale `false`. Qualquer outro
 valor (textos como `"true"` ou `"sim"`, números como `1` ou `0`, listas,
 objetos) é `DADO_INVALIDO`.
-**Origem:** ausente na política (AMB-018, AMB-021, AMB-022, AMB-023, AMB-024)
+**Origem:** ausente na política (AMB-018, AMB-021, AMB-022, AMB-023, AMB-024, AMB-025)
 **Aceite:** uma despesa com `"data": "2026-07-32"` sai RECUSADO/`DADO_INVALIDO`
 com `data` `"2026-07-32"` na saída, e as outras despesas do arquivo têm o
 resultado de sempre. `"valor": "R$ 45,00"` sai com `valor_solicitado` nulo.
 Uma despesa `"id": "D-001"` depois de uma `"id": "d-001"` →
-RECUSADO/`DADO_INVALIDO`. `"45.00"`,
+RECUSADO/`DADO_INVALIDO`. `"d-001"` com `"data": "2026-07-32"`, depois
+`"d-001"` válido e depois outro `"d-001"` válido → a 1ª RECUSADO/`DADO_INVALIDO`,
+a 2ª segue normalmente e a 3ª RECUSADO/`DADO_INVALIDO`. `"45.00"`,
 `"45,00"` e `45.00` dão o mesmo resultado (`valor_solicitado` 45,00).
 `"1.234,56"` e `"R$ 45,00"` → RECUSADO/`DADO_INVALIDO`.
 `"tem_nota_fiscal": "sim"` → RECUSADO/`DADO_INVALIDO`.
@@ -731,6 +743,29 @@ diferente é problema de digitação, e dois ids que só diferem na grafia
 provavelmente são o mesmo lançamento.
 **Regra afetada:** RN-003
 
+### AMB-025 — `id` repetido depois de uma despesa com dado inválido
+
+**Texto original do RH:** a política não fala do assunto.
+**O que não está claro:** a RN-003 recusa o `id` "igual ao de uma despesa
+anterior no arquivo", sem dizer se conta uma despesa anterior que já foi
+recusada. Leituras possíveis: (a) toda despesa anterior reserva o `id`;
+(b) só a que passou pela validação da RN-003 reserva; (c) só a que foi
+reembolsada, total ou parcialmente, reserva.
+**Decisão:** (b). Uma despesa recusada com `DADO_INVALIDO`, por qualquer
+motivo (inclusive o próprio `id` repetido), não reserva o `id`, e a seguinte
+com o mesmo `id` é tratada como a correção dela e segue normalmente. Uma
+despesa recusada numa etapa posterior (período, categoria, duplicata, nota
+fiscal) reserva o `id`. As duas despesas aparecem na saída, cada uma com seu
+resultado, então o mesmo `id` pode aparecer em mais de um item.
+**Justificativa:** decisão do usuário. Uma despesa com dado inválido seguida de
+outra completa com o mesmo `id` é, com toda probabilidade, uma tentativa de
+corrigir o lançamento. Recusar a correção puniria o colaborador duas vezes pelo
+mesmo erro de preenchimento. Já uma despesa recusada depois da validação tinha
+dados completos, e repetir o `id` dela não é correção de dado: é outro
+lançamento com identificador repetido. A leitura (c) foi descartada porque
+deixaria reusar o `id` de uma despesa recusada por período ou nota fiscal.
+**Regra afetada:** RN-003
+
 ---
 
 ## 7. Casos de borda
@@ -784,6 +819,8 @@ provavelmente são o mesmo lançamento.
 | Data impossível | `2026-02-30` | RECUSADO `DADO_INVALIDO`, os outros itens seguem | RN-003 |
 | `id` repetido | dois itens com `id` "d-001" | o segundo RECUSADO `DADO_INVALIDO` | RN-003 |
 | `id` repetido com outra grafia | `"d-001"` e depois `" D-001 "` | o segundo RECUSADO `DADO_INVALIDO`, `id` sai `" D-001 "` | RN-003 |
+| Correção de item inválido | `"d-001"` com data `2026-07-32`; depois `"d-001"` válido | 1º RECUSADO `DADO_INVALIDO`; 2º segue normalmente | RN-003 |
+| `id` de item recusado depois da validação | `"d-001"` fora do período; depois `"d-001"` válido | 1º RECUSADO `FORA_DO_PERIODO`; 2º RECUSADO `DADO_INVALIDO` | RN-003 |
 | Valor inválido na saída | `"valor": "R$ 45,00"` | RECUSADO `DADO_INVALIDO`, `valor_solicitado` nulo, fora do `total_solicitado` | RN-003, RN-014 |
 | Eco de campo inválido | `"categoria": 123` | `categoria` sai `123` na saída | RN-003 |
 | Despesa que não é objeto | um item `42` na lista `despesas` | RECUSADO `DADO_INVALIDO`, `id`/`data`/`categoria`/`valor_solicitado` nulos | RN-003 |
