@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { statusDe } from '../src/nucleo/status.ts';
 import type { ResultadoItem } from '../src/nucleo/tipos.ts';
 import { calcular } from '../src/nucleo/motor.ts';
-import { entrada, rodar } from './apoio.ts';
+import { NumeroJson } from '../src/nucleo/tipos.ts';
+import { cru, entrada, rodar } from './apoio.ts';
 
 /** O que a seção 7 verifica em cada item. */
 function decisao(i: ResultadoItem | undefined) {
@@ -349,5 +350,75 @@ describe('Casos de borda — viagem', () => {
   it('Borda › Viagem não altera o limiar de NF', () => {
     const [, t] = rodar([hotel, { ...transporteSemNf, data: '2026-07-14', valor: 110 }]);
     expect(decisao(t)).toMatchObject({ status: 'RECUSADO', codigo: 'NOTA_FISCAL_AUSENTE' });
+  });
+});
+
+describe('Casos de borda — id, data, categoria e eco inválidos', () => {
+  it('Borda › Data impossível', () => {
+    const itens = rodar([{ data: '2026-02-30' }, { data: '2026-07-04' }]);
+    expect(itens.map(decisao)).toEqual([
+      { status: 'RECUSADO', codigo: 'DADO_INVALIDO', solicitado: 4500n, reembolsavel: 0n },
+      { status: 'APROVADO', codigo: 'APROVADO_INTEGRAL', solicitado: 4500n, reembolsavel: 4500n },
+    ]);
+    expect(itens[0]?.data).toBe('2026-02-30');
+  });
+
+  it('Borda › id repetido', () => {
+    expect(codigos([{ id: 'd-001' }, { id: 'd-001', data: '2026-07-04' }])).toEqual(['APROVADO_INTEGRAL', 'DADO_INVALIDO']);
+  });
+
+  it('Borda › id repetido com outra grafia', () => {
+    const itens = rodar([{ id: 'd-001' }, { id: ' D-001 ', data: '2026-07-04' }]);
+    expect(itens.map((i) => i.motivo.codigo)).toEqual(['APROVADO_INTEGRAL', 'DADO_INVALIDO']);
+    expect(itens[1]?.id).toBe(' D-001 ');
+  });
+
+  it('Borda › Correção de item inválido', () => {
+    expect(codigos([{ id: 'd-001', data: '2026-07-32' }, { id: 'd-001' }])).toEqual(['DADO_INVALIDO', 'APROVADO_INTEGRAL']);
+  });
+
+  it('Borda › id de item recusado depois da validação', () => {
+    expect(codigos([{ id: 'd-001', data: '2026-08-15' }, { id: 'd-001' }])).toEqual(['FORA_DO_PERIODO', 'DADO_INVALIDO']);
+  });
+
+  it('Borda › Valor inválido na saída', () => {
+    const r = calcular(entrada([{ valor: 'R$ 45,00' }, { valor: 10, fornecedor: 'Y' }]));
+    expect(decisao(r.itens[0])).toEqual({ status: 'RECUSADO', codigo: 'DADO_INVALIDO', solicitado: null, reembolsavel: 0n });
+    expect(r.resumo.totalSolicitado).toBe(1000n);
+  });
+
+  it('Borda › Eco de campo inválido', () => {
+    const [i] = rodar([{ categoria: 123 }]);
+    expect(i?.motivo.codigo).toBe('DADO_INVALIDO');
+    expect(i?.categoria).toEqual(new NumeroJson('123'));
+  });
+
+  it('Borda › Despesa que não é objeto', () => {
+    const [i, j] = rodar([cru('42'), {}]);
+    expect(i).toMatchObject({ id: null, data: null, categoria: null, valorSolicitado: null, valorReembolsavel: 0n });
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'DADO_INVALIDO' });
+    expect(decisao(j).codigo).toBe('APROVADO_INTEGRAL');
+  });
+
+  it('Borda › Categoria vazia', () => {
+    const [i] = rodar([{ categoria: '  ' }]);
+    expect(i?.motivo.codigo).toBe('DADO_INVALIDO');
+    expect(i?.categoria).toBe('  ');
+  });
+
+  it('Borda › Categoria não textual', () => {
+    expect(codigos([{ categoria: 123 }])).toEqual(['DADO_INVALIDO']);
+  });
+
+  it('Borda › id vazio', () => {
+    const [i] = rodar([{ id: '' }]);
+    expect(i?.motivo.codigo).toBe('DADO_INVALIDO');
+    expect(i?.id).toBe('');
+  });
+
+  it('Borda › data nula', () => {
+    const [i] = rodar([{ data: null }]);
+    expect(i?.motivo.codigo).toBe('DADO_INVALIDO');
+    expect(i?.data).toBeNull();
   });
 });
