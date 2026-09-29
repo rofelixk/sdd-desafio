@@ -214,10 +214,10 @@
   - **Aceite:** passam `RN-010 › exemplo d-001: PARCIAL 60,00`, `RN-010 › exemplo d-002: RECUSADO LIMITE_DIARIO_ESGOTADO`, `RN-010 › exemplo d-003: PARCIAL 80,00`, `RN-008 › exemplo d-004: NOTA_FISCAL_AUSENTE`, `RN-006 › exemplo d-005: CATEGORIA_NAO_REEMBOLSAVEL`, `RN-009 › exemplo d-006: APROVADO 54,90`, `RN-007 › exemplo d-007: DUPLICATA`, `RN-005 › exemplo d-008: FORA_DO_PERIODO`, `RN-004 › exemplo d-009: VALOR_NAO_POSITIVO`, `RN-012 › exemplo d-010: APROVADO 480,00, diarias 2`, `RN-011 › exemplo d-011: APROVADO 33,33, em_viagem true, limite 90,00`, `RN-009 › exemplo d-012: APROVADO 47,20`, `RN-008 › exemplo d-013: NOTA_FISCAL_AUSENTE`, `RN-010 › exemplo d-014: PARCIAL 60,00`, `RN-014 › exemplo: resumo 1861.84 / 815.43 / 1046.41 · 4/3/7` e `RN-013 › exemplo: nenhum item com motivo ausente ou vazio`
   - **Commit:** `fadedb0`
 
-- [ ] **T-037** — [P] Teste de contrato em `tests/contrato-saida.test.ts`: valida a saída contra `contracts/saida.schema.json` com `ajv` (`multipleOfPrecision: 2`)
+- [x] **T-037** — [P] Teste de contrato em `tests/contrato-saida.test.ts`: valida a saída contra `contracts/saida.schema.json` com `ajv` (`multipleOfPrecision: 2`)
   - **Atende:** RN-013, RN-003 (seção 4)
   - **Aceite:** passam `RN-013 › saída do exemplo valida contra contracts/saida.schema.json` e `RN-013 › saída com itens DADO_INVALIDO (valor_solicitado nulo, ecos brutos) valida contra o schema`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `702de1c`
 
 - [ ] **T-038** — Criar `src/cli.ts` (R-08, DT-004, `contracts/cli.md`): `parseArgs` com subcomando `calcular` e `--input`/`--output` obrigatórios; lê, valida, calcula e serializa tudo em memória antes de `writeFile`; sucesso → código 0 e uma linha de resumo no `stdout`; `ErroEntrada`/falha de leitura → `erro: <mensagem>` no `stderr` e código 1, sem criar nem alterar a saída; uso incorreto → `uso: ...` e código 2
   - **Atende:** RN-015, RN-003, AMB-018
