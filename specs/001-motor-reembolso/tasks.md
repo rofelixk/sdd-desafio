@@ -85,10 +85,10 @@
   - **Aceite:** em `tests/nucleo/rn-004-valor-nao-positivo.test.ts` passam `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `RN-004 › 0,00 → VALOR_NAO_POSITIVO` e `RN-004 › -0.004 arredonda para 0,00 → VALOR_NAO_POSITIVO`
   - **Commit:** `772e8b6`
 
-- [ ] **T-013** — Etapa 4 em `src/nucleo/elegibilidade.ts`: `data` fora de `[periodo.inicio, periodo.fim]` (inclusive) → `Recusa(FORA_DO_PERIODO)`; `periodo.competencia` nunca é lido
+- [x] **T-013** — Etapa 4 em `src/nucleo/elegibilidade.ts`: `data` fora de `[periodo.inicio, periodo.fim]` (inclusive) → `Recusa(FORA_DO_PERIODO)`; `periodo.competencia` nunca é lido
   - **Atende:** RN-005, AMB-009, AMB-010
   - **Aceite:** em `tests/nucleo/rn-005-periodo.test.ts` passam `RN-005 › d-008 (2026-04-15, período de julho) → FORA_DO_PERIODO`, `RN-005 › d-014 (2026-07-31 = fim) é elegível`, `RN-005 › data = inicio é elegível` e `RN-005 › competencia divergente de inicio/fim é ignorada`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `2da1238`
 
 - [ ] **T-014** — Etapa 5 em `src/nucleo/elegibilidade.ts`: categoria normalizada que não é chave de `POLITICA.limites` → `Recusa(CATEGORIA_NAO_REEMBOLSAVEL)`, sem reclassificar
   - **Atende:** RN-006, AMB-019
