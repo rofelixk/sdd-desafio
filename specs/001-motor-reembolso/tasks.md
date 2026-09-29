@@ -8,7 +8,7 @@
 
 **Formato do commit:** `feat(T-003): <descrição>` · `test(T-003): <descrição>`
 
-**Base:** `spec.md` v1.1 · `plan.md` v1.0 · `data-model.md` · `research.md` · `contracts/`
+**Base:** `spec.md` v1.2 · `plan.md` v1.1 · `data-model.md` · `research.md` · `contracts/`
 
 **Convenções que valem para todas as tasks** (do `plan.md` §2 e §6 e do `CLAUDE.md`):
 
@@ -75,9 +75,9 @@
   - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO`, `RN-003 › "tem_nota_fiscal": null vale false`, `RN-003 › tem_nota_fiscal ausente, "" ou "   " vale false` e `RN-003 › tem_nota_fiscal "true", 1, 0, [] ou {} → DADO_INVALIDO`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-011** — Detectar `id` repetido em `src/nucleo/despesa.ts`: `validarDespesa` recebe o conjunto de ids normalizados (`normalizar`, T-007) das despesas **anteriores no arquivo** e recusa com `DADO_INVALIDO` se o `id` normalizado já estiver nele; o eco do `id` sai como veio. ⚠️ Antes de implementar, confirmar na spec se o id de uma despesa anterior **já recusada** conta como "anterior" (ver nota no fim deste arquivo)
-  - **Atende:** RN-003, AMB-024
-  - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "D-001" depois de "d-001" → DADO_INVALIDO`, `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco` e `RN-003 › a primeira ocorrência de "d-001" segue normalmente`
+- [ ] **T-011** — Detectar `id` repetido em `src/nucleo/despesa.ts`: `validarDespesa` recebe o conjunto de ids vistos (ids normalizados com `normalizar`, T-007) e recusa com `DADO_INVALIDO` se o `id` normalizado já estiver nele; o eco do `id` sai como veio. O conjunto só recebe o `id` de despesas que **passaram pela validação** (resultado `DespesaValida`); uma `Recusa(DADO_INVALIDO)`, por qualquer motivo, inclusive o próprio `id` repetido, não reserva o `id` (AMB-025). Expor o helper `registrarId(idsVistos, resultado)` que só adiciona quando o resultado é `DespesaValida`
+  - **Atende:** RN-003, AMB-024, AMB-025
+  - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "D-001" depois de "d-001" → DADO_INVALIDO`, `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `RN-003 › a primeira ocorrência de "d-001" segue normalmente`, `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)` e `RN-003 › "d-001" inválido, "d-001" válido e outro "d-001" válido → 1º e 3º DADO_INVALIDO, 2º segue`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-012** — [P] Criar `src/nucleo/elegibilidade.ts` com a etapa 3: `valorSolicitado ≤ 0` → `Recusa(VALOR_NAO_POSITIVO)`
@@ -105,9 +105,9 @@
   - **Aceite:** em `tests/nucleo/rn-008-nota-fiscal.test.ts` passam `RN-008 › d-003 (100,00, sem NF) não é recusada por nota fiscal`, `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-001 › 100.004 → 100,00 e não exige nota fiscal`
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
-  - **Atende:** RN-003, RN-004, RN-007, RN-008 (seção 8)
-  - **Aceite:** em `tests/nucleo/motor.test.ts` passam `RN-003 › despesa inválida não impede o processamento das outras`, `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)`, `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)` e `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
+- [ ] **T-017** — Criar `src/nucleo/motor.ts` com a **passada 1** (DT-002): percorre `entrada.despesas` na ordem, aplica etapas 1–2 (`despesa.ts`, registrando o `id` nos ids vistos com `registrarId` logo após a etapa 2) e 3–7 (`elegibilidade.ts`) na ordem da seção 8, com a primeira recusa encerrando a avaliação; a duplicata só compara despesas que passaram das etapas 1–5. Por enquanto as elegíveis saem sem alocação de limite
+  - **Atende:** RN-003, RN-004, RN-007, RN-008, AMB-025 (seção 8)
+  - **Aceite:** em `tests/nucleo/motor.test.ts` passam `RN-003 › despesa inválida não impede o processamento das outras`, `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`, `RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)`, `RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)` e `RN-004 › estorno fora do período sai VALOR_NAO_POSITIVO (etapa 3 antes da 4)`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-018** — [P] Criar `src/nucleo/diarias.ts` com `extrairDiarias(descricao)` (R-07): na descrição normalizada, primeira ocorrência de `(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])`; sem ocorrência, descrição ausente ou N = 0 → 1
@@ -188,8 +188,8 @@
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-032** — Casos de borda de `id`, `data`, `categoria` e eco inválidos em `tests/casos-de-borda.test.ts`
-  - **Atende:** RN-003, RN-014, AMB-018, AMB-023, AMB-024
-  - **Aceite:** passam `Borda › Data impossível`, `Borda › id repetido`, `Borda › id repetido com outra grafia`, `Borda › Valor inválido na saída`, `Borda › Eco de campo inválido`, `Borda › Despesa que não é objeto`, `Borda › Categoria vazia`, `Borda › Categoria não textual`, `Borda › id vazio` e `Borda › data nula`
+  - **Atende:** RN-003, RN-014, AMB-018, AMB-023, AMB-024, AMB-025
+  - **Aceite:** passam `Borda › Data impossível`, `Borda › id repetido`, `Borda › id repetido com outra grafia`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação`, `Borda › Valor inválido na saída`, `Borda › Eco de campo inválido`, `Borda › Despesa que não é objeto`, `Borda › Categoria vazia`, `Borda › Categoria não textual`, `Borda › id vazio` e `Borda › data nula`
   - **Commit:** `<hash preenchido depois>`
 
 - [ ] **T-033** — Casos de borda de `valor` como texto em `tests/casos-de-borda.test.ts`
@@ -299,20 +299,19 @@ exatamente a matriz que a correção vai montar.
 | AMB-022 | T-010, T-034 | `RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO`, `Borda › tem_nota_fiscal número` |
 | AMB-023 | T-008, T-009, T-024, T-032, T-035 | `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `Borda › Eco de campo inválido` |
 | AMB-024 | T-011, T-032 | `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `Borda › id repetido com outra grafia` |
+| AMB-025 | T-011, T-017, T-032 | `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)`, `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação` |
 
 **IDs sem cobertura:** nenhum.
 
-**Casos de borda da seção 7:** 71 linhas → T-026 (7), T-027 (6), T-028 (8), T-029 (8), T-030 (11), T-031 (6), T-032 (10), T-033 (7), T-034 (5), T-040 (3).
+**Casos de borda da seção 7:** 73 linhas → T-026 (7), T-027 (6), T-028 (8), T-029 (8), T-030 (11), T-031 (6), T-032 (12), T-033 (7), T-034 (5), T-040 (3).
 
 ---
 
 ## Notas para a implementação
 
-- **Ponto a confirmar antes da T-011:** a RN-003 diz "`id` igual ao de uma
-  despesa anterior no arquivo", sem dizer se uma despesa anterior **já
-  recusada** (por exemplo, `DADO_INVALIDO` por data inválida) conta. A leitura
-  literal é que conta. Se a decisão for outra, ela vai para a spec (nova AMB)
-  e para o `DECISIONS.md` antes do código, não para esta task.
+- **T-011 (resolvido):** o ponto sobre `id` de despesa anterior já recusada
+  foi decidido na spec 1.2 (AMB-025, D-017): só despesa validada reserva o
+  `id`. T-011, T-017, T-032 e a Cobertura foram atualizadas sem renumeração.
 - **Dependências:** T-001 → (T-002, T-003, T-004 em paralelo) → T-005 → Fase 2.
   Dentro de `despesa.ts` (T-008 → T-011) e de `elegibilidade.ts`
   (T-012 → T-016) a ordem é sequencial. T-017 precisa de T-011 e T-016;
