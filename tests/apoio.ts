@@ -4,7 +4,8 @@ import { expect } from 'vitest';
 import { lerJson } from '../src/io/json.ts';
 import { validarDespesa } from '../src/nucleo/despesa.ts';
 import { passada1 } from '../src/nucleo/motor.ts';
-import type { DespesaValida, Entrada } from '../src/nucleo/tipos.ts';
+import { POLITICA } from '../src/nucleo/politica.ts';
+import type { DespesaElegivel, DespesaValida, Entrada } from '../src/nucleo/tipos.ts';
 
 export const DESPESA_PADRAO = {
   id: 'd-001',
@@ -64,4 +65,11 @@ export function entrada(
 /** Código de recusa de cada despesa na passada 1 do motor (`null` = elegível). */
 export function codigosPassada1(e: Entrada): (string | null)[] {
   return passada1(e).map((a) => (a.tipo === 'elegivel' ? null : a.recusa.codigo));
+}
+
+/** `DespesaElegivel` a partir do padrão com `campos` trocados. */
+export function elegivel(campos: Record<string, unknown> = {}, indice = 0): DespesaElegivel {
+  const d = valida(campos, indice);
+  expect(Object.hasOwn(POLITICA.limites, d.categoria), d.categoria).toBe(true);
+  return d as DespesaElegivel;
 }

@@ -1,6 +1,8 @@
 // Diárias de hospedagem (RN-012, AMB-008).
 
+import { somarDias } from './datas.ts';
 import { normalizar } from './texto.ts';
+import type { DespesaElegivel, Parcela } from './tipos.ts';
 
 /** Primeiro "<inteiro> diária(s)/noite(s)", sem pegar pedaço de fracionário (R-07). */
 const PADRAO_DIARIAS = /(?<!\d[.,]?)(\d+)(?![.,]\d)\s*(diarias?|noites?)(?![a-z])/;
@@ -10,4 +12,25 @@ export function extrairDiarias(descricao: string): number {
   const m = PADRAO_DIARIAS.exec(normalizar(descricao));
   const n = m ? Number(m[1]) : 0;
   return n > 0 ? n : 1;
+}
+
+/** N da despesa: extraído da descrição na hospedagem, 1 nas demais. */
+export function diariasDe(d: DespesaElegivel): number {
+  return d.categoria === 'hospedagem' ? extrairDiarias(d.descricao) : 1;
+}
+
+/**
+ * Parcelas que consomem limite (DT-003): N noites D…D+N−1 com `valor ÷ N`,
+ * o resto um centavo por vez nas primeiras noites.
+ */
+export function gerarParcelas(d: DespesaElegivel): Parcela[] {
+  const n = diariasDe(d);
+  const base = d.valorSolicitado / BigInt(n);
+  const resto = d.valorSolicitado % BigInt(n);
+  return Array.from({ length: n }, (_, k) => ({
+    indiceDespesa: d.indice,
+    data: somarDias(d.data, k),
+    categoria: d.categoria,
+    valor: base + (BigInt(k) < resto ? 1n : 0n),
+  }));
 }

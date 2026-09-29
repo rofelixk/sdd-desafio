@@ -59,8 +59,6 @@ export interface DespesaValida {
 /** Despesa que passou das etapas 3 a 7. */
 export interface DespesaElegivel extends Omit<DespesaValida, 'categoria'> {
   readonly categoria: Categoria;
-  /** Só em hospedagem (RN-012). */
-  readonly diarias?: number;
 }
 
 /** Códigos de motivo da seção 4 da spec. */
