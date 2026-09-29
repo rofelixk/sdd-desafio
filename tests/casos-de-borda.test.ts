@@ -1,7 +1,13 @@
 // Um teste por linha da tabela da seção 7 da spec, com o título exato da coluna "Caso".
 // Período padrão: 2026-07-01 a 2026-07-31.
 
-import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+import { serializarJson } from '../src/io/json.ts';
+import { montarSaida } from '../src/io/saida.ts';
 import { statusDe } from '../src/nucleo/status.ts';
 import type { ResultadoItem } from '../src/nucleo/tipos.ts';
 import { calcular } from '../src/nucleo/motor.ts';
@@ -486,5 +492,60 @@ describe('Casos de borda — tem_nota_fiscal', () => {
   it('Borda › tem_nota_fiscal número', () => {
     expect(codigos([{ valor: 50, tem_nota_fiscal: 1 }])).toEqual(['DADO_INVALIDO']);
     expect(codigos([{ valor: 50, tem_nota_fiscal: 0 }])).toEqual(['DADO_INVALIDO']);
+  });
+});
+
+describe('Casos de borda — arquivo', () => {
+  const pasta = mkdtempSync(join(tmpdir(), 'reembolso-borda-'));
+  afterAll(() => rmSync(pasta, { recursive: true, force: true }));
+  let contador = 0;
+
+  /** Roda o CLI com `conteudo` como entrada; confere que nenhuma saída foi gerada. */
+  function cliComErro(conteudo: string): string {
+    const entradaArq = join(pasta, `entrada-${++contador}.json`);
+    const saidaArq = join(pasta, `saida-${contador}.json`);
+    writeFileSync(entradaArq, conteudo);
+    const r = spawnSync(process.execPath, ['src/cli.ts', 'calcular', '--input', entradaArq, '--output', saidaArq], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(1);
+    expect(existsSync(saidaArq)).toBe(false);
+    return r.stderr;
+  }
+
+  const valido = {
+    colaborador: { id: 'c-1' },
+    periodo: { inicio: '2026-07-01', fim: '2026-07-31' },
+    despesas: [],
+  };
+
+  it('Borda › Lista de despesas vazia', () => {
+    const texto = serializarJson(montarSaida(calcular(entrada([]))));
+    expect(JSON.parse(texto).itens).toEqual([]);
+    expect(texto).toContain('"total_solicitado": 0.00');
+    expect(texto).toContain('"total_reembolsavel": 0.00');
+    expect(texto).toContain('"total_nao_reembolsado": 0.00');
+  });
+
+  it('Borda › Arquivo sem periodo', () => {
+    expect(cliComErro(JSON.stringify({ ...valido, periodo: undefined }))).toMatch(/^erro: .*periodo/);
+  });
+
+  it('Borda › inicio depois de fim', () => {
+    const stderr = cliComErro(JSON.stringify({ ...valido, periodo: { inicio: '2026-07-31', fim: '2026-07-01' } }));
+    expect(stderr).toMatch(/^erro: .*periodo.inicio/);
+  });
+
+  it('Borda › colaborador.id vazio', () => {
+    expect(cliComErro(JSON.stringify({ ...valido, colaborador: { id: '  ' } }))).toMatch(/^erro: .*colaborador.id/);
+  });
+
+  it('Borda › periodo.inicio não textual', () => {
+    const stderr = cliComErro('{"colaborador": {"id": "c-1"}, "periodo": {"inicio": 20260701, "fim": "2026-07-31"}, "despesas": []}');
+    expect(stderr).toMatch(/^erro: .*periodo.inicio/);
+  });
+
+  it('Borda › Arquivo que não é objeto', () => {
+    expect(cliComErro('[]')).toMatch(/^erro: /);
   });
 });
