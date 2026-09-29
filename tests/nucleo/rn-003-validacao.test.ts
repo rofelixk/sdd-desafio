@@ -3,6 +3,7 @@ import { lerJson } from '../../src/io/json.ts';
 import { registrarId, validarDespesa } from '../../src/nucleo/despesa.ts';
 import { comoTexto } from '../../src/nucleo/texto.ts';
 import { NumeroJson } from '../../src/nucleo/tipos.ts';
+import { codigosPassada1, cru, entrada } from '../apoio.ts';
 import type { DespesaValida, RecusaDadoInvalido } from '../../src/nucleo/tipos.ts';
 
 /** Despesa válida com os campos trocados por `trocas` (texto JSON de cada valor; `undefined` remove o campo). */
@@ -203,5 +204,18 @@ describe('RN-003 — Validação dos dados do item', () => {
     const repetida = validarDespesa(despesa(), 1, idsVistos);
     registrarId(idsVistos, repetida);
     expect([...idsVistos]).toEqual(['d-001']);
+  });
+
+  it('RN-003 › despesa inválida não impede o processamento das outras', () => {
+    const e = entrada([{}, { data: '2026-07-32' }, cru('42'), { categoria: 'coworking' }, {}]);
+    expect(codigosPassada1(e)).toEqual([null, 'DADO_INVALIDO', 'DADO_INVALIDO', 'CATEGORIA_NAO_REEMBOLSAVEL', 'DUPLICATA']);
+  });
+
+  it('RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)', () => {
+    const e = entrada([
+      { id: 'd-001', data: '2026-06-30' },
+      { id: 'd-001', data: '2026-07-03' },
+    ]);
+    expect(codigosPassada1(e)).toEqual(['FORA_DO_PERIODO', 'DADO_INVALIDO']);
   });
 });

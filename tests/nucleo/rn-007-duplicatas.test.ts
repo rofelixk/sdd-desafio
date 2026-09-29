@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { verificarDuplicata } from '../../src/nucleo/elegibilidade.ts';
 import type { ChavesDuplicata } from '../../src/nucleo/elegibilidade.ts';
-import { valida } from '../apoio.ts';
+import { codigosPassada1, entrada, valida } from '../apoio.ts';
 
 /** Códigos da etapa 6 para as despesas em sequência (`null` = segue). */
 function codigos(...campos: Record<string, unknown>[]): (string | null)[] {
@@ -62,5 +62,31 @@ describe('RN-007 — Duplicatas', () => {
       null,
     ]);
     expect(codigos({ categoria: 'alimentacao' }, { categoria: 'ALIMENTAÇÃO', valor: '45,00' })).toEqual([null, 'DUPLICATA']);
+  });
+
+  it('RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)', () => {
+    const copia = { data: '2026-08-01', fornecedor: 'Tavola', valor: 40 };
+    expect(codigosPassada1(entrada([copia, copia, { ...copia, data: '2026-07-31' }]))).toEqual([
+      'FORA_DO_PERIODO',
+      'FORA_DO_PERIODO',
+      null,
+    ]);
+    const coworking = { categoria: 'coworking', valor: 40 };
+    expect(codigosPassada1(entrada([coworking, coworking]))).toEqual([
+      'CATEGORIA_NAO_REEMBOLSAVEL',
+      'CATEGORIA_NAO_REEMBOLSAVEL',
+    ]);
+  });
+
+  it('RN-007 › duplicata vem antes da nota fiscal (2ª cópia sem NF sai DUPLICATA)', () => {
+    const gasto = { categoria: 'transporte_urbano', valor: 150 };
+    expect(codigosPassada1(entrada([{ ...gasto, tem_nota_fiscal: true }, { ...gasto, tem_nota_fiscal: false }]))).toEqual([
+      null,
+      'DUPLICATA',
+    ]);
+    expect(codigosPassada1(entrada([{ ...gasto, tem_nota_fiscal: false }, { ...gasto, tem_nota_fiscal: false }]))).toEqual([
+      'NOTA_FISCAL_AUSENTE',
+      'DUPLICATA',
+    ]);
   });
 });
