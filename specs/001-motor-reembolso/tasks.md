@@ -140,10 +140,10 @@
   - **Aceite:** em `tests/nucleo/rn-013-motivos.test.ts` passam `RN-013 › todo código da seção 4 gera descrição não vazia`, `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › LIMITE_DIARIO_ESGOTADO cita o limite e o saldo zerado` e `RN-007 › descrição de DUPLICATA cita o id da ocorrência aceita`
   - **Commit:** `2761b61`
 
-- [ ] **T-024** — Criar `src/nucleo/resumo.ts` e ligá-lo no `motor.ts`: contagens por status; `total_solicitado` soma só `valor_solicitado` positivo e não nulo; `total_reembolsavel` soma todos os itens; `total_nao_reembolsado = total_solicitado − total_reembolsavel` em centavos
+- [x] **T-024** — Criar `src/nucleo/resumo.ts` e ligá-lo no `motor.ts`: contagens por status; `total_solicitado` soma só `valor_solicitado` positivo e não nulo; `total_reembolsavel` soma todos os itens; `total_nao_reembolsado = total_solicitado − total_reembolsavel` em centavos
   - **Atende:** RN-014, AMB-012, AMB-023
   - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel e contagens somam quantidade_itens`, `RN-014 › total_solicitado ignora valores não positivos e nulos`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel, exato em centavos` e `RN-014 › lista vazia → contagens 0 e totais 0,00`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `9ebda81`
 
 - [ ] **T-025** — [P] Criar `src/io/entrada.ts` com `validarEntrada(json)` → `Entrada` ou lança `ErroEntrada { mensagem }`: exige que o JSON seja objeto, `colaborador.id`, `periodo.inicio` e `periodo.fim` (datas válidas pela T-004, `inicio ≤ fim`) e `despesas` como lista; `colaborador.id`/`periodo.inicio`/`periodo.fim` vazios, só com espaços, nulos ou não textuais contam como ausentes, e `colaborador`/`periodo` que não são objeto têm todos os campos ausentes (AMB-027); a mensagem cita o campo ou o problema. `colaborador`/`periodo` guardados brutos para eco
   - **Atende:** RN-015, AMB-018, AMB-027
