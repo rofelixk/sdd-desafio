@@ -162,3 +162,76 @@ describe('Casos de borda — período, valor não positivo e categoria', () => {
     expect(i?.categoria).toBe('coworking');
   });
 });
+
+/** Código do motivo de cada item. */
+function codigos(despesas: Record<string, unknown>[]): string[] {
+  return rodar(despesas).map((i) => i.motivo.codigo);
+}
+
+describe('Casos de borda — duplicatas', () => {
+  const almoco = { data: '2026-07-03', fornecedor: 'Tavola', valor: 40 };
+
+  it('Borda › Mesmo fornecedor, datas diferentes', () => {
+    expect(codigos([almoco, { ...almoco, data: '2026-07-31' }])).toEqual(['APROVADO_INTEGRAL', 'APROVADO_INTEGRAL']);
+  });
+
+  it('Borda › Duplicata com e sem NF', () => {
+    expect(codigos([{ ...almoco, tem_nota_fiscal: true }, { ...almoco, tem_nota_fiscal: false }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'DUPLICATA',
+    ]);
+  });
+
+  it('Borda › Três cópias idênticas', () => {
+    expect(codigos([almoco, almoco, almoco])).toEqual(['APROVADO_INTEGRAL', 'DUPLICATA', 'DUPLICATA']);
+  });
+
+  it('Borda › Fornecedor com grafia diferente', () => {
+    expect(codigos([{ ...almoco, fornecedor: 'Bistro Central' }, { ...almoco, fornecedor: 'bistro central ' }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'DUPLICATA',
+    ]);
+  });
+
+  it('Borda › Fornecedores diferentes', () => {
+    expect(codigos([{ ...almoco, fornecedor: 'Tavola' }, { ...almoco, fornecedor: 'Porto' }])).not.toContain('DUPLICATA');
+  });
+
+  it('Borda › Ambas sem fornecedor', () => {
+    expect(codigos([{ ...almoco, fornecedor: undefined }, { ...almoco, fornecedor: undefined }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'DUPLICATA',
+    ]);
+  });
+
+  it('Borda › Só uma com fornecedor', () => {
+    expect(codigos([{ ...almoco, fornecedor: 'Tavola' }, { ...almoco, fornecedor: undefined }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'LIMITE_DIARIO_EXCEDIDO',
+    ]);
+  });
+
+  it('Borda › Fornecedor vazio', () => {
+    expect(
+      codigos([
+        { ...almoco, fornecedor: '' },
+        { ...almoco, fornecedor: '   ' },
+        { ...almoco, fornecedor: undefined },
+      ]),
+    ).toEqual(['APROVADO_INTEGRAL', 'DUPLICATA', 'DUPLICATA']);
+  });
+
+  it('Borda › Fornecedor numérico', () => {
+    expect(codigos([{ ...almoco, fornecedor: 123 }, { ...almoco, fornecedor: '123' }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'DUPLICATA',
+    ]);
+  });
+
+  it('Borda › Fornecedor nulo', () => {
+    expect(codigos([{ ...almoco, fornecedor: null }, { ...almoco, fornecedor: undefined }])).toEqual([
+      'APROVADO_INTEGRAL',
+      'DUPLICATA',
+    ]);
+  });
+});
