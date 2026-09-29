@@ -177,10 +177,10 @@
   - **Aceite:** passam `Borda › Mesmo fornecedor, datas diferentes`, `Borda › Duplicata com e sem NF`, `Borda › Três cópias idênticas`, `Borda › Fornecedor com grafia diferente`, `Borda › Fornecedores diferentes`, `Borda › Ambas sem fornecedor`, `Borda › Só uma com fornecedor`, `Borda › Fornecedor vazio`, `Borda › Fornecedor numérico` e `Borda › Fornecedor nulo`
   - **Commit:** `8edd03e`
 
-- [ ] **T-030** — Casos de borda de hospedagem e diárias em `tests/casos-de-borda.test.ts`
+- [x] **T-030** — Casos de borda de hospedagem e diárias em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-012, RN-005, RN-003, AMB-008, AMB-026
   - **Aceite:** passam `Borda › Diárias na descrição` (conferindo `limite_diario_aplicado` 250,00), `Borda › Diárias com acento e maiúscula`, `Borda › Duas hospedagens na mesma noite`, `Borda › Diária média acima do limite`, `Borda › Divisão com centavos`, `Borda › Noite fora do período`, `Borda › Número que não é diária`, `Borda › Descrição sem número`, `Borda › Zero diárias`, `Borda › Número solto antes das diárias`, `Borda › Diárias fracionárias`, `Borda › Hospedagem sem descrição` e `Borda › Descrição não textual`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `68e7db7`
 
 - [ ] **T-031** — Casos de borda de viagem em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-011, RN-008, AMB-007, AMB-017, AMB-020
