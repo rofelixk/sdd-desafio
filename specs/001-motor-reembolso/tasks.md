@@ -192,10 +192,10 @@
   - **Aceite:** passam `Borda › Data impossível`, `Borda › id repetido`, `Borda › id repetido com outra grafia`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação`, `Borda › Valor inválido na saída`, `Borda › Eco de campo inválido`, `Borda › Despesa que não é objeto`, `Borda › Categoria vazia`, `Borda › Categoria não textual`, `Borda › id vazio` e `Borda › data nula`
   - **Commit:** `d7ab5eb`
 
-- [ ] **T-033** — Casos de borda de `valor` como texto em `tests/casos-de-borda.test.ts`
+- [x] **T-033** — Casos de borda de `valor` como texto em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-001, RN-004, AMB-021
   - **Aceite:** passam `Borda › Valor como texto com ponto`, `Borda › Valor como texto com vírgula`, `Borda › Valor texto com 3 casas`, `Borda › Valor texto negativo`, `Borda › Separador de milhar`, `Borda › Símbolo de moeda` e `Borda › Valor booleano`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `087ac52`
 
 - [ ] **T-034** — Casos de borda de `tem_nota_fiscal` em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-008, AMB-018, AMB-022
