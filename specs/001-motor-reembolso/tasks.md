@@ -379,10 +379,10 @@
   - **Aceite:** passam `Borda › Centro de custo sem entrada na tabela`, `Borda › Colaborador sem centro de custo`, `Borda › Centro de custo com outra grafia`, `Borda › Categoria herdada do padrão`, `Borda › Categoria só em outro centro de custo`, `Borda › Categoria nova no centro de custo`, `Borda › Categoria com limite zero`, `Borda › Limite zero não gera viagem`, `Borda › Limite zero vem antes da nota fiscal` e `Borda › Representação em dia de viagem`
   - **Commit:** `0cf5429`
 
-- [ ] **T-062** — Casos de borda de `moeda` e de valor inválido com conversão em `tests/casos-de-borda.test.ts`
+- [x] **T-062** — Casos de borda de `moeda` e de valor inválido com conversão em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-017, AMB-023, AMB-036, AMB-043
   - **Aceite:** passam `Borda › Valor inválido em moeda estrangeira`, `Borda › Valor inválido em BRL`, `Borda › Moeda ausente`, `Borda › Moeda nula ou vazia`, `Borda › Moeda em minúsculas`, `Borda › Moeda não textual` e `Borda › Moeda fora do câmbio`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `b7f5630`
 
 - [ ] **T-063** — Casos de borda de conversão e do arquivo de câmbio em `tests/casos-de-borda.test.ts` ("Moeda repetida no câmbio" e "Moeda minúscula no câmbio" montam o câmbio a partir do texto com `lerCambio`, R-14)
   - **Atende:** RN-001, RN-004, RN-005, RN-014, RN-017, AMB-035, AMB-037, AMB-039, AMB-042
