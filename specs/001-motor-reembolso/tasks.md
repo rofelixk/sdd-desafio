@@ -356,10 +356,10 @@
   - **Aceite:** em `tests/nucleo/rn-018-aprovacao.test.ts` passam `RN-018 › e-007 (hospedagem 1.200,00, 3 × 400,00 no CC-COMERCIAL) → PENDENTE REQUER_APROVACAO, reembolsável 1.200,00`, `RN-018 › reembolsável exatamente 500,00 → APROVADO, não PENDENTE`, `RN-018 › reembolsável 500,01 (CC-COMERCIAL, "2 diarias" 500,01) → PENDENTE`, `RN-018 › hospedagem 1.200,00 com 1 diária na tabela padrão → PARCIAL 250,00, não PENDENTE`, `RN-018 › PENDENTE consome o limite: hospedagem seguinte na mesma noite → LIMITE_DIARIO_ESGOTADO` e `RN-018 › descrição cita o valor calculado, o limiar de R$ 500,00 e o corte de limite`; em `tests/nucleo/rn-011-viagem.test.ts`, `RN-011 › CC-COMERCIAL: e-008 (alimentação 95,00 em 23/07, noite de e-007 PENDENTE) → APROVADO 95,00 (limite 135,00)`; em `tests/nucleo/rn-013-motivos.test.ts`, `RN-013 › todo código da seção 4 gera descrição não vazia` cobre os 11 códigos
   - **Commit:** `be9da18`
 
-- [ ] **T-059** — [P] Resumo da v4 em `src/nucleo/resumo.ts` (estende T-024): `pendentes`; `totalReembolsavel` só dos itens não PENDENTE; `totalPendente` dos PENDENTE; `totalNaoReembolsado = solicitado − reembolsável − pendente`
+- [x] **T-059** — [P] Resumo da v4 em `src/nucleo/resumo.ts` (estende T-024): `pendentes`; `totalReembolsavel` só dos itens não PENDENTE; `totalPendente` dos PENDENTE; `totalNaoReembolsado = solicitado − reembolsável − pendente`
   - **Atende:** RN-014, AMB-041
   - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › PENDENTE entra em total_solicitado e total_pendente, e não em total_reembolsavel`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel − total_pendente, exato em centavos`, `RN-014 › contagens (aprovados, parciais, recusados, pendentes) somam quantidade_itens` e `RN-014 › lista vazia → pendentes 0 e total_pendente 0,00`; o teste da T-024 `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel ...` passa a somar só os itens não PENDENTE
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `2d38319`
 
 - [ ] **T-060** — [P] Descrições da v4 em `src/nucleo/motivos.ts` (RN-013): todo item com conversão em moeda estrangeira traz `"<MOEDA> <original> × <taxa> (cotação de <data>) = R$ <reais>"` antes do texto do código; `CAMBIO_INDISPONIVEL` cita a moeda e a data da despesa; `NOTA_FISCAL_AUSENTE` em moeda estrangeira cita o valor em reais e o limiar
   - **Atende:** RN-013, RN-017, RN-008
