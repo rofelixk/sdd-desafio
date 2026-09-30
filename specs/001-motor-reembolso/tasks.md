@@ -299,10 +299,10 @@
   - **Aceite:** em `tests/io/externos.test.ts` passa `Infra › externos: caminhos apontam para <raiz>/dados/, independente de process.cwd()`; em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › arquivo de câmbio ausente → erro que cita o arquivo de câmbio`, `RN-015 › tabela de limites ausente → erro que cita a tabela de limites` e `RN-015 › tabela e câmbio inválidos → a mensagem é a da tabela (ordem de leitura)`; `git diff --no-index exemplos/envelope/politica-v4.json dados/politica.json` e o mesmo para o câmbio não mostram diferença
   - **Commit:** `5c6414a`
 
-- [ ] **T-048** — Ler `colaborador.centro_custo` em `src/io/entrada.ts` (estende T-025): `Entrada` ganha `centroCusto: string | null`; ausente, nulo, texto vazio ou só espaços → `null`; texto → como veio (a normalização é da T-049); qualquer outro tipo → `ErroEntrada` que cita `colaborador.centro_custo`. `tests/apoio.ts` passa a preencher `centroCusto` (padrão `null`). O motor ainda não lê o campo
+- [x] **T-048** — Ler `colaborador.centro_custo` em `src/io/entrada.ts` (estende T-025): `Entrada` ganha `centroCusto: string | null`; ausente, nulo, texto vazio ou só espaços → `null`; texto → como veio (a normalização é da T-049); qualquer outro tipo → `ErroEntrada` que cita `colaborador.centro_custo`. `tests/apoio.ts` passa a preencher `centroCusto` (padrão `null`). O motor ainda não lê o campo
   - **Atende:** RN-015, AMB-032
   - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › "centro_custo": 42, true, [] ou {} → erro que cita colaborador.centro_custo` e `RN-015 › centro_custo ausente, null, "" ou "  " é aceito (centroCusto nulo)`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `cd11568`
 
 ### 5.2 Regras de negócio da v4
 
