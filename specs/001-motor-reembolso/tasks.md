@@ -8,7 +8,7 @@
 
 **Formato do commit:** `feat(T-003): <descrição>` · `test(T-003): <descrição>`
 
-**Base:** `spec.md` v1.3 · `plan.md` v1.2 · `data-model.md` · `research.md` · `contracts/`
+**Base:** Fases 1–4: `spec.md` v1.3 · `plan.md` v1.2. Fase 5: `spec.md` v2.2 · `plan.md` v2.0 · `data-model.md` · `research.md` (R-11 a R-17) · `contracts/`
 
 **Convenções que valem para todas as tasks** (do `plan.md` §2 e §6 e do `CLAUDE.md`):
 
@@ -248,8 +248,188 @@
 
 ## Fase 5 — Envelope (criar no Dia 2)
 
-<Novas tasks a partir da mudança de requisito. Numeração continua de onde parou —
-não reinicie e não renumere as antigas: a numeração é o eixo da rastreabilidade.>
+> Política v4 (D-019 a D-021): tabela de limites por centro de custo lida de
+> fora, moeda estrangeira e aprovação manual. As tasks da v1 que a v4 afeta
+> (lista em D-019) **não** são reabertas: cada mudança entra numa task nova,
+> que cita a antiga quando a estende.
+>
+> **Convenções extras da Fase 5** (plan §2, §6, R-10, R-11):
+>
+> - **Suíte vermelha conhecida:** desde a spec 2.2, `tests/rastreabilidade.test.ts`
+>   (RN-016 a RN-018 e 41 casos de borda sem teste) e `tests/contrato-saida.test.ts`
+>   (schema já na v4) falham. Até a T-066 (contrato) e a T-070
+>   (rastreabilidade), o "Aceite" de cada task é: os testes listados passam,
+>   `npm run typecheck` sem erros e **nenhuma falha além dessas duas**.
+> - **Fixture da v4:** os testes de regra e de borda usam a tabela de
+>   `exemplos/envelope/politica-v4.json` e o câmbio de
+>   `exemplos/envelope/cambio.json`, carregados por `tests/apoio.ts`, **nunca**
+>   `dados/`. Sem centro de custo e sem `moeda`, os testes da v1 continuam
+>   valendo sem mudar a expectativa (tabela padrão, BRL).
+> - **Arquivos de teste novos:** `tests/nucleo/rn-016-politica-centro-custo.test.ts`
+>   (`describe('RN-016 — Política por centro de custo')`),
+>   `tests/nucleo/rn-017-cambio.test.ts` (`describe('RN-017 — Moeda e conversão para reais')`)
+>   e `tests/nucleo/rn-018-aprovacao.test.ts`
+>   (`describe('RN-018 — Aprovação manual de itens acima de R$ 500')`). Testes
+>   `RN-015 ›` dos arquivos externos ficam em `tests/io/rn-015-entrada.test.ts`.
+
+### 5.1 Fundação da v4
+
+- [ ] **T-043** — Acrescentar em `src/nucleo/tipos.ts` os tipos novos do `data-model.md` §2–§3, **sem remover nem alterar** os da v1: `Decimal` (`{ digitos: bigint; escala: number }`), `Moeda`, `Periodicidade` (`'dia' | 'diaria'`), `RegraCategoria`, `TabelaCategorias`, `Politica`, `Cotacao`, `Cambio`, `TabelaAplicavel` e `Conversao` (`{ taxa: NumeroJson; dataCotacao: DataISO | null; valorSolicitado: Centavos }`). `Categoria`, `Status`, a união de códigos, `Entrada`, `DespesaValida` e `ResultadoItem` só mudam nas tasks que os usam (T-048, T-050, T-055, T-056, T-058)
+  - **Atende:** RN-016, RN-017, AMB-043
+  - **Aceite:** `npm run typecheck` sem erros e `npm test` sem falhas além das duas conhecidas
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-044** — [P] Criar `src/nucleo/decimal.ts` (R-13): `decimalDe(texto)` lê sinal, dígitos, ponto e expoente (o mesmo leitor de `paraCentavos`) e devolve `Decimal`; `dividirMeioParaPar(numerador: bigint, denominador: bigint): bigint` é o único arredondamento do sistema. `paraCentavos` em `src/nucleo/dinheiro.ts` passa a usá-la
+  - **Atende:** RN-001, AMB-013, AMB-037
+  - **Aceite:** em `tests/nucleo/decimal.test.ts` passam `Infra › decimal: "5.93" → 593 × 10^-2, "50" → 50 × 10^0 e "1.00005e2" → 100005 × 10^-3` e `Infra › decimal: dividirMeioParaPar 25/10 → 2, 35/10 → 4, 26/10 → 3, 24/10 → 2 e -25/10 → -2`; todos os `RN-001 ›` de `tests/nucleo/rn-001-arredondamento.test.ts` continuam passando
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-045** — Criar `src/io/politica.ts` (R-12): `lerPolitica(texto, rotulo = 'tabela de limites (dados/politica.json)')` → `Politica` ou lança `ErroEntrada`, com a mensagem começando pelo `rotulo` e citando o caminho do campo (`centros_custo.CC-ADM.alimentacao.limite`). Valida a lista da RN-016 e a AMB-044: objeto; `versao` texto não vazio; `vigencia` data válida (T-004); `moeda_base` = `"BRL"`; `padrao` e `centros_custo` objetos; cada centro de custo e cada categoria objeto; `limite` número ≥ 0 exato em centavos; `periodicidade` `dia`/`diaria`, com `diaria` ⇔ `hospedagem`; `nota_fiscal_obrigatoria_acima_de` e `acrescimo_em_viagem_percentual` números ≥ 0 (viram `Decimal`); centros de custo e categorias de uma mesma tabela sem colisão depois de `normalizar` (T-007). `observacao` e campos desconhecidos são ignorados. Guarda o nome do centro de custo como está escrito
+  - **Atende:** RN-015, RN-016, AMB-034, AMB-044
+  - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › tabela de limites de exemplos/envelope/politica-v4.json é lida: versao v4, padrão com 3 categorias, 3 centros de custo, limiar 100.00 e acréscimo 50`, `RN-015 › tabela de limites com "limite": -10 → erro que cita a tabela de limites e o campo`, `RN-015 › tabela de limites: limite que não é número ou com mais de 2 casas (60.001) → erro que cita o campo`, `RN-015 › tabela de limites sem versao, com versao vazia ou com vigencia que não é data → erro que cita o campo`, `RN-015 › tabela de limites: moeda_base diferente de BRL → erro`, `RN-015 › tabela de limites: periodicidade fora de dia/diaria, diaria em alimentacao ou hospedagem com dia → erro`, `RN-015 › tabela de limites: nota_fiscal_obrigatoria_acima_de ou acrescimo_em_viagem_percentual ausente, não numérico ou negativo → erro`, `RN-015 › tabela de limites: "CC-ADM" e " cc-adm " em centros_custo, ou "Alimentação" e "alimentacao" na mesma tabela → erro`, `RN-015 › tabela de limites: arquivo, padrao, centros_custo, centro de custo ou categoria que não é objeto → erro`, `RN-015 › tabela de limites: observacao e campos desconhecidos são ignorados` e `RN-015 › tabela de limites que não é JSON → erro que cita a tabela de limites`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-046** — Criar `src/io/cambio.ts` (R-12, R-14): `lerCambio(texto, rotulo = 'arquivo de câmbio (dados/cambio.json)')` → `Cambio` ou lança `ErroEntrada` (mesmo formato de mensagem da T-045). Valida a lista da RN-017 e a AMB-044: objeto; `moeda_base` = `"BRL"`; `taxas` objeto; cada chave de `taxas` data válida; cada valor de data objeto; cada moeda com 3 letras; cada taxa número > 0, **inclusive** a de uma moeda repetida que vai ser sobrescrita. Monta o índice `Map<Moeda, Cotacao[]>` com a moeda em maiúsculas (`normalizarMoeda`, criada aqui em `src/nucleo/texto.ts`: `trim` + `toUpperCase`), datas em ordem crescente e, para a mesma moeda na mesma data, a **última** do arquivo. `fonte`, `observacao` e campos desconhecidos são ignorados
+  - **Atende:** RN-015, RN-017, AMB-042, AMB-044
+  - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › câmbio de exemplos/envelope/cambio.json é lido: USD e EUR com 12 cotações cada, em ordem de data`, `RN-015 › câmbio: moeda_base diferente de BRL, ou taxas ausente ou que não é objeto → erro que cita o arquivo de câmbio`, `RN-015 › câmbio: chave de taxas que não é data válida (2026-07-32) ou valor de data que não é objeto → erro que cita o campo`, `RN-015 › câmbio: moeda sem 3 letras ("EURO", "US") → erro`, `RN-015 › câmbio: taxa 0, negativa ou texto → erro, inclusive numa moeda repetida que acaba sobrescrita`, `RN-015 › câmbio: fonte, observacao e campos desconhecidos são ignorados` e `RN-015 › câmbio que não é JSON → erro que cita o arquivo de câmbio`; em `tests/nucleo/rn-017-cambio.test.ts` passam `RN-017 › câmbio: "usd" no arquivo é indexado como USD`, `RN-017 › câmbio: "USD": 5.42 e depois "usd": 5.50 na mesma data → vale 5.50, sem erro` e `RN-017 › câmbio: datas fora de ordem no arquivo ficam em ordem crescente no índice`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-047** — Criar `dados/politica.json` e `dados/cambio.json` como cópias byte a byte de `exemplos/envelope/politica-v4.json` e `exemplos/envelope/cambio.json`, e `src/io/externos.ts` (R-11, DT-006): `CAMINHO_POLITICA` e `CAMINHO_CAMBIO` resolvidos a partir de `import.meta.dirname` (`../../dados/`), e `lerExternos(caminhos = { politica: CAMINHO_POLITICA, cambio: CAMINHO_CAMBIO })` → `{ politica, cambio }`, lendo a tabela **antes** do câmbio (T-045, T-046). Arquivo ausente ou ilegível → `ErroEntrada` `"<rótulo> (<caminho relativo à raiz>): arquivo não encontrado"`
+  - **Atende:** RN-015, AMB-028
+  - **Aceite:** em `tests/io/externos.test.ts` passa `Infra › externos: caminhos apontam para <raiz>/dados/, independente de process.cwd()`; em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › arquivo de câmbio ausente → erro que cita o arquivo de câmbio`, `RN-015 › tabela de limites ausente → erro que cita a tabela de limites` e `RN-015 › tabela e câmbio inválidos → a mensagem é a da tabela (ordem de leitura)`; `git diff --no-index exemplos/envelope/politica-v4.json dados/politica.json` e o mesmo para o câmbio não mostram diferença
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-048** — [P] Ler `colaborador.centro_custo` em `src/io/entrada.ts` (estende T-025): `Entrada` ganha `centroCusto: string | null`; ausente, nulo, texto vazio ou só espaços → `null`; texto → como veio (a normalização é da T-049); qualquer outro tipo → `ErroEntrada` que cita `colaborador.centro_custo`. `tests/apoio.ts` passa a preencher `centroCusto` (padrão `null`). O motor ainda não lê o campo
+  - **Atende:** RN-015, AMB-032
+  - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › "centro_custo": 42, true, [] ou {} → erro que cita colaborador.centro_custo` e `RN-015 › centro_custo ausente, null, "" ou "  " é aceito (centroCusto nulo)`
+  - **Commit:** `<hash preenchido depois>`
+
+### 5.2 Regras de negócio da v4
+
+- [ ] **T-049** — Em `src/nucleo/politica.ts`, acrescentar `LIMIAR_APROVACAO = 500_00n` (com `// RN-018, AMB-040`) e `tabelaAplicavel(politica, centroCusto)` → `TabelaAplicavel` (RN-016): `centroCusto` nulo ou sem entrada em `centros_custo` (comparado com `normalizar`) → `padrao` inteiro, `nome` `"padrao"`; com entrada → cada categoria do centro de custo por cima do padrão, categoria que falta herda do padrão (`origem: 'padrao'`), limite 0 **não** herda; `nome` = centro de custo como está escrito na tabela; limiar de NF e acréscimo únicos. `POLITICA` continua existindo até a T-050
+  - **Atende:** RN-016, AMB-029, AMB-030, AMB-031, AMB-032
+  - **Aceite:** em `tests/nucleo/rn-016-politica-centro-custo.test.ts` passam `RN-016 › CC-SUPORTE-N2 (sem entrada) → tabela "padrao", alimentação 60,00`, `RN-016 › " cc-comercial " → tabela "CC-COMERCIAL"`, `RN-016 › sem centro de custo → tabela "padrao"`, `RN-016 › CC-ADM sem hospedagem → hospedagem 250,00 herdada do padrão`, `RN-016 › CC-ENG-PLATAFORMA: hospedagem com limite 0 não herda do padrão`, `RN-016 › representacao só existe na tabela do CC-COMERCIAL` e `RN-016 › limiar de nota fiscal e acréscimo de viagem são os da tabela, iguais para todo centro de custo`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-050** — Refatorar o núcleo para receber a `TabelaAplicavel` no lugar de `POLITICA`, **sem mudar comportamento** na tabela padrão (plan §2, §8 "resistiu"; R-15): `Categoria` vira texto normalizado; categoria reconhecida (RN-002, RN-006) = chave da tabela aplicável; `elegibilidade.ts` compara o limiar de NF da tabela com `Decimal`, sem arredondar (RN-008); `limites.ts` inicia o saldo com o limite da tabela e, em dia de viagem e periodicidade `dia`, usa `dividirMeioParaPar(limite × (100 + p), 100)` (RN-011, AMB-033; sai o `throw` de limite inexato); `viagem.ts` e `diarias.ts` disparam por `periodicidade === 'diaria'`; `motivos.ts` usa um mapa de nomes só de apresentação com volta para a própria chave. `motor.calcular(entrada, tabela)`; `src/cli.ts` lê `dados/politica.json` por `lerExternos` (T-047) e passa `tabelaAplicavel(politica, null)` (o centro de custo entra na T-051); `tests/apoio.ts` monta a tabela da fixture da v4 com um centro de custo opcional. Remover `POLITICA` e trocar o teste de `tests/nucleo/politica.test.ts`
+  - **Atende:** RN-002, RN-006, RN-008, RN-009, RN-011, RN-012, AMB-020, AMB-033
+  - **Aceite:** todos os testes das Fases 1–4 continuam passando sem mudar expectativa; em `tests/nucleo/politica.test.ts` passa `Infra › política: src/nucleo/politica.ts não tem limite, limiar de nota fiscal nem percentual (só LIMIAR_APROVACAO e tabelaAplicavel)`; em `tests/nucleo/rn-011-viagem.test.ts` passa `RN-011 › limite 60,01 ampliado em 50% → 90,02 e 60,03 → 90,04 (meio para o par, AMB-033)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-051** — Ligar o centro de custo: `motor.calcular(entrada, politica)` monta a `TabelaAplicavel` uma vez com `entrada.centroCusto` (seção 8, "antes de tudo") e `Resultado` ganha `politica: { versao, tabela }`; `src/cli.ts` passa a `Politica`. `tests/exemplo.test.ts` passa a usar a tabela de `exemplos/envelope/politica-v4.json` e a tabela 1 da seção 9 (colaborador do CC-ENG-PLATAFORMA), substituindo os títulos da T-036
+  - **Atende:** RN-016, RN-005, RN-006, RN-009, RN-010, RN-014, AMB-029, AMB-032, AMB-034
+  - **Aceite:** em `tests/nucleo/rn-016-politica-centro-custo.test.ts` passam `RN-016 › CC-SUPORTE-N2: alimentação 65,00 → PARCIAL 60,00`, `RN-016 › " cc-comercial ": alimentação 85,00 → APROVADO 85,00`, `RN-016 › CC-ADM: hospedagem 1 diária 300,00 → PARCIAL 250,00`, `RN-016 › representacao no CC-SUPORTE-N2 → CATEGORIA_NAO_REEMBOLSAVEL`, `RN-016 › limite de alimentação do padrão trocado para 70,00 na tabela: alimentação 65,00 passa de PARCIAL a APROVADO` e `RN-016 › vigencia 2026-08-01 não recusa nem muda despesas de julho (AMB-034)`; em `tests/exemplo.test.ts` passam `RN-009 › exemplo d-001: APROVADO 72,50 (limite 75,00 do CC-ENG-PLATAFORMA)`, `RN-010 › exemplo d-002: PARCIAL 2,50`, `RN-010 › exemplo d-003: PARCIAL 80,00`, `RN-008 › exemplo d-004: NOTA_FISCAL_AUSENTE`, `RN-006 › exemplo d-005: CATEGORIA_NAO_REEMBOLSAVEL`, `RN-009 › exemplo d-006: APROVADO 54,90`, `RN-007 › exemplo d-007: DUPLICATA`, `RN-005 › exemplo d-008: FORA_DO_PERIODO`, `RN-004 › exemplo d-009: VALOR_NAO_POSITIVO`, `RN-001 › exemplo d-011: APROVADO 33,33`, `RN-009 › exemplo d-012: APROVADO 47,20`, `RN-009 › exemplo d-014: APROVADO 61,00`, `RN-014 › exemplo: resumo 1861.84 / 351.43 / 1510.41 · 5/2/7` e `RN-016 › exemplo: tabela aplicada CC-ENG-PLATAFORMA` (d-010 e d-013 entram na T-052)
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-052** — Categoria com limite 0 na etapa 5 (estende T-014) em `src/nucleo/elegibilidade.ts`: reembolsável = limite > 0 na tabela aplicável; `Recusa(CATEGORIA_NAO_REEMBOLSAVEL)` leva `{ categoria, tabela, caso: 'ausente' | 'limite_zero', centroCusto }`. Em `src/nucleo/motivos.ts`, `ausente` diz que a categoria não consta na tabela (padrão ou do centro de custo) da política `<versao>`, e `limite_zero` diz que ela não é reembolsável no centro de custo e cita o nome dele
+  - **Atende:** RN-006, RN-002, RN-011, AMB-019, AMB-030, AMB-031
+  - **Aceite:** em `tests/nucleo/rn-006-categorias.test.ts` passam `RN-006 › hospedagem no CC-ENG-PLATAFORMA → CATEGORIA_NAO_REEMBOLSAVEL, descrição cita "CC-ENG-PLATAFORMA"`, `RN-006 › representacao na tabela padrão → CATEGORIA_NAO_REEMBOLSAVEL, descrição diz que não consta na política` e `RN-006 › limite 0 recusa na etapa 5: hospedagem 690,00 sem NF no CC-ENG-PLATAFORMA sai CATEGORIA_NAO_REEMBOLSAVEL`; em `tests/nucleo/rn-011-viagem.test.ts` passa `RN-011 › hospedagem com limite 0 no centro de custo não gera dia de viagem`; em `tests/nucleo/rn-002-categoria.test.ts` passa `RN-002 › "Representação" é representacao no CC-COMERCIAL e sai como veio na tabela padrão`; em `tests/exemplo.test.ts` passam `RN-006 › exemplo d-010: CATEGORIA_NAO_REEMBOLSAVEL (hospedagem com limite 0)` e `RN-006 › exemplo d-013: CATEGORIA_NAO_REEMBOLSAVEL (antes da nota fiscal)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-053** — Testes de limite, viagem e nota fiscal com a tabela de outro centro de custo e com a tabela alterada em memória. Se algum falhar, o conserto faz parte desta task
+  - **Atende:** RN-008, RN-009, RN-010, RN-011, AMB-029, AMB-033
+  - **Aceite:** passam, em `tests/nucleo/rn-009-limites.test.ts`, `RN-009 › alimentação 80,00 no CC-COMERCIAL → APROVADO 80,00 (limite 90,00)` e `RN-009 › alimentação 50,00 no CC-ADM → PARCIAL 45,00`; em `tests/nucleo/rn-010-parcial.test.ts`, `RN-010 › CC-ENG-PLATAFORMA (75,00): d-001 72,50 → APROVADO 72,50 e d-002 38,00 → PARCIAL 2,50`; em `tests/nucleo/rn-011-viagem.test.ts`, `RN-011 › CC-COMERCIAL: representacao 420,00 em dia de viagem → APROVADO 420,00 (limite 450,00)` e `RN-011 › acréscimo trocado para 20 na tabela: alimentação em dia de viagem tem limite 72,00`; em `tests/nucleo/rn-008-nota-fiscal.test.ts`, `RN-008 › limiar trocado para 150,00 na tabela: 120,00 sem NF não é recusada`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-054** — [P] Criar `src/nucleo/cambio.ts` (DT-007, R-13, R-14): `converter(valorOriginal, moeda, data, cambio)` → `Conversao | null`. `BRL` → `{ taxa: NumeroJson "1", dataCotacao: null, valorSolicitado: valorOriginal }`, sem olhar a data. Outra moeda → último elemento do índice com `data ≤ D` (busca binária, comparação de texto); `valorSolicitado = dividirMeioParaPar(valorOriginal × taxa.digitos, 10^taxa.escala)`; sem cotação até D (ou moeda fora do índice) → `null`
+  - **Atende:** RN-017, RN-001, AMB-035, AMB-037
+  - **Aceite:** em `tests/nucleo/rn-017-cambio.test.ts` passam `RN-017 › e-002 (22,00 EUR em 14/07) → taxa 5.93, cotação 2026-07-14, R$ 130,46`, `RN-017 › e-004 (30,00 EUR no sábado 18/07) → taxa 5.96 de 2026-07-17, R$ 178,80`, `RN-017 › 10,05 USD em 13/07 × 5,42 = 54,471 → R$ 54,47`, `RN-017 › 0,50 USD em 16/07 × 5,41 = 2,705 → R$ 2,70 (meio para o par, AMB-037)`, `RN-017 › EUR em 2026-07-10 (antes da primeira cotação) → sem conversão`, `RN-017 › GBP e EURO (fora do câmbio) → sem conversão`, `RN-017 › BRL → taxa 1, data_cotacao nula, valor igual ao original` e `RN-017 › cotação antiga continua valendo: EUR em 2026-12-31 usa a de 2026-07-28 (AMB-035)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-055** — Validar `moeda` em `src/nucleo/despesa.ts` (estende T-008): ausente, nula, texto vazio ou só espaços → `"BRL"`; texto → `normalizarMoeda` (T-046), **sem checagem de formato**; outro tipo (número, booleano, lista, objeto) → `DADO_INVALIDO`. `DespesaValida` ganha `moeda`; `RecusaDadoInvalido` ganha o eco bruto de `moeda` (ausente → `null`)
+  - **Atende:** RN-003, AMB-036, AMB-023
+  - **Aceite:** em `tests/nucleo/rn-003-validacao.test.ts` passam `RN-003 › "moeda": " eur " vale EUR`, `RN-003 › moeda ausente, null, "" ou "  " vale BRL`, `RN-003 › "moeda": 978, true, [] ou {} → DADO_INVALIDO com a moeda como veio no eco` e `RN-003 › "moeda": "EURO" passa pela validação (moeda EURO)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-056** — Ligar a conversão (etapas 1 e 6, DT-007): `validarDespesa` recebe o `Cambio` e `DespesaValida` troca `valorSolicitado` por `valorOriginal` + `conversao` (T-054). `RecusaDadoInvalido` guarda `valorOriginal` (nulo se `valor` não numérico) e `conversao` (nula se `valor` não numérico, AMB-043; BRL com `valor` numérico e `data` inválida → taxa 1; estrangeira com `data` inválida → nula). Em `elegibilidade.ts`: etapa 3 recusa `valorOriginal ≤ 0` ou valor em reais ≤ 0 (RN-004); nova etapa 6 `verificarCambio` → `Recusa(CAMBIO_INDISPONIVEL)` com `{ moeda, data }` quando `conversao` é nula, entre categoria e duplicata; etapa 8 compara o limiar com o valor em reais; a chave de duplicata usa `valorOriginal` (a moeda entra na T-057). Parcelas, alocação e `total_solicitado` usam o valor em reais. `ResultadoItem` ganha `moeda`, `valorOriginal` e `conversao` (o `valor_solicitado` da saída sai de `conversao`). Código `CAMBIO_INDISPONIVEL` na união e um modelo simples em `motivos.ts` (texto completo na T-060). `motor.calcular(entrada, politica, cambio)`; `src/cli.ts` lê o câmbio pelo `lerExternos`; `tests/apoio.ts` carrega o câmbio da fixture
+  - **Atende:** RN-017, RN-001, RN-003, RN-004, RN-008, RN-012, RN-014, AMB-025, AMB-036, AMB-037, AMB-038, AMB-039, AMB-043
+  - **Aceite:** passam, em `tests/nucleo/rn-017-cambio.test.ts`, `RN-017 › e-006 (55,00 GBP) → CAMBIO_INDISPONIVEL, valor_solicitado nulo`, `RN-017 › 10,00 "EURO" → CAMBIO_INDISPONIVEL, e não DADO_INVALIDO`, `RN-017 › EUR em 2026-07-10 → CAMBIO_INDISPONIVEL`, `RN-017 › EUR em 2026-06-30 num período de julho → FORA_DO_PERIODO, e não CAMBIO_INDISPONIVEL`, `RN-017 › GBP com categoria coworking → CATEGORIA_NAO_REEMBOLSAVEL (etapa 5 antes da 6)`, `RN-017 › e-010 (sem moeda) → BRL, taxa_cambio 1` e `RN-017 › limite compara o valor em reais: 22,00 EUR (R$ 130,46) de alimentação na tabela padrão → PARCIAL 60,00`; em `tests/nucleo/rn-004-valor-nao-positivo.test.ts`, `RN-004 › −10,00 GBP (sem cotação) → VALOR_NAO_POSITIVO` e `RN-004 › 0,01 numa moeda de taxa 0.20 → R$ 0,00 → VALOR_NAO_POSITIVO`; em `tests/nucleo/rn-008-nota-fiscal.test.ts`, `RN-008 › e-005 (40,00 USD × 5,50 = R$ 220,00, sem NF) → NOTA_FISCAL_AUSENTE` e `RN-008 › e-003 (14,50 EUR × 5,88 = R$ 85,26, sem NF) não é recusada por nota fiscal`; em `tests/nucleo/rn-003-validacao.test.ts`, `RN-003 › id de despesa recusada por CAMBIO_INDISPONIVEL continua reservado (AMB-025)`, `RN-003 › valor inválido: valor_original e os três campos de conversão nulos, mesmo em BRL ou com cotação (AMB-043)`, `RN-003 › BRL com valor numérico e data inválida → DADO_INVALIDO com taxa 1 e valor_solicitado preenchido`, `RN-003 › EUR com valor numérico e data inválida → DADO_INVALIDO com conversão nula` e `RN-003 › DADO_INVALIDO por outro campo, EUR com cotação → valor_solicitado convertido`; em `tests/nucleo/rn-012-diarias.test.ts`, `RN-012 › parcelas em reais: 100,00 USD em 13/07 (R$ 542,00) "2 diarias" → 271,00 + 271,00 → PARCIAL 500,00`; em `tests/nucleo/rn-014-resumo.test.ts`, `RN-014 › total_solicitado soma o valor em reais e ignora CAMBIO_INDISPONIVEL (nulo)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-057** — Duplicata com moeda (estende T-015) em `src/nucleo/elegibilidade.ts`: a chave passa a ser `(data, categoria, fornecedor, moeda normalizada, valorOriginal)`
+  - **Atende:** RN-007, AMB-038
+  - **Aceite:** em `tests/nucleo/rn-007-duplicatas.test.ts` passam `RN-007 › 20,00 EUR e 20,00 USD, resto igual → as duas seguem`, `RN-007 › sem moeda e "BRL", resto igual → a 2ª DUPLICATA` e `RN-007 › "eur" e "EUR", resto igual → a 2ª DUPLICATA`; todos os `RN-007 ›` da T-015 continuam passando
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-058** — Aprovação manual (etapa 11, DT-008, R-16): `Status` ganha `PENDENTE` e a união de códigos ganha `REQUER_APROVACAO`; `statusDe` em `src/nucleo/status.ts` devolve `PENDENTE` quando `reembolsável > LIMIAR_APROVACAO`, antes das outras regras; em `src/nucleo/motor.ts`, um `map` depois da alocação troca o motivo por `REQUER_APROVACAO` (com os detalhes do limite), sem mudar valor nem saldo; em `src/nucleo/motivos.ts`, a descrição cita o valor calculado, o limiar de R$ 500,00 e, se houve, o valor cortado pelo limite
+  - **Atende:** RN-018, RN-011, RN-013, AMB-040, AMB-041
+  - **Aceite:** em `tests/nucleo/rn-018-aprovacao.test.ts` passam `RN-018 › e-007 (hospedagem 1.200,00, 3 × 400,00 no CC-COMERCIAL) → PENDENTE REQUER_APROVACAO, reembolsável 1.200,00`, `RN-018 › reembolsável exatamente 500,00 → APROVADO, não PENDENTE`, `RN-018 › reembolsável 500,01 (CC-COMERCIAL, "2 diarias" 500,01) → PENDENTE`, `RN-018 › hospedagem 1.200,00 com 1 diária na tabela padrão → PARCIAL 250,00, não PENDENTE`, `RN-018 › PENDENTE consome o limite: hospedagem seguinte na mesma noite → LIMITE_DIARIO_ESGOTADO` e `RN-018 › descrição cita o valor calculado, o limiar de R$ 500,00 e o corte de limite`; em `tests/nucleo/rn-011-viagem.test.ts`, `RN-011 › CC-COMERCIAL: e-008 (alimentação 95,00 em 23/07, noite de e-007 PENDENTE) → APROVADO 95,00 (limite 135,00)`; em `tests/nucleo/rn-013-motivos.test.ts`, `RN-013 › todo código da seção 4 gera descrição não vazia` cobre os 11 códigos
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-059** — [P] Resumo da v4 em `src/nucleo/resumo.ts` (estende T-024): `pendentes`; `totalReembolsavel` só dos itens não PENDENTE; `totalPendente` dos PENDENTE; `totalNaoReembolsado = solicitado − reembolsável − pendente`
+  - **Atende:** RN-014, AMB-041
+  - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › PENDENTE entra em total_solicitado e total_pendente, e não em total_reembolsavel`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel − total_pendente, exato em centavos`, `RN-014 › contagens (aprovados, parciais, recusados, pendentes) somam quantidade_itens` e `RN-014 › lista vazia → pendentes 0 e total_pendente 0,00`; o teste da T-024 `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel ...` passa a somar só os itens não PENDENTE
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-060** — [P] Descrições da v4 em `src/nucleo/motivos.ts` (RN-013): todo item com conversão em moeda estrangeira traz `"<MOEDA> <original> × <taxa> (cotação de <data>) = R$ <reais>"` antes do texto do código; `CAMBIO_INDISPONIVEL` cita a moeda e a data da despesa; `NOTA_FISCAL_AUSENTE` em moeda estrangeira cita o valor em reais e o limiar
+  - **Atende:** RN-013, RN-017, RN-008
+  - **Aceite:** em `tests/nucleo/rn-013-motivos.test.ts` passam `RN-013 › item em moeda estrangeira: descrição traz valor original × taxa, data da cotação e valor em reais`, `RN-013 › CAMBIO_INDISPONIVEL cita a moeda e a data da despesa` e `RN-013 › NOTA_FISCAL_AUSENTE em moeda estrangeira cita o valor em reais e o limiar`
+  - **Commit:** `<hash preenchido depois>`
+
+### 5.3 Casos de borda da v4
+
+> Todos em `tests/casos-de-borda.test.ts`, chamando o motor em memória com a
+> fixture da v4 (`tests/apoio.ts`, com centro de custo, tabela e câmbio
+> opcionais). Um `it` por linha da seção 7, título `Borda › <Caso>` com o texto
+> exato da coluna "Caso". Se um teste falhar, o conserto faz parte da mesma task.
+> Os 4 casos de arquivo externo ficam na T-069.
+
+- [ ] **T-061** — Casos de borda de centro de custo e tabela aplicável em `tests/casos-de-borda.test.ts`
+  - **Atende:** RN-002, RN-006, RN-009, RN-011, RN-016, AMB-029, AMB-030, AMB-031, AMB-032, AMB-033
+  - **Aceite:** passam `Borda › Centro de custo sem entrada na tabela`, `Borda › Colaborador sem centro de custo`, `Borda › Centro de custo com outra grafia`, `Borda › Categoria herdada do padrão`, `Borda › Categoria só em outro centro de custo`, `Borda › Categoria nova no centro de custo`, `Borda › Categoria com limite zero`, `Borda › Limite zero não gera viagem`, `Borda › Limite zero vem antes da nota fiscal` e `Borda › Representação em dia de viagem`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-062** — Casos de borda de `moeda` e de valor inválido com conversão em `tests/casos-de-borda.test.ts`
+  - **Atende:** RN-003, RN-017, AMB-023, AMB-036, AMB-043
+  - **Aceite:** passam `Borda › Valor inválido em moeda estrangeira`, `Borda › Valor inválido em BRL`, `Borda › Moeda ausente`, `Borda › Moeda nula ou vazia`, `Borda › Moeda em minúsculas`, `Borda › Moeda não textual` e `Borda › Moeda fora do câmbio`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-063** — Casos de borda de conversão e do arquivo de câmbio em `tests/casos-de-borda.test.ts` ("Moeda repetida no câmbio" e "Moeda minúscula no câmbio" montam o câmbio a partir do texto com `lerCambio`, R-14)
+  - **Atende:** RN-001, RN-004, RN-005, RN-014, RN-017, AMB-035, AMB-037, AMB-039, AMB-042
+  - **Aceite:** passam `Borda › Conversão em dia útil`, `Borda › Conversão no fim de semana`, `Borda › Antes da primeira cotação`, `Borda › Moeda sem cotação`, `Borda › Estrangeira fora do período`, `Borda › Estrangeira negativa sem cotação`, `Borda › Arredondamento da conversão`, `Borda › Moeda repetida no câmbio` e `Borda › Moeda minúscula no câmbio`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-064** — Casos de borda de nota fiscal e duplicata em moeda estrangeira em `tests/casos-de-borda.test.ts`
+  - **Atende:** RN-007, RN-008, AMB-038
+  - **Aceite:** passam `Borda › Nota fiscal sobre o valor convertido`, `Borda › Estrangeira abaixo do limiar de NF`, `Borda › Mesmo valor em moedas diferentes` e `Borda › BRL explícito e implícito`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-065** — Casos de borda de aprovação manual em `tests/casos-de-borda.test.ts`
+  - **Atende:** RN-010, RN-011, RN-012, RN-014, RN-018, AMB-040, AMB-041
+  - **Aceite:** passam `Borda › Reembolsável exatamente 500,00`, `Borda › Reembolsável acima de 500,00`, `Borda › Solicitado alto cortado pelo limite`, `Borda › Pendente com corte de limite`, `Borda › Pendente consome o limite`, `Borda › Hospedagem pendente gera viagem` e `Borda › Pendente fora do total reembolsável`
+  - **Commit:** `<hash preenchido depois>`
+
+### 5.4 Saída e CLI da v4
+
+- [ ] **T-066** — Saída da v4 em `src/io/saida.ts` (estende T-035, R-17): bloco `politica` (`versao`, `tabela`) entre `periodo` e `itens`; item com os 14 campos na ordem `id`, `data`, `categoria`, `moeda`, `valor_original`, `taxa_cambio`, `data_cotacao`, `valor_solicitado`, `valor_reembolsavel`, `status`, `limite_diario_aplicado`, `em_viagem`, `diarias`, `motivo`; `taxa_cambio` via `JSON.rawJSON` do texto do arquivo (`1` em BRL); os três campos de conversão saem de `conversao` (nulos juntos); `moeda` de item `DADO_INVALIDO` sai como veio; resumo com `pendentes` e `total_pendente`
+  - **Atende:** RN-003, RN-013, RN-014, RN-016, RN-017, AMB-023, AMB-043
+  - **Aceite:** em `tests/io/saida.test.ts` passam `Infra › saída: campos do item na ordem da seção 4 (id … diarias, motivo) e politica entre periodo e itens`, `RN-017 › taxa_cambio sai com o texto do arquivo (5.90 continua 5.90) e 1 em BRL`, `RN-003 › DADO_INVALIDO: moeda sai como veio (978 → 978, ausente → null)`, `RN-016 › saída traz politica { versao: "v4", tabela }` e `RN-014 › resumo traz pendentes e total_pendente com duas casas`; em `tests/contrato-saida.test.ts` voltam a passar os dois testes da T-037 e passam `RN-013 › saída do envelope (PENDENTE, CAMBIO_INDISPONIVEL, moeda estrangeira) valida contra o schema` e `RN-013 › item com taxa_cambio e valor_solicitado nulo é rejeitado pelo schema (AMB-043)`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-067** — [P] Exemplos oficiais em `tests/exemplo.test.ts` (estende T-051): lê os três arquivos da seção 9 com a tabela e o câmbio de `exemplos/envelope/`, roda `validarEntrada` → motor → `montarSaida` e compara com as três tabelas e os três resumos. Um `it` por despesa (moeda, original, taxa, data da cotação, solicitado, reembolsável, status, código)
+  - **Atende:** RN-001, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-016, RN-017, RN-018 (seção 9)
+  - **Aceite:** passam os `it` da T-051 e da T-052 (com `RN-014 › exemplo: resumo 1861.84 / 351.43 / 0.00 / 1510.41 · 5/2/7/0` no lugar do resumo da T-051), `RN-010 › envelope e-001: representacao 340,00 → PARCIAL 300,00`, `RN-017 › envelope e-002: EUR 22,00 × 5.93 (07-14) = 130,46 → PARCIAL 90,00`, `RN-017 › envelope e-003: EUR 14,50 × 5.88 (07-15) = 85,26 → APROVADO 85,26`, `RN-017 › envelope e-004: EUR 30,00 × 5.96 (07-17) = 178,80 → PARCIAL 90,00`, `RN-008 › envelope e-005: USD 40,00 × 5.50 = 220,00 → NOTA_FISCAL_AUSENTE`, `RN-017 › envelope e-006: GBP → CAMBIO_INDISPONIVEL, conversão nula`, `RN-018 › envelope e-007: PENDENTE 1.200,00, diarias 3`, `RN-011 › envelope e-008: APROVADO 95,00, em_viagem, limite 135,00`, `RN-006 › envelope e-009: coworking → CATEGORIA_NAO_REEMBOLSAVEL`, `RN-017 › envelope e-010: sem moeda → BRL, taxa 1, APROVADO 88,00`, `RN-014 › envelope: resumo 2457.52 / 748.26 / 1200.00 / 509.26 · 3/3/3/1`, `RN-016 › envelope: tabela aplicada CC-COMERCIAL`, `RN-016 › cc-desconhecido f-001: APROVADO 58,00 (tabela padrão)`, `RN-012 › cc-desconhecido f-002: PARCIAL 250,00`, `RN-006 › cc-desconhecido f-003: representacao → CATEGORIA_NAO_REEMBOLSAVEL`, `RN-017 › cc-desconhecido f-004: USD 12,00 × 5.48 (07-21) = 65,76 → APROVADO`, `RN-014 › cc-desconhecido: resumo 623.76 / 373.76 / 0.00 / 250.00 · 2/1/1/0`, `RN-016 › cc-desconhecido: politica.tabela "padrao"` e `RN-013 › exemplos: nenhum item com motivo ausente ou vazio nos três arquivos`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-068** — [P] CLI da v4 em `src/cli.ts` e `tests/cli.test.ts` (estende T-038, R-08, R-11): a linha de resumo no `stdout` inclui o total pendente quando houver; helper de teste que copia `src/`, `dados/` e `package.json` para uma pasta temporária e roda o CLI dessa cópia com um arquivo de `dados/` trocado ou removido
+  - **Atende:** RN-015, RN-016, RN-017, AMB-028, AMB-032, AMB-044
+  - **Aceite:** em `tests/cli.test.ts` passam `RN-015 › CLI: "centro_custo": 42 → código 1, stderr cita colaborador.centro_custo, nenhum arquivo de saída`, `RN-015 › CLI: dados/cambio.json ausente (cópia temporária) → código 1, stderr cita o arquivo de câmbio, nenhum arquivo de saída`, `RN-015 › CLI: limite negativo em dados/politica.json (cópia temporária) → código 1, stderr cita a tabela de limites e o campo`, `RN-016 › CLI: padrao.hospedagem.limite 320.00 em dados/ (cópia temporária) muda f-002 de PARCIAL 250,00 para APROVADO 310,00 sem mudar o código`, `Infra › CLI: chamado de outra pasta lê o mesmo dados/`, `Infra › CLI: envelope → código 0, stdout cita o total pendente` e `Infra › CLI: duas execuções do envelope geram bytes idênticos`; os testes da T-038 e da T-039 continuam passando
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-069** — Casos de borda de arquivo da v4 em `tests/casos-de-borda.test.ts`: "Centro de custo não textual" por `validarEntrada`; "Tabela de limites inválida" e "Tabela sem versão" por `lerPolitica` com o texto do arquivo; "Arquivo de câmbio ausente" por `lerExternos` com um caminho inexistente **e** pelo CLI numa cópia temporária (helper da T-068), conferindo que o arquivo de saída não existe
+  - **Atende:** RN-015, RN-016, RN-017, AMB-028, AMB-032, AMB-044
+  - **Aceite:** passam `Borda › Centro de custo não textual`, `Borda › Tabela de limites inválida`, `Borda › Arquivo de câmbio ausente` e `Borda › Tabela sem versão`
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-070** — Fechar a rastreabilidade (estende T-041, DT-005): em `tests/rastreabilidade.test.ts`, subir os mínimos para 18 RNs e 121 casos de borda; nada mais muda no teste
+  - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015, RN-016, RN-017, RN-018 (seção 9, critérios 3 e 4)
+  - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste`, `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; `npm test` inteiro verde, sem falhas conhecidas
+  - **Commit:** `<hash preenchido depois>`
+
+- [ ] **T-071** — Atualizar `README.md` (estende T-042): os dois arquivos em `dados/` (o que são, que simulam o serviço do financeiro, como trocá-los e restaurá-los com `git checkout dados/`), os três exemplos da seção 9 e o apontamento para `quickstart.md` e `contracts/arquivos-externos.md`
+  - **Atende:** AMB-028 (seção 9, entrega: "como rodar e como testar")
+  - **Aceite:** seguir o README do zero num clone limpo reproduz as seções 1 a 6 do `quickstart.md` com o resultado esperado
+  - **Commit:** `<hash preenchido depois>`
 
 ---
 
@@ -260,21 +440,24 @@ exatamente a matriz que a correção vai montar.
 
 | Regra da spec | Task | Teste |
 |---|---|---|
-| RN-001 | T-006, T-026, T-033, T-035 | `RN-001 › 10.005 → 10.00 (meio, 0 é par)` (+ demais `RN-001 ›`), `Borda › Arredondamento meio-para-o-par no limiar` |
-| RN-002 | T-007, T-022, T-028 | `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao`, `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário` |
-| RN-003 | T-007, T-008, T-009, T-010, T-011, T-017, T-029, T-030, T-032, T-033, T-034, T-035, T-038 | `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco` (+ demais `RN-003 ›`), `Borda › Data impossível` |
-| RN-004 | T-012, T-017, T-022, T-028 | `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `Borda › Estorno` |
-| RN-005 | T-013, T-028, T-030 | `RN-005 › d-008 (2026-04-15, período de julho) → FORA_DO_PERIODO`, `Borda › Último dia do período` |
-| RN-006 | T-014, T-028 | `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL`, `Borda › Categoria desconhecida` |
-| RN-007 | T-015, T-017, T-023, T-029 | `RN-007 › d-006 segue e d-007 → DUPLICATA`, `Borda › Ambas sem fornecedor` |
-| RN-008 | T-016, T-022, T-026, T-031, T-034 | `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `Borda › Nota fiscal no limiar exato` |
-| RN-009 | T-021, T-027 | `RN-009 › alimentação isolada de 60,00 → APROVADO 60,00`, `Borda › Exatamente no limite diário` |
-| RN-010 | T-021, T-026, T-027 | `RN-010 › d-001 e d-002 em 03/07: 1ª PARCIAL 60,00, 2ª ESGOTADO`, `Borda › Várias no mesmo dia` |
-| RN-011 | T-020, T-022, T-031 | `RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem`, `Borda › Dia do check-out` |
-| RN-012 | T-018, T-019, T-022, T-030 | `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00`, `Borda › Divisão com centavos` |
-| RN-013 | T-023, T-035, T-036, T-037 | `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › exemplo: nenhum item com motivo ausente ou vazio` |
-| RN-014 | T-024, T-032, T-036, T-040 | `RN-014 › total_solicitado ignora valores não positivos e nulos`, `Borda › Lista de despesas vazia` |
-| RN-015 | T-025, T-038, T-040 | `RN-015 › CLI: arquivo sem periodo → código 1, stderr cita periodo, nenhum arquivo de saída`, `Borda › inicio depois de fim`, `Borda › colaborador.id vazio` |
+| RN-001 | T-006, T-026, T-033, T-035, T-044, T-054, T-056, T-063 | `RN-001 › 10.005 → 10.00 (meio, 0 é par)` (+ demais `RN-001 ›`), `RN-017 › 0,50 USD em 16/07 × 5,41 = 2,705 → R$ 2,70 (meio para o par, AMB-037)`, `Borda › Arredondamento meio-para-o-par no limiar`, `Borda › Arredondamento da conversão` |
+| RN-002 | T-007, T-022, T-028, T-050, T-052, T-061 | `RN-002 › "ALIMENTACAO" e "alimentacao" na mesma data somam no mesmo limite diário`, `RN-002 › "Representação" é representacao no CC-COMERCIAL e sai como veio na tabela padrão` |
+| RN-003 | T-007, T-008, T-009, T-010, T-011, T-017, T-029, T-030, T-032, T-033, T-034, T-035, T-038, T-055, T-056, T-062, T-066 | `RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco` (+ demais `RN-003 ›`), `RN-003 › "moeda": 978, true, [] ou {} → DADO_INVALIDO com a moeda como veio no eco`, `Borda › Data impossível`, `Borda › Moeda não textual` |
+| RN-004 | T-012, T-017, T-022, T-028, T-056, T-063 | `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `RN-004 › −10,00 GBP (sem cotação) → VALOR_NAO_POSITIVO`, `Borda › Estorno`, `Borda › Estrangeira negativa sem cotação` |
+| RN-005 | T-013, T-028, T-030, T-051, T-063 | `RN-005 › d-008 (2026-04-15, período de julho) → FORA_DO_PERIODO`, `Borda › Último dia do período`, `Borda › Estrangeira fora do período` |
+| RN-006 | T-014, T-028, T-050, T-052, T-061 | `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL`, `RN-006 › hospedagem no CC-ENG-PLATAFORMA → CATEGORIA_NAO_REEMBOLSAVEL, descrição cita "CC-ENG-PLATAFORMA"`, `Borda › Categoria com limite zero` |
+| RN-007 | T-015, T-017, T-023, T-029, T-057, T-064 | `RN-007 › d-006 segue e d-007 → DUPLICATA`, `RN-007 › 20,00 EUR e 20,00 USD, resto igual → as duas seguem`, `Borda › Ambas sem fornecedor`, `Borda › BRL explícito e implícito` |
+| RN-008 | T-016, T-022, T-026, T-031, T-034, T-050, T-053, T-056, T-060, T-064 | `RN-008 › d-004 (100,01, sem NF) → NOTA_FISCAL_AUSENTE`, `RN-008 › e-005 (40,00 USD × 5,50 = R$ 220,00, sem NF) → NOTA_FISCAL_AUSENTE`, `Borda › Nota fiscal no limiar exato`, `Borda › Nota fiscal sobre o valor convertido` |
+| RN-009 | T-021, T-027, T-050, T-051, T-053, T-061 | `RN-009 › alimentação isolada de 60,00 → APROVADO 60,00`, `RN-009 › alimentação 50,00 no CC-ADM → PARCIAL 45,00`, `Borda › Exatamente no limite diário`, `Borda › Categoria nova no centro de custo` |
+| RN-010 | T-021, T-026, T-027, T-051, T-053, T-065 | `RN-010 › CC-ENG-PLATAFORMA (75,00): d-001 72,50 → APROVADO 72,50 e d-002 38,00 → PARCIAL 2,50`, `Borda › Várias no mesmo dia`, `Borda › Pendente consome o limite` |
+| RN-011 | T-020, T-022, T-031, T-050, T-052, T-053, T-058, T-061, T-065 | `RN-011 › limite 60,01 ampliado em 50% → 90,02 e 60,03 → 90,04 (meio para o par, AMB-033)`, `RN-011 › CC-COMERCIAL: e-008 (alimentação 95,00 em 23/07, noite de e-007 PENDENTE) → APROVADO 95,00 (limite 135,00)`, `Borda › Dia do check-out`, `Borda › Hospedagem pendente gera viagem` |
+| RN-012 | T-018, T-019, T-022, T-030, T-050, T-056, T-065 | `RN-012 › h1 14/07 "2 diarias" 480,00 e h2 15/07 "1 diaria" 200,00 → h1 APROVADO 480,00, h2 PARCIAL 10,00`, `RN-012 › parcelas em reais: 100,00 USD em 13/07 (R$ 542,00) "2 diarias" → 271,00 + 271,00 → PARCIAL 500,00`, `Borda › Divisão com centavos` |
+| RN-013 | T-023, T-035, T-036, T-037, T-058, T-060, T-066, T-067 | `RN-013 › LIMITE_DIARIO_EXCEDIDO cita limite, saldo disponível e valor cortado`, `RN-013 › item em moeda estrangeira: descrição traz valor original × taxa, data da cotação e valor em reais`, `RN-013 › saída do envelope (PENDENTE, CAMBIO_INDISPONIVEL, moeda estrangeira) valida contra o schema` |
+| RN-014 | T-024, T-032, T-036, T-040, T-051, T-056, T-059, T-063, T-065, T-066 | `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel − total_pendente, exato em centavos`, `Borda › Lista de despesas vazia`, `Borda › Pendente fora do total reembolsável` |
+| RN-015 | T-025, T-038, T-040, T-045, T-046, T-047, T-048, T-068, T-069 | `RN-015 › tabela de limites com "limite": -10 → erro que cita a tabela de limites e o campo`, `RN-015 › CLI: dados/cambio.json ausente (cópia temporária) → código 1, stderr cita o arquivo de câmbio, nenhum arquivo de saída`, `Borda › Centro de custo não textual`, `Borda › Tabela sem versão` |
+| RN-016 | T-045, T-049, T-051, T-061, T-066, T-067, T-068, T-069 | `RN-016 › CC-ADM: hospedagem 1 diária 300,00 → PARCIAL 250,00`, `RN-016 › CLI: padrao.hospedagem.limite 320.00 em dados/ (cópia temporária) muda f-002 de PARCIAL 250,00 para APROVADO 310,00 sem mudar o código`, `Borda › Categoria herdada do padrão` |
+| RN-017 | T-043, T-046, T-054, T-056, T-060, T-062, T-063, T-066, T-067, T-069 | `RN-017 › e-004 (30,00 EUR no sábado 18/07) → taxa 5.96 de 2026-07-17, R$ 178,80`, `RN-017 › e-006 (55,00 GBP) → CAMBIO_INDISPONIVEL, valor_solicitado nulo`, `Borda › Conversão no fim de semana`, `Borda › Moeda sem cotação` |
+| RN-018 | T-049, T-058, T-065, T-067 | `RN-018 › e-007 (hospedagem 1.200,00, 3 × 400,00 no CC-COMERCIAL) → PENDENTE REQUER_APROVACAO, reembolsável 1.200,00`, `RN-018 › reembolsável exatamente 500,00 → APROVADO, não PENDENTE`, `Borda › Reembolsável acima de 500,00` |
 | AMB-001 | T-021, T-027 | `RN-009 › categorias diferentes no mesmo dia têm limites independentes`, `Borda › Mesmo dia, categorias diferentes` |
 | AMB-002 | T-021, T-027 | `RN-010 › d-001 e d-002 em 03/07: 1ª PARCIAL 60,00, 2ª ESGOTADO` |
 | AMB-003 | T-021 | `RN-010 › d-014 (61,00) → PARCIAL 60,00` |
@@ -287,25 +470,42 @@ exatamente a matriz que a correção vai montar.
 | AMB-010 | T-013 | `RN-005 › competencia divergente de inicio/fim é ignorada` |
 | AMB-011 | T-015, T-029 | `RN-007 › só uma com fornecedor → as duas seguem`, `Borda › Fornecedor vazio` |
 | AMB-012 | T-012, T-024, T-028 | `RN-004 › d-009 (−45,00) → RECUSADO VALOR_NAO_POSITIVO, reembolsável 0,00`, `RN-014 › total_solicitado ignora valores não positivos e nulos` |
-| AMB-013 | T-006, T-026 | `RN-001 › 10.015 → 10.02 (meio, 2 é par)`, `Borda › Meio-para-o-par sobe` |
+| AMB-013 | T-006, T-026, T-044 | `RN-001 › 10.015 → 10.02 (meio, 2 é par)`, `Borda › Meio-para-o-par sobe` |
 | AMB-014 | T-007, T-028 | `RN-002 › "ALIMENTACAO", " Alimentação " e "alimentacao" viram alimentacao`, `Borda › Categoria em maiúsculas` |
 | AMB-015 | T-021, T-027 | `RN-010 › despesa que usa exatamente o saldo restante → APROVADO_INTEGRAL`, `Borda › Exatamente no limite diário` |
 | AMB-016 | T-021, T-027 | `RN-009 › d-012 (sábado, 47,20) → APROVADO 47,20`, `Borda › Fim de semana` |
 | AMB-017 | T-022, T-031 | `RN-008 › dia de viagem não amplia o limiar de nota fiscal`, `Borda › Viagem não altera o limiar de NF` |
 | AMB-018 | T-008, T-010, T-025, T-032, T-034, T-038 | `RN-003 › id, data ou categoria nulos, vazios ou só com espaços → DADO_INVALIDO`, `RN-003 › CLI: despesa inválida não aborta (código 0)` |
-| AMB-019 | T-014, T-028 | `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL` |
-| AMB-020 | T-021, T-022, T-031 | `RN-009 › em dia de viagem alimentação vai a 90,00 e transporte a 120,00, hospedagem fica em 250,00` |
+| AMB-019 | T-014, T-028, T-052 | `RN-006 › d-005 (coworking, 89,00) → CATEGORIA_NAO_REEMBOLSAVEL`, `RN-006 › representacao na tabela padrão → CATEGORIA_NAO_REEMBOLSAVEL, descrição diz que não consta na política` |
+| AMB-020 | T-021, T-022, T-031, T-050 | `RN-009 › em dia de viagem alimentação vai a 90,00 e transporte a 120,00, hospedagem fica em 250,00` |
 | AMB-021 | T-009, T-033 | `RN-003 › "45.00", "45,00" e 45.00 dão valor_solicitado 45,00`, `Borda › Separador de milhar` |
 | AMB-022 | T-010, T-034 | `RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO`, `Borda › tem_nota_fiscal número` |
-| AMB-023 | T-008, T-009, T-024, T-032, T-035 | `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `Borda › Eco de campo inválido` |
+| AMB-023 | T-008, T-009, T-024, T-032, T-035, T-055, T-062, T-066 | `RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo`, `RN-003 › DADO_INVALIDO: moeda sai como veio (978 → 978, ausente → null)`, `Borda › Eco de campo inválido` |
 | AMB-024 | T-011, T-032 | `RN-003 › " d-001 " depois de "d-001" → DADO_INVALIDO, com id " d-001 " no eco`, `Borda › id repetido com outra grafia` |
-| AMB-025 | T-011, T-017, T-032 | `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)`, `RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação` |
+| AMB-025 | T-011, T-017, T-032, T-056 | `RN-003 › "d-001" com data inválida, depois "d-001" válido → o 2º segue (correção, AMB-025)`, `RN-003 › id de despesa recusada por CAMBIO_INDISPONIVEL continua reservado (AMB-025)`, `Borda › Correção de item inválido`, `Borda › id de item recusado depois da validação` |
 | AMB-026 | T-007, T-008, T-015, T-018, T-029, T-030 | `RN-007 › fornecedor 123 e "123" são o mesmo fornecedor`, `RN-012 › descricao nula ou 2 (número) → N = 1`, `Borda › Descrição não textual` |
 | AMB-027 | T-025, T-040 | `RN-015 › colaborador.id "", "  ", null ou 123 → erro cuja mensagem cita colaborador.id`, `Borda › Arquivo que não é objeto` |
+| AMB-028 | T-047, T-068, T-069, T-071 | `RN-015 › arquivo de câmbio ausente → erro que cita o arquivo de câmbio`, `Infra › CLI: chamado de outra pasta lê o mesmo dados/`, `Borda › Arquivo de câmbio ausente` |
+| AMB-029 | T-049, T-051, T-053, T-061 | `RN-016 › CC-SUPORTE-N2 (sem entrada) → tabela "padrao", alimentação 60,00`, `Borda › Centro de custo sem entrada na tabela`, `Borda › Colaborador sem centro de custo` |
+| AMB-030 | T-049, T-052, T-061 | `RN-016 › CC-ADM sem hospedagem → hospedagem 250,00 herdada do padrão`, `Borda › Categoria herdada do padrão` |
+| AMB-031 | T-049, T-052, T-061 | `RN-016 › CC-ENG-PLATAFORMA: hospedagem com limite 0 não herda do padrão`, `RN-011 › hospedagem com limite 0 no centro de custo não gera dia de viagem`, `Borda › Limite zero não gera viagem`, `Borda › Limite zero vem antes da nota fiscal` |
+| AMB-032 | T-048, T-049, T-051, T-061, T-068, T-069 | `RN-015 › "centro_custo": 42, true, [] ou {} → erro que cita colaborador.centro_custo`, `RN-016 › " cc-comercial " → tabela "CC-COMERCIAL"`, `Borda › Centro de custo com outra grafia`, `Borda › Centro de custo não textual` |
+| AMB-033 | T-050, T-053, T-061 | `RN-011 › limite 60,01 ampliado em 50% → 90,02 e 60,03 → 90,04 (meio para o par, AMB-033)`, `RN-011 › CC-COMERCIAL: representacao 420,00 em dia de viagem → APROVADO 420,00 (limite 450,00)`, `Borda › Representação em dia de viagem` |
+| AMB-034 | T-045, T-051 | `RN-016 › vigencia 2026-08-01 não recusa nem muda despesas de julho (AMB-034)` |
+| AMB-035 | T-054, T-063 | `RN-017 › cotação antiga continua valendo: EUR em 2026-12-31 usa a de 2026-07-28 (AMB-035)`, `Borda › Conversão no fim de semana` |
+| AMB-036 | T-055, T-056, T-062 | `RN-003 › "moeda": "EURO" passa pela validação (moeda EURO)`, `RN-017 › 10,00 "EURO" → CAMBIO_INDISPONIVEL, e não DADO_INVALIDO`, `Borda › Moeda fora do câmbio` |
+| AMB-037 | T-044, T-054, T-056, T-063 | `RN-017 › 10,05 USD em 13/07 × 5,42 = 54,471 → R$ 54,47`, `Borda › Arredondamento da conversão` |
+| AMB-038 | T-056, T-057, T-064 | `RN-008 › e-003 (14,50 EUR × 5,88 = R$ 85,26, sem NF) não é recusada por nota fiscal`, `RN-007 › 20,00 EUR e 20,00 USD, resto igual → as duas seguem`, `Borda › Mesmo valor em moedas diferentes` |
+| AMB-039 | T-056, T-063 | `RN-017 › EUR em 2026-06-30 num período de julho → FORA_DO_PERIODO, e não CAMBIO_INDISPONIVEL`, `Borda › Estrangeira fora do período` |
+| AMB-040 | T-049, T-058, T-065 | `RN-018 › reembolsável exatamente 500,00 → APROVADO, não PENDENTE`, `Borda › Solicitado alto cortado pelo limite` |
+| AMB-041 | T-058, T-059, T-065 | `RN-014 › PENDENTE entra em total_solicitado e total_pendente, e não em total_reembolsavel`, `Borda › Pendente fora do total reembolsável` |
+| AMB-042 | T-046, T-063 | `RN-017 › câmbio: "USD": 5.42 e depois "usd": 5.50 na mesma data → vale 5.50, sem erro`, `Borda › Moeda repetida no câmbio`, `Borda › Moeda minúscula no câmbio` |
+| AMB-043 | T-043, T-056, T-062, T-066 | `RN-003 › valor inválido: valor_original e os três campos de conversão nulos, mesmo em BRL ou com cotação (AMB-043)`, `RN-013 › item com taxa_cambio e valor_solicitado nulo é rejeitado pelo schema (AMB-043)`, `Borda › Valor inválido em BRL` |
+| AMB-044 | T-045, T-046, T-068, T-069 | `RN-015 › tabela de limites sem versao, com versao vazia ou com vigencia que não é data → erro que cita o campo`, `RN-015 › câmbio: fonte, observacao e campos desconhecidos são ignorados`, `Borda › Tabela sem versão` |
 
 **IDs sem cobertura:** nenhum.
 
-**Casos de borda da seção 7:** 80 linhas → T-026 (7), T-027 (6), T-028 (8), T-029 (10), T-030 (13), T-031 (6), T-032 (12), T-033 (7), T-034 (5), T-040 (6).
+**Casos de borda da seção 7:** 121 linhas → v1: 80 (T-026 (7), T-027 (6), T-028 (8), T-029 (10), T-030 (13), T-031 (6), T-032 (12), T-033 (7), T-034 (5), T-040 (6)); v4: 41 (T-061 (10), T-062 (7), T-063 (9), T-064 (4), T-065 (7), T-069 (4)).
 
 ---
 
@@ -326,3 +526,17 @@ exatamente a matriz que a correção vai montar.
   T-022 precisa de T-017 a T-021. A Fase 3 precisa de T-024. T-040 precisa
   de T-038; T-041 fecha a Fase 4 e só fica verde com todos os testes de RN e
   de borda escritos.
+- **Fase 5 (v4, D-019 a D-021):** as tasks da v1 afetadas pela v4 (lista em
+  D-019) continuam `[x]`, e a mudança entra numa task nova que diz "estende
+  T-0NN". Os títulos de `tests/exemplo.test.ts` da T-036 são substituídos na
+  T-051/T-052/T-067, porque a tabela 1 da seção 9 mudou (CC-ENG-PLATAFORMA).
+- **Dependências da Fase 5:** T-043 → (T-044 ∥ T-048). T-044 → T-045 → T-046
+  → T-047 (as três escrevem em `tests/io/rn-015-entrada.test.ts`). T-049
+  precisa de T-045 e T-048; T-050 de T-047 e T-049; depois, em sequência,
+  T-051 → T-052 → T-053. T-054 pode correr em paralelo com T-049 a T-053
+  (só precisa de T-044 e T-046). T-055 precisa de T-050; T-056 precisa de
+  T-051, T-054 e T-055; depois T-057 → T-058 → (T-059 ∥ T-060). A seção 5.3
+  precisa de T-060. T-066 precisa de T-059; depois (T-067 ∥ T-068) →
+  T-069 → T-070 → T-071. A T-050 é um refactor **sem mudança de
+  comportamento** e a T-051 é o único passo que muda a tabela 1 da seção 9:
+  por isso o centro de custo só entra no motor depois do refactor.
