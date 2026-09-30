@@ -23,14 +23,21 @@ const EXEMPLOS: Decisao[] = [
   { codigo: 'DADO_INVALIDO', detalhes: { campo: 'data', problema: 'data_invalida' } },
   { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valor: -4500n } },
   { codigo: 'FORA_DO_PERIODO', detalhes: { data: '2026-04-15', inicio: '2026-07-01', fim: '2026-07-31' } },
-  { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: 'coworking' } },
+  {
+    codigo: 'CATEGORIA_NAO_REEMBOLSAVEL',
+    detalhes: { categoria: 'coworking', tabela: 'padrao', versao: 'v4', caso: 'ausente', centroCusto: null },
+  },
+  {
+    codigo: 'CATEGORIA_NAO_REEMBOLSAVEL',
+    detalhes: { categoria: 'hospedagem', tabela: 'CC-X', versao: 'v4', caso: 'limite_zero', centroCusto: 'CC-X' },
+  },
   { codigo: 'DUPLICATA', detalhes: { idAceito: 'd-006' } },
   { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: 10001n, limiar: { digitos: 10000n, escala: 2 } } },
 ];
 
 describe('RN-013 — Justificativa obrigatória', () => {
   it('RN-013 › todo código da seção 4 gera descrição não vazia', () => {
-    expect(Object.keys(MODELOS).sort()).toEqual(EXEMPLOS.map((e) => e.codigo).sort());
+    expect(Object.keys(MODELOS).sort()).toEqual([...new Set(EXEMPLOS.map((e) => e.codigo))].sort());
     for (const decisao of EXEMPLOS) {
       const m = montarMotivo(decisao);
       expect(m.codigo).toBe(decisao.codigo);

@@ -54,6 +54,13 @@ describe('RN-011 — Colaborador em viagem', () => {
     expect(limiteDiario('alimentacao', '2026-07-15', viagem, comLimite(60.01))).toBe(6001n);
   });
 
+  it('RN-011 › hospedagem com limite 0 no centro de custo não gera dia de viagem', () => {
+    const opcoes = { centroCusto: 'CC-ENG-PLATAFORMA' };
+    const itens = rodar([{ ...hotel, descricao: 'Hotel 2 diarias' }, { ...alimentacao80, data: '2026-07-14' }], opcoes);
+    expect(itens[0]?.motivo.codigo).toBe('CATEGORIA_NAO_REEMBOLSAVEL');
+    expect(itens[1]).toMatchObject({ valorReembolsavel: 7500n, limiteDiarioAplicado: 7500n, emViagem: false });
+  });
+
   it('RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem', () => {
     const d013 = { id: 'd-013', categoria: 'hospedagem', data: '2026-07-22', valor: 690, descricao: 'Airbnb 3 noites', tem_nota_fiscal: false };
     const itens = rodar([

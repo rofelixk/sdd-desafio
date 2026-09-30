@@ -28,4 +28,14 @@ describe('RN-002 — Normalização da categoria', () => {
     ]);
     expect(rodar([{ categoria: 'ALIMENTACAO' }])[0]?.categoria).toBe('alimentacao');
   });
+
+  it('RN-002 › "Representação" é representacao no CC-COMERCIAL e sai como veio na tabela padrão', () => {
+    const despesa = { categoria: 'Representação', valor: 200 };
+    const [comercial] = rodar([despesa], { centroCusto: 'CC-COMERCIAL' });
+    expect(comercial?.categoria).toBe('representacao');
+    expect(comercial?.motivo.codigo).toBe('APROVADO_INTEGRAL');
+    const [padrao] = rodar([despesa]);
+    expect(padrao?.categoria).toBe('Representação');
+    expect(padrao?.motivo.codigo).toBe('CATEGORIA_NAO_REEMBOLSAVEL');
+  });
 });

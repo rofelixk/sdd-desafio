@@ -73,12 +73,26 @@ describe('Exemplo oficial (seção 9, CC-ENG-PLATAFORMA)', () => {
     expect(linha('d-009')).toEqual([-45, 0, 'RECUSADO', 'VALOR_NAO_POSITIVO']);
   });
 
+  it('RN-006 › exemplo d-010: CATEGORIA_NAO_REEMBOLSAVEL (hospedagem com limite 0)', () => {
+    expect(linha('d-010')).toEqual([480, 0, 'RECUSADO', 'CATEGORIA_NAO_REEMBOLSAVEL']);
+    expect(item('d-010')).toMatchObject({ diarias: null, limite_diario_aplicado: null, em_viagem: null });
+    expect(item('d-010').motivo.descricao).toContain('CC-ENG-PLATAFORMA');
+  });
+
   it('RN-001 › exemplo d-011: APROVADO 33,33', () => {
     expect(linha('d-011')).toEqual([33.33, 33.33, 'APROVADO', 'APROVADO_INTEGRAL']);
   });
 
   it('RN-009 › exemplo d-012: APROVADO 47,20', () => {
     expect(linha('d-012')).toEqual([47.2, 47.2, 'APROVADO', 'APROVADO_INTEGRAL']);
+  });
+
+  it('RN-006 › exemplo d-013: CATEGORIA_NAO_REEMBOLSAVEL (antes da nota fiscal)', () => {
+    expect(linha('d-013')).toEqual([690, 0, 'RECUSADO', 'CATEGORIA_NAO_REEMBOLSAVEL']);
+    expect(item('d-013').motivo.descricao).toContain('CC-ENG-PLATAFORMA');
+    // sem hospedagem elegível, nenhum dia de viagem no exemplo
+    expect(saida.itens.every((i) => i.em_viagem !== true)).toBe(true);
+    expect(item('d-011')).toMatchObject({ limite_diario_aplicado: 75, em_viagem: false });
   });
 
   it('RN-009 › exemplo d-014: APROVADO 61,00', () => {

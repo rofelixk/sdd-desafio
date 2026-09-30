@@ -22,11 +22,23 @@ export function ehCategoria(categoria: string, tabela: TabelaAplicavel): boolean
   return tabela.categorias.has(categoria);
 }
 
-/** Etapa 5 (RN-006, AMB-019): sem reclassificar. */
+/**
+ * Etapa 5 (RN-006, AMB-019, AMB-031): reembolsável é a categoria com limite
+ * maior que zero na tabela aplicável; sem reclassificar.
+ */
 export function verificarCategoria(d: DespesaValida, tabela: TabelaAplicavel): Recusa | null {
-  return ehCategoria(d.categoria, tabela)
-    ? null
-    : { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: d.categoriaOriginal } };
+  const regra = tabela.categorias.get(d.categoria);
+  if (regra && regra.limite > 0n) return null;
+  return {
+    codigo: 'CATEGORIA_NAO_REEMBOLSAVEL',
+    detalhes: {
+      categoria: regra ? d.categoria : d.categoriaOriginal,
+      tabela: tabela.nome,
+      versao: tabela.versao,
+      caso: regra ? 'limite_zero' : 'ausente',
+      centroCusto: tabela.centroCusto,
+    },
+  };
 }
 
 /** Chave da RN-007 → `id` da primeira ocorrência. */

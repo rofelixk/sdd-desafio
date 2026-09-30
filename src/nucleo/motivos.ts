@@ -54,7 +54,12 @@ export const MODELOS: Modelos = {
   VALOR_NAO_POSITIVO: (d) =>
     `Valor solicitado ${formatarReais(d.valor)} não é positivo; estornos e valores zerados não são reembolsados.`,
   FORA_DO_PERIODO: (d) => `Data ${d.data} fora do período de ${d.inicio} a ${d.fim}.`,
-  CATEGORIA_NAO_REEMBOLSAVEL: (d) => `Categoria '${d.categoria}' não consta na política de reembolso.`,
+  CATEGORIA_NAO_REEMBOLSAVEL: (d) =>
+    d.caso === 'limite_zero'
+      ? `Categoria '${d.categoria}' não é reembolsável no centro de custo ${d.centroCusto} (limite 0 na política ${d.versao}).`
+      : d.centroCusto === null
+        ? `Categoria '${d.categoria}' não consta na tabela padrão da política ${d.versao}.`
+        : `Categoria '${d.categoria}' não consta na tabela do centro de custo ${d.centroCusto} nem na tabela padrão da política ${d.versao}.`,
   DUPLICATA: (d) =>
     `Mesma data, categoria, fornecedor e valor da despesa '${d.idAceito}', que já foi considerada; este lançamento repetido não é reembolsado.`,
   NOTA_FISCAL_AUSENTE: (d) =>

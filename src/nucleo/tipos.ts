@@ -90,7 +90,18 @@ export type Recusa =
       readonly codigo: 'FORA_DO_PERIODO';
       readonly detalhes: { readonly data: DataISO; readonly inicio: DataISO; readonly fim: DataISO };
     }
-  | { readonly codigo: 'CATEGORIA_NAO_REEMBOLSAVEL'; readonly detalhes: { readonly categoria: string } }
+  | {
+      readonly codigo: 'CATEGORIA_NAO_REEMBOLSAVEL';
+      readonly detalhes: {
+        readonly categoria: string;
+        /** Nome da tabela aplicada e versão da política. */
+        readonly tabela: string;
+        readonly versao: string;
+        /** Fora da tabela aplicável, ou com limite 0 no centro de custo (RN-006, AMB-031). */
+        readonly caso: 'ausente' | 'limite_zero';
+        readonly centroCusto: string | null;
+      };
+    }
   | { readonly codigo: 'DUPLICATA'; readonly detalhes: { readonly idAceito: string } }
   | { readonly codigo: 'NOTA_FISCAL_AUSENTE'; readonly detalhes: { readonly valor: Centavos; readonly limiar: Decimal } };
 
