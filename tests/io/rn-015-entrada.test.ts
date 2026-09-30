@@ -94,6 +94,22 @@ describe('RN-015 — Arquivo de entrada inválido', () => {
     expect(erro(JSON.stringify({ ...VALIDO, periodo: null }))).toContain('periodo');
   });
 
+  it('RN-015 › "centro_custo": 42, true, [] ou {} → erro que cita colaborador.centro_custo', () => {
+    for (const centro_custo of [42, true, [], {}, ['CC-ADM'], 0]) {
+      expect(erro(arquivo({ colaborador: { centro_custo } })), JSON.stringify(centro_custo)).toContain('colaborador.centro_custo');
+    }
+  });
+
+  it('RN-015 › centro_custo ausente, null, "" ou "  " é aceito (centroCusto nulo)', () => {
+    for (const centro_custo of [undefined, null, '', '  ']) {
+      expect(lerEntrada(arquivo({ colaborador: { centro_custo } })).centroCusto, JSON.stringify(centro_custo)).toBeNull();
+    }
+    expect(lerEntrada(arquivo({ colaborador: { centro_custo: ' cc-comercial ' } })).centroCusto).toBe(' cc-comercial ');
+    expect(lerEntrada(arquivo({ colaborador: { centro_custo: 'CC-SUPORTE-N2' } })).colaborador).toMatchObject({
+      centro_custo: 'CC-SUPORTE-N2',
+    });
+  });
+
   it('RN-015 › JSON que não é objeto ([], 42, "x") → erro', () => {
     for (const texto of ['[]', '42', '"x"', 'null', 'true']) {
       expect(erro(texto), texto).toContain('objeto');

@@ -35,6 +35,13 @@ export function validarEntrada(json: unknown): Entrada {
   const idColaborador = ehObjeto(colaborador) ? colaborador.id : undefined;
   if (!textoPreenchido(idColaborador)) throw new ErroEntrada('colaborador.id ausente, vazio ou não é texto');
 
+  const bruto = ehObjeto(colaborador) ? colaborador.centro_custo : undefined;
+  // AMB-032: vazio vale padrão; tipo errado aborta.
+  if (bruto !== undefined && bruto !== null && typeof bruto !== 'string') {
+    throw new ErroEntrada('colaborador.centro_custo não é texto');
+  }
+  const centroCusto = typeof bruto === 'string' && bruto.trim() !== '' ? bruto : null;
+
   const periodo = json.periodo;
   if (!ehObjeto(periodo)) throw new ErroEntrada('periodo ausente ou não é um objeto (periodo.inicio e periodo.fim)');
   const inicio = data(periodo, 'inicio');
@@ -44,7 +51,7 @@ export function validarEntrada(json: unknown): Entrada {
   const despesas = json.despesas;
   if (!Array.isArray(despesas)) throw new ErroEntrada('despesas ausente ou não é uma lista');
 
-  return { colaborador, periodo, inicio, fim, despesas };
+  return { colaborador, centroCusto, periodo, inicio, fim, despesas };
 }
 
 /** Texto do arquivo → `Entrada`; JSON inválido também é `ErroEntrada`. */

@@ -27,6 +27,8 @@ export class NumeroJson {
 export interface Entrada {
   /** Eco integral. */
   readonly colaborador: unknown;
+  /** `colaborador.centro_custo` como veio; ausente, nulo ou vazio → `null` (RN-015, AMB-032). */
+  readonly centroCusto: string | null;
   /** Eco integral. */
   readonly periodo: unknown;
   readonly inicio: DataISO;

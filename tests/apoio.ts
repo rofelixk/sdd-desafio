@@ -59,6 +59,7 @@ export function entrada(
 ): Entrada {
   return {
     colaborador: { id: 'c-0001' },
+    centroCusto: null,
     periodo,
     inicio: periodo.inicio,
     fim: periodo.fim,
