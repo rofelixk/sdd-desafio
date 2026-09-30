@@ -421,10 +421,10 @@
   - **Aceite:** passam `Borda › Centro de custo não textual`, `Borda › Tabela de limites inválida`, `Borda › Arquivo de câmbio ausente` e `Borda › Tabela sem versão`
   - **Commit:** `f7da03d`
 
-- [ ] **T-070** — Fechar a rastreabilidade (estende T-041, DT-005): em `tests/rastreabilidade.test.ts`, subir os mínimos para 18 RNs e 121 casos de borda; nada mais muda no teste
+- [x] **T-070** — Fechar a rastreabilidade (estende T-041, DT-005): em `tests/rastreabilidade.test.ts`, subir os mínimos para 18 RNs e 121 casos de borda; nada mais muda no teste
   - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015, RN-016, RN-017, RN-018 (seção 9, critérios 3 e 4)
   - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste`, `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; `npm test` inteiro verde, sem falhas conhecidas
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `3d44b6b`
 
 - [ ] **T-071** — Atualizar `README.md` (estende T-042): os dois arquivos em `dados/` (o que são, que simulam o serviço do financeiro, como trocá-los e restaurá-los com `git checkout dados/`), os três exemplos da seção 9 e o apontamento para `quickstart.md` e `contracts/arquivos-externos.md`
   - **Atende:** AMB-028 (seção 9, entrega: "como rodar e como testar")
