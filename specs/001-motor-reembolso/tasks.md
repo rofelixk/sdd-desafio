@@ -374,10 +374,10 @@
 > exato da coluna "Caso". Se um teste falhar, o conserto faz parte da mesma task.
 > Os 4 casos de arquivo externo ficam na T-069.
 
-- [ ] **T-061** — Casos de borda de centro de custo e tabela aplicável em `tests/casos-de-borda.test.ts`
+- [x] **T-061** — Casos de borda de centro de custo e tabela aplicável em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-002, RN-006, RN-009, RN-011, RN-016, AMB-029, AMB-030, AMB-031, AMB-032, AMB-033
   - **Aceite:** passam `Borda › Centro de custo sem entrada na tabela`, `Borda › Colaborador sem centro de custo`, `Borda › Centro de custo com outra grafia`, `Borda › Categoria herdada do padrão`, `Borda › Categoria só em outro centro de custo`, `Borda › Categoria nova no centro de custo`, `Borda › Categoria com limite zero`, `Borda › Limite zero não gera viagem`, `Borda › Limite zero vem antes da nota fiscal` e `Borda › Representação em dia de viagem`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `0cf5429`
 
 - [ ] **T-062** — Casos de borda de `moeda` e de valor inválido com conversão em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-003, RN-017, AMB-023, AMB-036, AMB-043
