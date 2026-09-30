@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 2.2 · **Status:** rascunho · **Última alteração:** `2026-09-30`
+**Versão:** 2.3 · **Status:** rascunho · **Última alteração:** `2026-09-30`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -175,7 +175,7 @@ ignorados (AMB-044).
 | `itens[].data_cotacao` | texto ou nulo | Data da cotação usada (a da despesa ou a última anterior, RN-017). Nulo em BRL ou se não houve conversão (`valor_solicitado` nulo, AMB-043) |
 | `itens[].valor_solicitado` | número ou nulo | Valor solicitado **em reais**: `valor_original` convertido (RN-017), ou igual a ele em BRL. Nulo se o `valor` é ausente ou não numérico (RN-003) ou se não há cotação para a moeda (RN-017) |
 | `itens[].valor_reembolsavel` | número | Valor a reembolsar em reais, `0 ≤ valor_reembolsavel ≤ max(valor_solicitado, 0)` (nulo conta como 0). Num item PENDENTE, é o valor que será pago se o gestor aprovar |
-| `itens[].status` | texto | `APROVADO` (reembolsável = solicitado), `PARCIAL` (0 < reembolsável < solicitado), `RECUSADO` (reembolsável = 0) ou `PENDENTE` (reembolsável > R$ 500,00, aguardando aprovação do gestor, RN-018) |
+| `itens[].status` | texto | `APROVADO` (reembolsável = solicitado), `PARCIAL` (0 < reembolsável < solicitado), `RECUSADO` (reembolsável = 0, que prevalece sobre APROVADO quando o solicitado também é 0,00 ou nulo) ou `PENDENTE` (reembolsável > R$ 500,00, aguardando aprovação do gestor, RN-018) |
 | `itens[].motivo.codigo` | texto | Código padronizado da decisão (tabela abaixo) |
 | `itens[].motivo.descricao` | texto | Frase legível em português, com os números que justificam a decisão |
 | `itens[].limite_diario_aplicado` | número ou nulo | Limite diário da categoria usado no cálculo, já ampliado se for dia de viagem. Em hospedagem é o limite por diária. Nulo se a despesa não chegou à etapa de limite |
@@ -621,8 +621,9 @@ Arquivo de câmbio ausente → erro que cita o arquivo de câmbio.
 ### RN-016 — Política por centro de custo
 
 **Regra:** Os limites vêm da tabela de limites mantida pelo financeiro (seção
-4), lida a cada execução. Nenhum limite, limiar ou percentual da política é
-fixo no sistema. A **tabela aplicável** ao colaborador é montada assim:
+4), lida a cada execução. Nenhum limite, limiar ou percentual **que a tabela
+traz** é fixo no sistema. A única exceção é o limiar de aprovação manual da
+RN-018, que a tabela não traz (AMB-040). A **tabela aplicável** ao colaborador é montada assim:
 1. Se `colaborador.centro_custo` está ausente, nulo ou vazio, ou se não há
    entrada para ele em `centros_custo`, vale a tabela `padrao` inteira. O
    centro de custo é comparado com a normalização da RN-002 (AMB-029, AMB-032).

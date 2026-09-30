@@ -17,6 +17,38 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-022 — Ajustes de redação do `/speckit-analyze` da v4 · `2026-09-30`
+
+**Gatilho:** `/speckit-analyze` sobre spec 2.2, plan 2.0 e tasks T-001 a
+T-071. Dois achados na spec (I1, A1) aprovados pelo usuário.
+
+**O que mudou na spec (versão 2.2 → 2.3):**
+- RN-016: "nenhum limite, limiar ou percentual da política é fixo no sistema"
+  contradizia a RN-018, que fixa o limiar de R$ 500,00 (AMB-040). Passa a
+  dizer "nenhum limite, limiar ou percentual **que a tabela traz**", com a
+  RN-018 citada como a única exceção.
+- Seção 4 (`itens[].status`): com solicitado 0,00 ou nulo, as definições de
+  APROVADO (reembolsável = solicitado) e RECUSADO (reembolsável = 0) valiam ao
+  mesmo tempo. Fica explícito que RECUSADO prevalece.
+
+**Como se chegou lá:** o Claude apontou as duas contradições e propôs a
+redação. O usuário aprovou as duas como propostas.
+
+**Por quê:** as duas leituras já eram as praticadas (plan §4 com
+`LIMIAR_APROVACAO`; tabela de códigos com `VALOR_NAO_POSITIVO` → RECUSADO). Só
+o texto da spec ficava ambíguo.
+
+**O que isso invalidou:** nada. Nenhuma regra, teste ou valor esperado muda.
+
+**Tasks afetadas:** nenhuma. Na mesma análise, sem mudar a spec: a T-048 entra
+na cadeia T-047 → T-048 e perde o `[P]` (mesmo arquivo de teste da T-045 a
+T-047), e as Notas do `tasks.md` registram que os títulos de teste da v1 que
+citam `d-013` se referem à tabela padrão.
+
+**Custo:** `spec.md` (2 trechos), `DECISIONS.md` e `tasks.md` (2 trechos).
+
+---
+
 ## D-021 — Lacunas achadas no `/speckit-plan` da v4 (AMB-042, AMB-043, AMB-044) · `2026-09-30`
 
 **Gatilho:** `/speckit-plan` sobre a spec 2.1. Ao desenhar a leitura dos

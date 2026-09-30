@@ -299,7 +299,7 @@
   - **Aceite:** em `tests/io/externos.test.ts` passa `Infra › externos: caminhos apontam para <raiz>/dados/, independente de process.cwd()`; em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › arquivo de câmbio ausente → erro que cita o arquivo de câmbio`, `RN-015 › tabela de limites ausente → erro que cita a tabela de limites` e `RN-015 › tabela e câmbio inválidos → a mensagem é a da tabela (ordem de leitura)`; `git diff --no-index exemplos/envelope/politica-v4.json dados/politica.json` e o mesmo para o câmbio não mostram diferença
   - **Commit:** `<hash preenchido depois>`
 
-- [ ] **T-048** — [P] Ler `colaborador.centro_custo` em `src/io/entrada.ts` (estende T-025): `Entrada` ganha `centroCusto: string | null`; ausente, nulo, texto vazio ou só espaços → `null`; texto → como veio (a normalização é da T-049); qualquer outro tipo → `ErroEntrada` que cita `colaborador.centro_custo`. `tests/apoio.ts` passa a preencher `centroCusto` (padrão `null`). O motor ainda não lê o campo
+- [ ] **T-048** — Ler `colaborador.centro_custo` em `src/io/entrada.ts` (estende T-025): `Entrada` ganha `centroCusto: string | null`; ausente, nulo, texto vazio ou só espaços → `null`; texto → como veio (a normalização é da T-049); qualquer outro tipo → `ErroEntrada` que cita `colaborador.centro_custo`. `tests/apoio.ts` passa a preencher `centroCusto` (padrão `null`). O motor ainda não lê o campo
   - **Atende:** RN-015, AMB-032
   - **Aceite:** em `tests/io/rn-015-entrada.test.ts` passam `RN-015 › "centro_custo": 42, true, [] ou {} → erro que cita colaborador.centro_custo` e `RN-015 › centro_custo ausente, null, "" ou "  " é aceito (centroCusto nulo)`
   - **Commit:** `<hash preenchido depois>`
@@ -530,9 +530,14 @@ exatamente a matriz que a correção vai montar.
   D-019) continuam `[x]`, e a mudança entra numa task nova que diz "estende
   T-0NN". Os títulos de `tests/exemplo.test.ts` da T-036 são substituídos na
   T-051/T-052/T-067, porque a tabela 1 da seção 9 mudou (CC-ENG-PLATAFORMA).
-- **Dependências da Fase 5:** T-043 → (T-044 ∥ T-048). T-044 → T-045 → T-046
-  → T-047 (as três escrevem em `tests/io/rn-015-entrada.test.ts`). T-049
-  precisa de T-045 e T-048; T-050 de T-047 e T-049; depois, em sequência,
+- **Títulos da v1 que citam `d-013` (D-022):** `RN-008 › d-013 (690,00, sem NF) → NOTA_FISCAL_AUSENTE`
+  (T-016, usado na linha AMB-006 da Cobertura) e `RN-011 › d-013 recusada por NF…`
+  (T-022) se referem à **tabela padrão** da fixture, em que a hospedagem é
+  reembolsável. Não descrevem o resultado da seção 9, em que o colaborador é
+  do CC-ENG-PLATAFORMA e `d-013` sai `CATEGORIA_NAO_REEMBOLSAVEL` (T-052).
+- **Dependências da Fase 5:** T-043 → T-044 → T-045 → T-046 → T-047 → T-048
+  (as quatro últimas escrevem em `tests/io/rn-015-entrada.test.ts`; D-022). T-049
+  precisa de T-048; T-050 de T-047 e T-049; depois, em sequência,
   T-051 → T-052 → T-053. T-054 pode correr em paralelo com T-049 a T-053
   (só precisa de T-044 e T-046). T-055 precisa de T-050; T-056 precisa de
   T-051, T-054 e T-055; depois T-057 → T-058 → (T-059 ∥ T-060). A seção 5.3
