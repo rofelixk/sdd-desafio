@@ -56,8 +56,8 @@ async function executar(argv: string[]): Promise<void> {
   let resumo: string;
   try {
     const entrada = lerEntrada(texto);
-    const { politica } = lerExternos(); // entrada → tabela de limites → câmbio (R-12)
-    const resultado = calcular(entrada, politica);
+    const { politica, cambio } = lerExternos(); // entrada → tabela de limites → câmbio (R-12)
+    const resultado = calcular(entrada, politica, cambio);
     conteudo = serializarJson(montarSaida(resultado));
     resumo = `${resultado.resumo.quantidadeItens} itens processados; total reembolsável ${formatarReais(resultado.resumo.totalReembolsavel)}`;
   } catch (e) {

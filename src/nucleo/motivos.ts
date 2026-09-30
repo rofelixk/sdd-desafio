@@ -1,7 +1,7 @@
 // Justificativa de cada item (RN-013): um modelo de texto por código da seção 4.
 
 import { formatarReais, formatarReaisDecimal } from './dinheiro.ts';
-import type { Categoria, CodigoLimite, CodigoMotivo, DecisaoLimite, Motivo, ProblemaDado, Recusa } from './tipos.ts';
+import type { Categoria, Centavos, CodigoLimite, CodigoMotivo, DecisaoLimite, Motivo, ProblemaDado, Recusa } from './tipos.ts';
 
 /** O que decidiu o item: a recusa de uma etapa ou a decisão do limite. */
 export type Decisao = Recusa | DecisaoLimite;
@@ -34,6 +34,11 @@ const PROBLEMA: Record<ProblemaDado, (campo: string) => string> = {
   repetido: () => "O 'id' repete o de uma despesa anterior do arquivo.",
 };
 
+/** Valor na moeda da despesa: `R$ 45,00` em BRL, `EUR 22,00` nas demais. */
+function formatarValor(c: Centavos, moeda: string): string {
+  return moeda === 'BRL' ? formatarReais(c) : `${moeda} ${formatarReais(c).replace('R$ ', '')}`;
+}
+
 /** Limite da categoria na data; na periodicidade `diaria`, por diária e com o período das noites. */
 function limiteDoDia(d: DecisaoLimite['detalhes']): string {
   const nome = nomeCategoria(d.categoria);
@@ -53,8 +58,12 @@ export const MODELOS: Modelos = {
     `${limiteDoDia(d)} já esgotado por despesas anteriores; saldo disponível ${formatarReais(d.saldoDisponivel)}; ${formatarReais(d.solicitado)} não reembolsado.`,
   DADO_INVALIDO: (d) => PROBLEMA[d.problema](d.campo),
   VALOR_NAO_POSITIVO: (d) =>
-    `Valor solicitado ${formatarReais(d.valor)} não é positivo; estornos e valores zerados não são reembolsados.`,
+    d.moeda === 'BRL' || d.valorOriginal <= 0n
+      ? `Valor solicitado ${formatarValor(d.valorOriginal, d.moeda)} não é positivo; estornos e valores zerados não são reembolsados.`
+      : `Valor solicitado ${formatarValor(d.valorOriginal, d.moeda)} convertido para ${formatarReais(d.emReais ?? 0n)} não é positivo; valores zerados não são reembolsados.`,
   FORA_DO_PERIODO: (d) => `Data ${d.data} fora do período de ${d.inicio} a ${d.fim}.`,
+  CAMBIO_INDISPONIVEL: (d) =>
+    `Sem cotação de ${d.moeda} até ${d.data} no arquivo de câmbio; o valor não pode ser convertido para reais.`,
   CATEGORIA_NAO_REEMBOLSAVEL: (d) =>
     d.caso === 'limite_zero'
       ? `Categoria '${d.categoria}' não é reembolsável no centro de custo ${d.centroCusto} (limite 0 na política ${d.versao}).`

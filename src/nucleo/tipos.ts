@@ -52,14 +52,17 @@ export interface DespesaValida {
   readonly fornecedorChave: string;
   /** RN-003, AMB-036: normalizada; ausente, nula ou vazia → `BRL`. */
   readonly moeda: Moeda;
-  /** RN-001. */
-  readonly valorSolicitado: Centavos;
+  /** RN-001, na moeda da despesa. */
+  readonly valorOriginal: Centavos;
+  /** Etapa 1 (RN-017, DT-007). `null` aqui só por falta de cotação (a recusa vem na etapa 6). */
+  readonly conversao: Conversao | null;
   /** RN-003. */
   readonly temNotaFiscal: boolean;
 }
 
-/** Despesa que passou das etapas 3 a 7, com a regra da sua categoria na tabela aplicável. */
-export interface DespesaElegivel extends DespesaValida {
+/** Despesa que passou das etapas 3 a 8: com conversão e com a regra da sua categoria na tabela aplicável. */
+export interface DespesaElegivel extends Omit<DespesaValida, 'conversao'> {
+  readonly conversao: Conversao;
   readonly regra: RegraCategoria;
 }
 
@@ -72,6 +75,7 @@ export type CodigoMotivo =
   | 'VALOR_NAO_POSITIVO'
   | 'FORA_DO_PERIODO'
   | 'CATEGORIA_NAO_REEMBOLSAVEL'
+  | 'CAMBIO_INDISPONIVEL'
   | 'DUPLICATA'
   | 'NOTA_FISCAL_AUSENTE';
 
@@ -94,7 +98,11 @@ export type ProblemaDado =
 /** Recusa de uma etapa, com os dados para a descrição do motivo (RN-013). */
 export type Recusa =
   | { readonly codigo: 'DADO_INVALIDO'; readonly detalhes: { readonly campo: string; readonly problema: ProblemaDado } }
-  | { readonly codigo: 'VALOR_NAO_POSITIVO'; readonly detalhes: { readonly valor: Centavos } }
+  | {
+      readonly codigo: 'VALOR_NAO_POSITIVO';
+      /** `emReais`: o valor convertido, quando há conversão (RN-004). */
+      readonly detalhes: { readonly valorOriginal: Centavos; readonly moeda: Moeda; readonly emReais: Centavos | null };
+    }
   | {
       readonly codigo: 'FORA_DO_PERIODO';
       readonly detalhes: { readonly data: DataISO; readonly inicio: DataISO; readonly fim: DataISO };
@@ -111,14 +119,18 @@ export type Recusa =
         readonly centroCusto: string | null;
       };
     }
+  | { readonly codigo: 'CAMBIO_INDISPONIVEL'; readonly detalhes: { readonly moeda: Moeda; readonly data: DataISO } }
   | { readonly codigo: 'DUPLICATA'; readonly detalhes: { readonly idAceito: string } }
   | { readonly codigo: 'NOTA_FISCAL_AUSENTE'; readonly detalhes: { readonly valor: Centavos; readonly limiar: Decimal } };
 
-/** Recusa da RN-003: leva os ecos brutos e o valor, se numérico (AMB-023). */
+/** Recusa da RN-003: leva os ecos brutos, o valor, se numérico, e a conversão, se possível (AMB-023, AMB-043). */
 export type RecusaDadoInvalido = Extract<Recusa, { codigo: 'DADO_INVALIDO' }> & {
   /** Como vieram; ausente → `null`. */
   readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown; readonly moeda: unknown };
-  readonly valorSolicitado: Centavos | null;
+  /** Nulo se `valor` não é numérico. */
+  readonly valorOriginal: Centavos | null;
+  /** Nula se `valor` não é numérico, se a moeda não é texto, ou sem data válida/cotação numa moeda estrangeira. */
+  readonly conversao: Conversao | null;
 };
 
 /** Decisão da etapa de limite, com os números para a descrição (RN-013). */
@@ -159,7 +171,13 @@ export interface ResultadoItem {
   readonly id: unknown;
   readonly data: unknown;
   readonly categoria: unknown;
-  /** Nulo só em `DADO_INVALIDO` com `valor` não numérico (AMB-023). */
+  /** Normalizada; em `DADO_INVALIDO` sai como veio (ausente → `null`). */
+  readonly moeda: unknown;
+  /** Nulo só com `valor` não numérico (AMB-023). */
+  readonly valorOriginal: Centavos | null;
+  /** Os três campos de conversão da saída saem daqui, juntos (AMB-043, R-17). */
+  readonly conversao: Conversao | null;
+  /** Em reais: `conversao?.valorSolicitado ?? null`, montado só pelo motor. */
   readonly valorSolicitado: Centavos | null;
   readonly valorReembolsavel: Centavos;
   readonly motivo: Motivo;

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { lerCambio } from '../../src/io/cambio.ts';
 import { converter } from '../../src/nucleo/cambio.ts';
-import { CAMBIO_V4 } from '../apoio.ts';
+import { statusDe } from '../../src/nucleo/status.ts';
+import { CAMBIO_V4, rodar } from '../apoio.ts';
+import type { Opcoes } from '../apoio.ts';
 
 /** `[taxa, data da cotação, valor em reais]` da conversão, ou `null`. */
 function conversao(centavos: bigint, moeda: string, data: string) {
@@ -51,6 +53,58 @@ describe('RN-017 — Moeda e conversão para reais', () => {
 
   it('RN-017 › cotação antiga continua valendo: EUR em 2026-12-31 usa a de 2026-07-28 (AMB-035)', () => {
     expect(conversao(1000n, 'EUR', '2026-12-31')).toEqual(['6.02', '2026-07-28', 6020n]);
+  });
+
+  /** `[código, valor em reais, reembolsável]` de cada item pelo motor. */
+  function motor(despesas: Record<string, unknown>[], opcoes: Opcoes = {}) {
+    return rodar(despesas, opcoes).map((i) => [i.motivo.codigo, i.valorSolicitado, i.valorReembolsavel]);
+  }
+
+  it('RN-017 › e-006 (55,00 GBP) → CAMBIO_INDISPONIVEL, valor_solicitado nulo', () => {
+    const e006 = { id: 'e-006', data: '2026-07-21', categoria: 'representacao', valor: 55, moeda: 'GBP' };
+    const [i] = rodar([e006], { centroCusto: 'CC-COMERCIAL' });
+    expect(i).toMatchObject({ moeda: 'GBP', valorOriginal: 5500n, conversao: null, valorSolicitado: null, valorReembolsavel: 0n });
+    expect(i?.motivo.codigo).toBe('CAMBIO_INDISPONIVEL');
+    expect(statusDe(i!)).toBe('RECUSADO');
+  });
+
+  it('RN-017 › 10,00 "EURO" → CAMBIO_INDISPONIVEL, e não DADO_INVALIDO', () => {
+    expect(motor([{ valor: 10, moeda: 'EURO' }])).toEqual([['CAMBIO_INDISPONIVEL', null, 0n]]);
+    expect(rodar([{ valor: 10, moeda: ' euro ' }])[0]?.moeda).toBe('EURO');
+  });
+
+  it('RN-017 › EUR em 2026-07-10 → CAMBIO_INDISPONIVEL', () => {
+    expect(motor([{ data: '2026-07-10', valor: 10, moeda: 'EUR' }])).toEqual([['CAMBIO_INDISPONIVEL', null, 0n]]);
+    expect(motor([{ data: '2026-07-13', valor: 10, moeda: 'EUR' }])).toEqual([['APROVADO_INTEGRAL', 5910n, 5910n]]);
+  });
+
+  it('RN-017 › EUR em 2026-06-30 num período de julho → FORA_DO_PERIODO, e não CAMBIO_INDISPONIVEL', () => {
+    const [i] = rodar([{ data: '2026-06-30', valor: 10, moeda: 'EUR' }]);
+    expect(i?.motivo.codigo).toBe('FORA_DO_PERIODO');
+    // sem cotação até a data: os três campos de conversão nulos (seção 4)
+    expect(i).toMatchObject({ conversao: null, valorSolicitado: null, valorOriginal: 1000n });
+    // com cotação, o recusado antes do câmbio sai convertido
+    const [j] = rodar([{ data: '2026-08-03', valor: 10, moeda: 'EUR' }]);
+    expect(j?.motivo.codigo).toBe('FORA_DO_PERIODO');
+    expect(j?.conversao).toMatchObject({ dataCotacao: '2026-07-28', valorSolicitado: 6020n });
+  });
+
+  it('RN-017 › GBP com categoria coworking → CATEGORIA_NAO_REEMBOLSAVEL (etapa 5 antes da 6)', () => {
+    expect(motor([{ categoria: 'coworking', valor: 55, moeda: 'GBP' }])).toEqual([['CATEGORIA_NAO_REEMBOLSAVEL', null, 0n]]);
+  });
+
+  it('RN-017 › e-010 (sem moeda) → BRL, taxa_cambio 1', () => {
+    const e010 = { id: 'e-010', data: '2026-07-27', valor: 88, fornecedor: 'Bistro Central', moeda: undefined };
+    const [i] = rodar([e010], { centroCusto: 'CC-COMERCIAL' });
+    expect(i).toMatchObject({ moeda: 'BRL', valorOriginal: 8800n, valorSolicitado: 8800n, valorReembolsavel: 8800n });
+    expect(i?.conversao).toEqual({ taxa: expect.objectContaining({ texto: '1' }), dataCotacao: null, valorSolicitado: 8800n });
+  });
+
+  it('RN-017 › limite compara o valor em reais: 22,00 EUR (R$ 130,46) de alimentação na tabela padrão → PARCIAL 60,00', () => {
+    expect(motor([{ data: '2026-07-14', valor: 22, moeda: 'EUR' }])).toEqual([['LIMITE_DIARIO_EXCEDIDO', 13046n, 6000n]]);
+    const [i] = rodar([{ data: '2026-07-14', valor: 22, moeda: 'EUR' }]);
+    expect(i?.valorOriginal).toBe(2200n);
+    expect(statusDe(i!)).toBe('PARCIAL');
   });
 
   it('RN-017 › câmbio: "usd" no arquivo é indexado como USD', () => {

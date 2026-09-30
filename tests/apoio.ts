@@ -14,6 +14,7 @@ import { calcular, calcularItens, passada1 } from '../src/nucleo/motor.ts';
 import { tabelaAplicavel } from '../src/nucleo/politica.ts';
 import { statusDe } from '../src/nucleo/status.ts';
 import type {
+  Cambio,
   DespesaElegivel,
   DespesaValida,
   Entrada,
@@ -44,6 +45,7 @@ export interface Opcoes {
   readonly periodo?: { inicio: string; fim: string };
   readonly centroCusto?: string | null;
   readonly politica?: Politica;
+  readonly cambio?: Cambio;
 }
 
 /** Tabela aplicável da fixture para as `opcoes` (sem centro de custo: a padrão). */
@@ -71,7 +73,7 @@ export function bruta(campos: Record<string, unknown> = {}): unknown {
 
 /** `DespesaValida` a partir do padrão com `campos` trocados. */
 export function valida(campos: Record<string, unknown> = {}, indice = 0): DespesaValida {
-  const r = validarDespesa(bruta(campos), indice);
+  const r = validarDespesa(bruta(campos), indice, new Set(), CAMBIO_V4);
   expect('codigo' in r, JSON.stringify(r, (_k, v: unknown) => (typeof v === 'bigint' ? String(v) : v))).toBe(false);
   return r as DespesaValida;
 }
@@ -110,13 +112,13 @@ export function entrada(despesas: (Record<string, unknown> | Cru)[], opcoes: Opc
 }
 
 /** Resultado do motor para uma `Entrada` (com o centro de custo dela), com a fixture da v4. */
-export function calcularV4(e: Entrada, opcoes: Pick<Opcoes, 'politica'> = {}): Resultado {
-  return calcular(e, opcoes.politica ?? POLITICA_V4);
+export function calcularV4(e: Entrada, opcoes: Pick<Opcoes, 'politica' | 'cambio'> = {}): Resultado {
+  return calcular(e, opcoes.politica ?? POLITICA_V4, opcoes.cambio ?? CAMBIO_V4);
 }
 
 /** Código de recusa de cada despesa na passada 1 do motor (`null` = elegível). */
 export function codigosPassada1(e: Entrada, opcoes: Opcoes = {}): (string | null)[] {
-  return passada1(e, tabela(opcoes)).map((a) => (a.tipo === 'elegivel' ? null : a.recusa.codigo));
+  return passada1(e, tabela(opcoes), opcoes.cambio ?? CAMBIO_V4).map((a) => (a.tipo === 'elegivel' ? null : a.recusa.codigo));
 }
 
 /** `DespesaElegivel` a partir do padrão com `campos` trocados, com a regra da tabela aplicável. */
@@ -124,7 +126,8 @@ export function elegivel(campos: Record<string, unknown> = {}, indice = 0, opcoe
   const d = valida(campos, indice);
   const regra = tabela(opcoes).categorias.get(d.categoria);
   expect(regra, d.categoria).toBeDefined();
-  return { ...d, regra: regra! };
+  expect(d.conversao, d.moeda).not.toBeNull();
+  return { ...d, conversao: d.conversao!, regra: regra! };
 }
 
 /** Aloca o limite para despesas elegíveis montadas do padrão, na ordem dada. */
@@ -142,7 +145,7 @@ export function alocarDespesas(
 
 /** Itens do motor para as despesas montadas do padrão (ver `entrada`). */
 export function rodar(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoes = {}): ResultadoItem[] {
-  return calcularItens(entrada(despesas, opcoes), tabela(opcoes));
+  return calcularItens(entrada(despesas, opcoes), tabela(opcoes), opcoes.cambio ?? CAMBIO_V4);
 }
 
 /** `[status, código, reembolsável]` de cada item do motor. */

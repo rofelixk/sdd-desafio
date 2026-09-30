@@ -33,6 +33,26 @@ describe('RN-014 — Totais do resumo', () => {
     expect(resumo.totalNaoReembolsado).toBe(6050n);
   });
 
+  it('RN-014 › total_solicitado soma o valor em reais e ignora CAMBIO_INDISPONIVEL (nulo)', () => {
+    const { itens, resumo } = calcularV4(
+      entrada([
+        { data: '2026-07-14', valor: 22, moeda: 'EUR' }, // R$ 130,46 → 60,00
+        { data: '2026-07-21', valor: 55, moeda: 'GBP' }, // sem cotação
+        { data: '2026-07-10', valor: 10, moeda: 'EUR', fornecedor: 'Y' }, // antes da 1ª cotação
+        { data: '2026-07-27', valor: 30, fornecedor: 'Z' }, // BRL
+      ]),
+    );
+    expect(itens.map((i) => i.motivo.codigo)).toEqual([
+      'LIMITE_DIARIO_EXCEDIDO',
+      'CAMBIO_INDISPONIVEL',
+      'CAMBIO_INDISPONIVEL',
+      'APROVADO_INTEGRAL',
+    ]);
+    expect(resumo.totalSolicitado).toBe(13046n + 3000n);
+    expect(resumo.totalReembolsavel).toBe(6000n + 3000n);
+    expect(resumo.totalNaoReembolsado).toBe(7046n);
+  });
+
   it('RN-014 › lista vazia → contagens 0 e totais 0,00', () => {
     expect(calcularV4(entrada([])).resumo).toEqual({
       quantidadeItens: 0,

@@ -1,12 +1,16 @@
-// Etapas 3 a 7 da seção 8. Cada função devolve a recusa da etapa ou `null`;
+// Etapas 3 a 8 da seção 8. Cada função devolve a recusa da etapa ou `null`;
 // a ordem das etapas vive só no `motor.ts` (DT-002).
 
 import type { Centavos, DataISO, Decimal, DespesaValida, Recusa, TabelaAplicavel } from './tipos.ts';
 
-/** Etapa 3 (RN-004, AMB-012). */
+/**
+ * Etapa 3 (RN-004, AMB-012): valor original ≤ 0, mesmo sem cotação, ou valor
+ * em reais que arredonda para ≤ 0.
+ */
 export function verificarValorPositivo(d: DespesaValida): Recusa | null {
-  return d.valorSolicitado <= 0n
-    ? { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valor: d.valorSolicitado } }
+  const emReais = d.conversao?.valorSolicitado ?? null;
+  return d.valorOriginal <= 0n || (emReais !== null && emReais <= 0n)
+    ? { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valorOriginal: d.valorOriginal, moeda: d.moeda, emReais } }
     : null;
 }
 
@@ -41,16 +45,21 @@ export function verificarCategoria(d: DespesaValida, tabela: TabelaAplicavel): R
   };
 }
 
+/** Etapa 6 (RN-017, AMB-036, AMB-039): sem cotação até a data. */
+export function verificarCambio(d: DespesaValida): Recusa | null {
+  return d.conversao === null ? { codigo: 'CAMBIO_INDISPONIVEL', detalhes: { moeda: d.moeda, data: d.data } } : null;
+}
+
 /** Chave da RN-007 → `id` da primeira ocorrência. */
 export type ChavesDuplicata = Map<string, string>;
 
 /**
- * Etapa 6 (RN-007, AMB-011, AMB-026): mesma data, categoria normalizada,
- * fornecedor (`trim` + minúsculas; vazio é um valor) e valor. A primeira
- * ocorrência é registrada em `aceitas` e segue; as seguintes são recusadas.
+ * Etapa 7 (RN-007, AMB-011, AMB-026): mesma data, categoria normalizada,
+ * fornecedor (`trim` + minúsculas; vazio é um valor) e valor original. A
+ * primeira ocorrência é registrada em `aceitas` e segue; as seguintes são recusadas.
  */
 export function verificarDuplicata(d: DespesaValida, aceitas: ChavesDuplicata): Recusa | null {
-  const chave = JSON.stringify([d.data, d.categoria, d.fornecedorChave, d.valorSolicitado.toString()]);
+  const chave = JSON.stringify([d.data, d.categoria, d.fornecedorChave, d.valorOriginal.toString()]);
   const idAceito = aceitas.get(chave);
   if (idAceito !== undefined) return { codigo: 'DUPLICATA', detalhes: { idAceito } };
   aceitas.set(chave, d.id);
@@ -62,9 +71,13 @@ function acimaDe(valor: Centavos, limiar: Decimal): boolean {
   return valor * 10n ** BigInt(limiar.escala) > limiar.digitos * 100n;
 }
 
-/** Etapa 7 (RN-008, AMB-004, AMB-005, AMB-006): estritamente acima do limiar da tabela, sem nota. */
+/**
+ * Etapa 8 (RN-008, AMB-004 a AMB-006, AMB-038): valor em reais estritamente
+ * acima do limiar da tabela, sem nota. Só chega aqui despesa com conversão (etapa 6).
+ */
 export function verificarNotaFiscal(d: DespesaValida, tabela: TabelaAplicavel): Recusa | null {
-  return acimaDe(d.valorSolicitado, tabela.limiarNotaFiscal) && !d.temNotaFiscal
-    ? { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: d.valorSolicitado, limiar: tabela.limiarNotaFiscal } }
+  const emReais = d.conversao!.valorSolicitado;
+  return acimaDe(emReais, tabela.limiarNotaFiscal) && !d.temNotaFiscal
+    ? { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: emReais, limiar: tabela.limiarNotaFiscal } }
     : null;
 }

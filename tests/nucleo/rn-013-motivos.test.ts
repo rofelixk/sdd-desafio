@@ -21,7 +21,9 @@ const EXEMPLOS: Decisao[] = [
   { codigo: 'LIMITE_DIARIO_EXCEDIDO', detalhes: LIMITE },
   { codigo: 'LIMITE_DIARIO_ESGOTADO', detalhes: { ...LIMITE, saldoDisponivel: 0n, reembolsavel: 0n } },
   { codigo: 'DADO_INVALIDO', detalhes: { campo: 'data', problema: 'data_invalida' } },
-  { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valor: -4500n } },
+  { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valorOriginal: -4500n, moeda: 'BRL', emReais: -4500n } },
+  { codigo: 'VALOR_NAO_POSITIVO', detalhes: { valorOriginal: 1n, moeda: 'XYZ', emReais: 0n } },
+  { codigo: 'CAMBIO_INDISPONIVEL', detalhes: { moeda: 'GBP', data: '2026-07-21' } },
   { codigo: 'FORA_DO_PERIODO', detalhes: { data: '2026-04-15', inicio: '2026-07-01', fim: '2026-07-31' } },
   {
     codigo: 'CATEGORIA_NAO_REEMBOLSAVEL',

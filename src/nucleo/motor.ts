@@ -4,6 +4,7 @@ import { registrarId, validarDespesa } from './despesa.ts';
 import { diariasDe, gerarParcelas } from './diarias.ts';
 import {
   ehCategoria,
+  verificarCambio,
   verificarCategoria,
   verificarDuplicata,
   verificarNotaFiscal,
@@ -17,6 +18,9 @@ import { montarMotivo } from './motivos.ts';
 import { tabelaAplicavel } from './politica.ts';
 import { calcularResumo } from './resumo.ts';
 import type {
+  Cambio,
+  Centavos,
+  Conversao,
   DespesaElegivel,
   DespesaValida,
   Entrada,
@@ -35,12 +39,12 @@ export type Avaliacao =
   | { readonly tipo: 'recusada'; readonly despesa: DespesaValida; readonly recusa: Recusa }
   | { readonly tipo: 'elegivel'; readonly despesa: DespesaElegivel };
 
-/** Passada 1: etapas 1 a 7, na ordem da entrada; a primeira recusa encerra a avaliação. */
-export function passada1(entrada: Entrada, tabela: TabelaAplicavel): Avaliacao[] {
+/** Passada 1: etapas 1 a 8, na ordem da entrada; a primeira recusa encerra a avaliação. */
+export function passada1(entrada: Entrada, tabela: TabelaAplicavel, cambio: Cambio): Avaliacao[] {
   const idsVistos = new Set<string>();
   const aceitas: ChavesDuplicata = new Map();
   return entrada.despesas.map((bruta, indice): Avaliacao => {
-    const validada = validarDespesa(bruta, indice, idsVistos); // etapas 1 e 2
+    const validada = validarDespesa(bruta, indice, idsVistos, cambio); // etapas 1 e 2
     registrarId(idsVistos, validada);
     if ('codigo' in validada) return { tipo: 'invalida', recusa: validada };
 
@@ -48,32 +52,35 @@ export function passada1(entrada: Entrada, tabela: TabelaAplicavel): Avaliacao[]
       verificarValorPositivo(validada) ?? // etapa 3
       verificarPeriodo(validada, entrada.inicio, entrada.fim) ?? // etapa 4
       verificarCategoria(validada, tabela) ?? // etapa 5
-      verificarDuplicata(validada, aceitas) ?? // etapa 6
-      verificarNotaFiscal(validada, tabela); // etapa 7
+      verificarCambio(validada) ?? // etapa 6
+      verificarDuplicata(validada, aceitas) ?? // etapa 7
+      verificarNotaFiscal(validada, tabela); // etapa 8
     if (recusa) return { tipo: 'recusada', despesa: validada, recusa };
 
-    // A etapa 5 garante que a categoria está na tabela aplicável.
-    return { tipo: 'elegivel', despesa: { ...validada, regra: tabela.categorias.get(validada.categoria)! } };
+    // As etapas 5 e 6 garantem a categoria na tabela aplicável e a conversão.
+    const despesa = { ...validada, conversao: validada.conversao!, regra: tabela.categorias.get(validada.categoria)! };
+    return { tipo: 'elegivel', despesa };
   });
 }
 
-/** Passada 2: etapas 8 e 9 sobre as elegíveis; monta um item por despesa, na ordem da entrada. */
-export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): ResultadoItem[] {
-  const avaliacoes = passada1(entrada, tabela);
+/** Passada 2: etapas 9 e 10 sobre as elegíveis; monta um item por despesa, na ordem da entrada. */
+export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio: Cambio): ResultadoItem[] {
+  const avaliacoes = passada1(entrada, tabela, cambio);
   const elegiveis = avaliacoes.flatMap((a) => (a.tipo === 'elegivel' ? [a.despesa] : []));
-  const viagem = diasDeViagem(elegiveis); // etapa 8
+  const viagem = diasDeViagem(elegiveis); // etapa 9
   const alocacoes = new Map<number, Alocacao>(
-    alocar(elegiveis.flatMap(gerarParcelas), viagem, tabela).map((a) => [a.indiceDespesa, a]), // etapa 9
+    alocar(elegiveis.flatMap(gerarParcelas), viagem, tabela).map((a) => [a.indiceDespesa, a]), // etapa 10
   );
 
   return avaliacoes.map((a): ResultadoItem => {
     if (a.tipo === 'invalida') {
-      const { eco, valorSolicitado } = a.recusa;
+      const { eco, valorOriginal, conversao } = a.recusa;
       return {
         id: eco.id,
         data: eco.data,
         categoria: eco.categoria,
-        valorSolicitado,
+        moeda: eco.moeda,
+        ...valores(valorOriginal, conversao),
         valorReembolsavel: 0n,
         motivo: montarMotivo(a.recusa),
         ...foraDoLimite,
@@ -85,7 +92,8 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): Result
         id: d.id,
         data: d.data,
         categoria: ehCategoria(d.categoria, tabela) ? d.categoria : d.categoriaOriginal,
-        valorSolicitado: d.valorSolicitado,
+        moeda: d.moeda,
+        ...valores(d.valorOriginal, d.conversao),
         valorReembolsavel: 0n,
         motivo: montarMotivo(a.recusa),
         ...foraDoLimite,
@@ -98,7 +106,8 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): Result
       id: d.id,
       data: d.data,
       categoria: d.categoria,
-      valorSolicitado: d.valorSolicitado,
+      moeda: d.moeda,
+      ...valores(d.valorOriginal, d.conversao),
       valorReembolsavel: alocacao.reembolsavel,
       motivo: montarMotivo({
         codigo: alocacao.codigo,
@@ -121,6 +130,11 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): Result
   });
 }
 
+/** Valor original e conversão; o solicitado em reais sai só da conversão (AMB-043). */
+function valores(valorOriginal: Centavos | null, conversao: Conversao | null) {
+  return { valorOriginal, conversao, valorSolicitado: conversao?.valorSolicitado ?? null };
+}
+
 /** Recusada antes da etapa de limite (seção 4). */
 const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null } as const;
 
@@ -128,9 +142,9 @@ const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null
  * Resultado completo: ecos, tabela aplicada, itens na ordem da entrada e
  * resumo (RN-014). A tabela aplicável é montada uma vez, antes de tudo (seção 8).
  */
-export function calcular(entrada: Entrada, politica: Politica): Resultado {
+export function calcular(entrada: Entrada, politica: Politica, cambio: Cambio): Resultado {
   const tabela = tabelaAplicavel(politica, entrada.centroCusto);
-  const itens = calcularItens(entrada, tabela);
+  const itens = calcularItens(entrada, tabela, cambio);
   return {
     colaborador: entrada.colaborador,
     periodo: entrada.periodo,

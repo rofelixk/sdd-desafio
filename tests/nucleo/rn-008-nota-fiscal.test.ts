@@ -21,7 +21,7 @@ describe('RN-008 — Nota fiscal obrigatória', () => {
 
   it('RN-008 › 100.004 arredonda para 100,00 e não exige nota fiscal', () => {
     const d = valida({ ...semNf, valor: 100.004 });
-    expect(d.valorSolicitado).toBe(10000n);
+    expect(d.conversao?.valorSolicitado).toBe(10000n);
     expect(verificarNotaFiscal(d, TABELA_PADRAO)).toBeNull();
   });
 
@@ -35,6 +35,22 @@ describe('RN-008 — Nota fiscal obrigatória', () => {
     const tabelaFina = tabela({ politica: politicaCom((p) => (p.nota_fiscal_obrigatoria_acima_de = 100.005)) });
     expect(verificarNotaFiscal(valida({ ...semNf, valor: 100 }), tabelaFina)).toBeNull();
     expect(verificarNotaFiscal(valida({ ...semNf, valor: 100.01 }), tabelaFina)?.codigo).toBe('NOTA_FISCAL_AUSENTE');
+  });
+
+  it('RN-008 › e-005 (40,00 USD × 5,50 = R$ 220,00, sem NF) → NOTA_FISCAL_AUSENTE', () => {
+    const e005 = { ...semNf, id: 'e-005', data: '2026-07-20', valor: 40, moeda: 'USD' };
+    const d = valida(e005);
+    expect(verificarNotaFiscal(d, TABELA_PADRAO)).toEqual({
+      codigo: 'NOTA_FISCAL_AUSENTE',
+      detalhes: { valor: 22000n, limiar: { digitos: 10000n, escala: 2 } },
+    });
+    expect(decisoes([e005], { centroCusto: 'CC-COMERCIAL' })).toEqual([['RECUSADO', 'NOTA_FISCAL_AUSENTE', 0n]]);
+  });
+
+  it('RN-008 › e-003 (14,50 EUR × 5,88 = R$ 85,26, sem NF) não é recusada por nota fiscal', () => {
+    const e003 = { id: 'e-003', data: '2026-07-15', categoria: 'alimentacao', valor: 14.5, moeda: 'EUR', tem_nota_fiscal: false };
+    expect(verificarNotaFiscal(valida(e003), TABELA_PADRAO)).toBeNull();
+    expect(decisoes([e003], { centroCusto: 'CC-COMERCIAL' })).toEqual([['APROVADO', 'APROVADO_INTEGRAL', 8526n]]);
   });
 
   it('RN-008 › dia de viagem não amplia o limiar de nota fiscal', () => {

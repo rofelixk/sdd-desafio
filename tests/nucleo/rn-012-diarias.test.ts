@@ -109,6 +109,17 @@ describe('RN-012 — Hospedagem com mais de uma diária', () => {
     ]);
   });
 
+  it('RN-012 › parcelas em reais: 100,00 USD em 13/07 (R$ 542,00) "2 diarias" → 271,00 + 271,00 → PARCIAL 500,00', () => {
+    const hotel = { categoria: 'hospedagem', data: '2026-07-13', descricao: 'Hotel NY - 2 diarias', valor: 100, moeda: 'USD' };
+    expect(parcelas(hotel)).toEqual([
+      ['2026-07-13', 27100n],
+      ['2026-07-14', 27100n],
+    ]);
+    const [i] = rodar([hotel]);
+    expect(i).toMatchObject({ valorOriginal: 10000n, valorSolicitado: 54200n, valorReembolsavel: 50000n, diarias: 2 });
+    expect(i?.motivo.codigo).toBe('LIMITE_DIARIO_EXCEDIDO');
+  });
+
   it('RN-012 › diarias só é preenchido em hospedagem que chegou ao limite; limite e em_viagem nulos nas recusadas', () => {
     const itens = rodar([
       { categoria: 'hospedagem', descricao: '3 noites', valor: 300 },

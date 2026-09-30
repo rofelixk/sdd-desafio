@@ -3,7 +3,7 @@ import { lerJson } from '../../src/io/json.ts';
 import { registrarId, validarDespesa } from '../../src/nucleo/despesa.ts';
 import { comoTexto } from '../../src/nucleo/texto.ts';
 import { NumeroJson } from '../../src/nucleo/tipos.ts';
-import { codigosPassada1, cru, entrada } from '../apoio.ts';
+import { CAMBIO_V4, codigosPassada1, cru, entrada, rodar } from '../apoio.ts';
 import type { DespesaValida, RecusaDadoInvalido } from '../../src/nucleo/tipos.ts';
 
 /** Despesa válida com os campos trocados por `trocas` (texto JSON de cada valor; `undefined` remove o campo). */
@@ -25,7 +25,7 @@ function despesa(trocas: Record<string, string | undefined> = {}): unknown {
 }
 
 function validar(bruta: unknown): DespesaValida | RecusaDadoInvalido {
-  return validarDespesa(bruta, 0);
+  return validarDespesa(bruta, 0, new Set(), CAMBIO_V4);
 }
 
 function recusada(r: DespesaValida | RecusaDadoInvalido): RecusaDadoInvalido {
@@ -54,7 +54,7 @@ describe('RN-003 — Validação dos dados do item', () => {
   it('RN-003 › "data": "2026-07-32" → DADO_INVALIDO com data "2026-07-32" no eco', () => {
     const r = recusada(validar(despesa({ data: '"2026-07-32"' })));
     expect(r.eco.data).toBe('2026-07-32');
-    expect(r.valorSolicitado).toBe(4500n);
+    expect(r.valorOriginal).toBe(4500n);
   });
 
   it('RN-003 › id, data, categoria ou valor ausentes → DADO_INVALIDO', () => {
@@ -83,7 +83,7 @@ describe('RN-003 — Validação dos dados do item', () => {
     for (const bruta of [lerJson('42'), 'x', null, lerJson('[1]')]) {
       const r = recusada(validar(bruta));
       expect(r.eco).toEqual({ id: null, data: null, categoria: null, moeda: null });
-      expect(r.valorSolicitado).toBeNull();
+      expect(r.valorOriginal).toBeNull();
     }
   });
 
@@ -104,9 +104,9 @@ describe('RN-003 — Validação dos dados do item', () => {
 
   it('RN-003 › "45.00", "45,00" e 45.00 dão valor_solicitado 45,00', () => {
     for (const valor of ['"45.00"', '"45,00"', '45.00', '45', '"45"']) {
-      expect(valida(validar(despesa({ valor }))).valorSolicitado, valor).toBe(4500n);
+      expect(valida(validar(despesa({ valor }))).valorOriginal, valor).toBe(4500n);
     }
-    expect(valida(validar(despesa({ valor: '"33,333"' }))).valorSolicitado).toBe(3333n);
+    expect(valida(validar(despesa({ valor: '"33,333"' }))).valorOriginal).toBe(3333n);
   });
 
   it('RN-003 › "1.234,56" e "R$ 45,00" → DADO_INVALIDO', () => {
@@ -116,24 +116,24 @@ describe('RN-003 — Validação dos dados do item', () => {
   });
 
   it('RN-003 › "valor": "R$ 45,00" → valor_solicitado nulo', () => {
-    expect(recusada(validar(despesa({ valor: '"R$ 45,00"' }))).valorSolicitado).toBeNull();
+    expect(recusada(validar(despesa({ valor: '"R$ 45,00"' }))).valorOriginal).toBeNull();
   });
 
   it('RN-003 › "", "45.", ",5", "1,2,3", "abc", true, [], {} e null não são numéricos', () => {
     for (const valor of ['""', '"45."', '",5"', '"1,2,3"', '"abc"', 'true', '[]', '{}', 'null', '"   "', '"4 5"', '"+45"', '"1e2"']) {
       const r = recusada(validar(despesa({ valor })));
       expect(r.detalhes.campo, valor).toBe('valor');
-      expect(r.valorSolicitado, valor).toBeNull();
+      expect(r.valorOriginal, valor).toBeNull();
     }
   });
 
   it('RN-003 › " -45,00 " (espaços nas bordas) é numérico', () => {
-    expect(valida(validar(despesa({ valor: '" -45,00 "' }))).valorSolicitado).toBe(-4500n);
+    expect(valida(validar(despesa({ valor: '" -45,00 "' }))).valorOriginal).toBe(-4500n);
   });
 
   it('RN-003 › recusa por outro campo mantém valor_solicitado arredondado quando o valor é numérico', () => {
-    expect(recusada(validar(despesa({ id: 'null', valor: '10.005' }))).valorSolicitado).toBe(1000n);
-    expect(recusada(validar(despesa({ categoria: '""', valor: '"10,015"' }))).valorSolicitado).toBe(1002n);
+    expect(recusada(validar(despesa({ id: 'null', valor: '10.005' }))).valorOriginal).toBe(1000n);
+    expect(recusada(validar(despesa({ categoria: '""', valor: '"10,015"' }))).valorOriginal).toBe(1002n);
   });
 
   it('RN-003 › "tem_nota_fiscal": "sim" → DADO_INVALIDO', () => {
@@ -156,7 +156,7 @@ describe('RN-003 — Validação dos dados do item', () => {
     for (const tem_nota_fiscal of ['"true"', '1', '0', '[]', '{}', '"false"']) {
       const r = recusada(validar(despesa({ tem_nota_fiscal })));
       expect(r.detalhes.campo, tem_nota_fiscal).toBe('tem_nota_fiscal');
-      expect(r.valorSolicitado).toBe(4500n);
+      expect(r.valorOriginal).toBe(4500n);
     }
   });
 
@@ -183,7 +183,7 @@ describe('RN-003 — Validação dos dados do item', () => {
       const r = recusada(validar(despesa({ moeda })));
       expect(r.detalhes, moeda).toEqual({ campo: 'moeda', problema: 'nao_textual' });
       expect(r.eco.moeda, moeda).toEqual(eco);
-      expect(r.valorSolicitado).toBe(4500n);
+      expect(r.valorOriginal).toBe(4500n);
     }
     expect(recusada(validar(despesa({ data: '"2026-07-32"', moeda: undefined }))).eco.moeda).toBeNull();
     expect(recusada(validar(despesa({ data: '"2026-07-32"', moeda: '" eur "' }))).eco.moeda).toBe(' eur ');
@@ -198,7 +198,7 @@ describe('RN-003 — Validação dos dados do item', () => {
   function emSequencia(...brutas: unknown[]): (DespesaValida | RecusaDadoInvalido)[] {
     const idsVistos = new Set<string>();
     return brutas.map((bruta, i) => {
-      const r = validarDespesa(bruta, i, idsVistos);
+      const r = validarDespesa(bruta, i, idsVistos, CAMBIO_V4);
       registrarId(idsVistos, r);
       return r;
     });
@@ -234,8 +234,8 @@ describe('RN-003 — Validação dos dados do item', () => {
 
   it('RN-003 › id repetido também não reserva o id', () => {
     const idsVistos = new Set<string>();
-    registrarId(idsVistos, validarDespesa(despesa(), 0, idsVistos));
-    const repetida = validarDespesa(despesa(), 1, idsVistos);
+    registrarId(idsVistos, validarDespesa(despesa(), 0, idsVistos, CAMBIO_V4));
+    const repetida = validarDespesa(despesa(), 1, idsVistos, CAMBIO_V4);
     registrarId(idsVistos, repetida);
     expect([...idsVistos]).toEqual(['d-001']);
   });
@@ -243,6 +243,56 @@ describe('RN-003 — Validação dos dados do item', () => {
   it('RN-003 › despesa inválida não impede o processamento das outras', () => {
     const e = entrada([{}, { data: '2026-07-32' }, cru('42'), { categoria: 'coworking' }, {}]);
     expect(codigosPassada1(e)).toEqual([null, 'DADO_INVALIDO', 'DADO_INVALIDO', 'CATEGORIA_NAO_REEMBOLSAVEL', 'DUPLICATA']);
+  });
+
+  it('RN-003 › id de despesa recusada por CAMBIO_INDISPONIVEL continua reservado (AMB-025)', () => {
+    const e = entrada([
+      { id: 'd-001', valor: 10, moeda: 'GBP' },
+      { id: 'd-001', valor: 10 },
+    ]);
+    expect(codigosPassada1(e)).toEqual(['CAMBIO_INDISPONIVEL', 'DADO_INVALIDO']);
+  });
+
+  it('RN-003 › valor inválido: valor_original e os três campos de conversão nulos, mesmo em BRL ou com cotação (AMB-043)', () => {
+    for (const moeda of [undefined, '"BRL"', '"EUR"']) {
+      for (const valor of ['"R$ 45,00"', 'true', undefined]) {
+        const r = recusada(validar(despesa({ data: '"2026-07-14"', valor, moeda })));
+        expect(r.valorOriginal, `${moeda} ${valor}`).toBeNull();
+        expect(r.conversao, `${moeda} ${valor}`).toBeNull();
+      }
+    }
+    const [i] = rodar([{ data: '2026-07-14', valor: 'R$ 45,00', moeda: 'EUR' }]);
+    expect(i).toMatchObject({ moeda: 'EUR', valorOriginal: null, conversao: null, valorSolicitado: null });
+  });
+
+  it('RN-003 › BRL com valor numérico e data inválida → DADO_INVALIDO com taxa 1 e valor_solicitado preenchido', () => {
+    for (const data of ['"2026-07-32"', 'null', undefined]) {
+      const r = recusada(validar(despesa({ data, moeda: undefined })));
+      expect(r.valorOriginal, String(data)).toBe(4500n);
+      expect(r.conversao, String(data)).toEqual({ taxa: new NumeroJson('1'), dataCotacao: null, valorSolicitado: 4500n });
+    }
+    const [i] = rodar([{ data: '2026-07-32', moeda: 'brl' }]);
+    expect(i).toMatchObject({ moeda: 'brl', valorOriginal: 4500n, valorSolicitado: 4500n });
+  });
+
+  it('RN-003 › EUR com valor numérico e data inválida → DADO_INVALIDO com conversão nula', () => {
+    for (const data of ['"2026-07-32"', 'null', '"14/07/2026"']) {
+      const r = recusada(validar(despesa({ data, moeda: '"EUR"' })));
+      expect(r.valorOriginal, data).toBe(4500n);
+      expect(r.conversao, data).toBeNull();
+    }
+    // moeda não textual também anula a conversão
+    expect(recusada(validar(despesa({ moeda: '978' }))).conversao).toBeNull();
+  });
+
+  it('RN-003 › DADO_INVALIDO por outro campo, EUR com cotação → valor_solicitado convertido', () => {
+    const r = recusada(validar(despesa({ data: '"2026-07-14"', valor: '22', moeda: '"eur"', tem_nota_fiscal: '"sim"' })));
+    expect(r.detalhes.campo).toBe('tem_nota_fiscal');
+    expect(r.conversao).toEqual({ taxa: new NumeroJson('5.93'), dataCotacao: '2026-07-14', valorSolicitado: 13046n });
+    const [i] = rodar([{ id: '', data: '2026-07-18', valor: 30, moeda: 'EUR' }]);
+    expect(i?.motivo.codigo).toBe('DADO_INVALIDO');
+    expect(i).toMatchObject({ valorOriginal: 3000n, valorSolicitado: 17880n });
+    expect(i?.conversao?.dataCotacao).toBe('2026-07-17');
   });
 
   it('RN-003 › id de despesa recusada por FORA_DO_PERIODO continua reservado (AMB-025)', () => {

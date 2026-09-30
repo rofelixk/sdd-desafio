@@ -20,13 +20,14 @@ export function diariasDe(d: DespesaElegivel): number {
 }
 
 /**
- * Parcelas que consomem limite (DT-003): N noites D…D+N−1 com `valor ÷ N`,
+ * Parcelas que consomem limite (DT-003): N noites D…D+N−1 com `valor em reais ÷ N`,
  * o resto um centavo por vez nas primeiras noites.
  */
 export function gerarParcelas(d: DespesaElegivel): Parcela[] {
   const n = diariasDe(d);
-  const base = d.valorSolicitado / BigInt(n);
-  const resto = d.valorSolicitado % BigInt(n);
+  const valor = d.conversao.valorSolicitado;
+  const base = valor / BigInt(n);
+  const resto = valor % BigInt(n);
   return Array.from({ length: n }, (_, k) => ({
     indiceDespesa: d.indice,
     data: somarDias(d.data, k),
