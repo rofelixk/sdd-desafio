@@ -8,7 +8,6 @@ import { serializarJson } from './io/json.ts';
 import { montarSaida } from './io/saida.ts';
 import { formatarReais } from './nucleo/dinheiro.ts';
 import { calcular } from './nucleo/motor.ts';
-import { tabelaAplicavel } from './nucleo/politica.ts';
 
 const USO = 'uso: node src/cli.ts calcular --input <arquivo-entrada.json> --output <arquivo-saida.json>';
 
@@ -58,7 +57,7 @@ async function executar(argv: string[]): Promise<void> {
   try {
     const entrada = lerEntrada(texto);
     const { politica } = lerExternos(); // entrada → tabela de limites → câmbio (R-12)
-    const resultado = calcular(entrada, tabelaAplicavel(politica, null));
+    const resultado = calcular(entrada, politica);
     conteudo = serializarJson(montarSaida(resultado));
     resumo = `${resultado.resumo.quantidadeItens} itens processados; total reembolsável ${formatarReais(resultado.resumo.totalReembolsavel)}`;
   } catch (e) {

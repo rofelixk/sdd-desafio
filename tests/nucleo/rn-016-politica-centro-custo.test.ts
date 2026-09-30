@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { tabelaAplicavel } from '../../src/nucleo/politica.ts';
-import { POLITICA_V4 } from '../apoio.ts';
+import { statusDe } from '../../src/nucleo/status.ts';
+import { POLITICA_V4, calcularV4, entrada, politicaCom } from '../apoio.ts';
+import type { Opcoes } from '../apoio.ts';
 
 /** `categoria → [limite, origem]` da tabela aplicável. */
 function limites(centroCusto: string | null): Record<string, [bigint, string]> {
@@ -53,6 +55,61 @@ describe('RN-016 — Política por centro de custo', () => {
     for (const cc of [null, 'CC-SUPORTE-N2', 'CC-ADM', 'CC-ENG-PLATAFORMA']) {
       expect(tabelaAplicavel(POLITICA_V4, cc).categorias.has('representacao'), String(cc)).toBe(false);
     }
+  });
+
+  /** `[status, código, reembolsável]` e a tabela aplicada, pelo motor completo. */
+  function motor(despesas: Record<string, unknown>[], opcoes: Opcoes = {}) {
+    const r = calcularV4(entrada(despesas, opcoes), opcoes);
+    return { tabela: r.politica.tabela, itens: r.itens.map((i) => [statusDe(i), i.motivo.codigo, i.valorReembolsavel]) };
+  }
+
+  it('RN-016 › CC-SUPORTE-N2: alimentação 65,00 → PARCIAL 60,00', () => {
+    expect(motor([{ valor: 65 }], { centroCusto: 'CC-SUPORTE-N2' })).toEqual({
+      tabela: 'padrao',
+      itens: [['PARCIAL', 'LIMITE_DIARIO_EXCEDIDO', 6000n]],
+    });
+  });
+
+  it('RN-016 › " cc-comercial ": alimentação 85,00 → APROVADO 85,00', () => {
+    expect(motor([{ valor: 85 }], { centroCusto: ' cc-comercial ' })).toEqual({
+      tabela: 'CC-COMERCIAL',
+      itens: [['APROVADO', 'APROVADO_INTEGRAL', 8500n]],
+    });
+  });
+
+  it('RN-016 › CC-ADM: hospedagem 1 diária 300,00 → PARCIAL 250,00', () => {
+    const r = calcularV4(entrada([{ categoria: 'hospedagem', descricao: 'Hotel - 1 diaria', valor: 300 }], { centroCusto: 'CC-ADM' }));
+    expect(r.politica).toEqual({ versao: 'v4', tabela: 'CC-ADM' });
+    expect(r.itens[0]).toMatchObject({ valorReembolsavel: 25000n, limiteDiarioAplicado: 25000n, diarias: 1 });
+    expect(r.itens[0]?.motivo.codigo).toBe('LIMITE_DIARIO_EXCEDIDO');
+  });
+
+  it('RN-016 › representacao no CC-SUPORTE-N2 → CATEGORIA_NAO_REEMBOLSAVEL', () => {
+    expect(motor([{ categoria: 'representacao', valor: 190 }], { centroCusto: 'CC-SUPORTE-N2' }).itens).toEqual([
+      ['RECUSADO', 'CATEGORIA_NAO_REEMBOLSAVEL', 0n],
+    ]);
+  });
+
+  it('RN-016 › limite de alimentação do padrão trocado para 70,00 na tabela: alimentação 65,00 passa de PARCIAL a APROVADO', () => {
+    const politica = politicaCom((p) => (p.padrao.alimentacao.limite = 70.0));
+    expect(motor([{ valor: 65 }]).itens).toEqual([['PARCIAL', 'LIMITE_DIARIO_EXCEDIDO', 6000n]]);
+    expect(motor([{ valor: 65 }], { politica }).itens).toEqual([['APROVADO', 'APROVADO_INTEGRAL', 6500n]]);
+    expect(motor([{ valor: 65 }], { politica, centroCusto: 'CC-SUPORTE-N2' }).itens).toEqual([['APROVADO', 'APROVADO_INTEGRAL', 6500n]]);
+  });
+
+  it('RN-016 › vigencia 2026-08-01 não recusa nem muda despesas de julho (AMB-034)', () => {
+    const despesas = [
+      { data: '2026-07-01', valor: 65 },
+      { data: '2026-07-31', categoria: 'transporte_urbano', valor: 50 },
+      { data: '2026-06-30', valor: 10 },
+    ];
+    const futura = politicaCom((p) => (p.vigencia = '2026-08-01'));
+    expect(motor(despesas, { politica: futura })).toEqual(motor(despesas));
+    expect(motor(despesas, { politica: futura }).itens.map((i) => i[1])).toEqual([
+      'LIMITE_DIARIO_EXCEDIDO',
+      'APROVADO_INTEGRAL',
+      'FORA_DO_PERIODO',
+    ]);
   });
 
   it('RN-016 › limiar de nota fiscal e acréscimo de viagem são os da tabela, iguais para todo centro de custo', () => {

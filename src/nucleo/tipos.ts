@@ -162,6 +162,8 @@ export interface Resumo {
 export interface Resultado {
   readonly colaborador: unknown;
   readonly periodo: unknown;
+  /** `versao` da tabela de limites e a tabela aplicada (RN-016). */
+  readonly politica: { readonly versao: string; readonly tabela: string };
   readonly itens: readonly ResultadoItem[];
   readonly resumo: Resumo;
 }

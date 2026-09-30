@@ -14,11 +14,13 @@ import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
 import { montarMotivo } from './motivos.ts';
+import { tabelaAplicavel } from './politica.ts';
 import { calcularResumo } from './resumo.ts';
 import type {
   DespesaElegivel,
   DespesaValida,
   Entrada,
+  Politica,
   Recusa,
   RecusaDadoInvalido,
   Resultado,
@@ -114,8 +116,18 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): Result
 /** Recusada antes da etapa de limite (seção 4). */
 const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null } as const;
 
-/** Resultado completo: ecos, itens na ordem da entrada e resumo (RN-014). */
-export function calcular(entrada: Entrada, tabela: TabelaAplicavel): Resultado {
+/**
+ * Resultado completo: ecos, tabela aplicada, itens na ordem da entrada e
+ * resumo (RN-014). A tabela aplicável é montada uma vez, antes de tudo (seção 8).
+ */
+export function calcular(entrada: Entrada, politica: Politica): Resultado {
+  const tabela = tabelaAplicavel(politica, entrada.centroCusto);
   const itens = calcularItens(entrada, tabela);
-  return { colaborador: entrada.colaborador, periodo: entrada.periodo, itens, resumo: calcularResumo(itens) };
+  return {
+    colaborador: entrada.colaborador,
+    periodo: entrada.periodo,
+    politica: { versao: tabela.versao, tabela: tabela.nome },
+    itens,
+    resumo: calcularResumo(itens),
+  };
 }

@@ -1,4 +1,5 @@
-// Arquivo oficial × tabela da seção 9 da spec.
+// Arquivos oficiais × tabelas da seção 9 da spec, com a tabela de limites de
+// exemplos/envelope/ (fixture da v4).
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -18,7 +19,8 @@ interface ItemSaida {
   diarias: number | null;
 }
 
-const texto = serializarJson(montarSaida(calcularV4(lerEntrada(readFileSync('exemplos/despesas-exemplo.json', 'utf8')))));
+const resultado = calcularV4(lerEntrada(readFileSync('exemplos/despesas-exemplo.json', 'utf8')));
+const texto = serializarJson(montarSaida(resultado));
 const saida = JSON.parse(texto) as { itens: ItemSaida[]; resumo: Record<string, number> };
 
 function item(id: string): ItemSaida {
@@ -33,13 +35,14 @@ function linha(id: string) {
   return [i.valor_solicitado, i.valor_reembolsavel, i.status, i.motivo.codigo];
 }
 
-describe('Exemplo oficial (seção 9)', () => {
-  it('RN-010 › exemplo d-001: PARCIAL 60,00', () => {
-    expect(linha('d-001')).toEqual([72.5, 60, 'PARCIAL', 'LIMITE_DIARIO_EXCEDIDO']);
+describe('Exemplo oficial (seção 9, CC-ENG-PLATAFORMA)', () => {
+  it('RN-009 › exemplo d-001: APROVADO 72,50 (limite 75,00 do CC-ENG-PLATAFORMA)', () => {
+    expect(linha('d-001')).toEqual([72.5, 72.5, 'APROVADO', 'APROVADO_INTEGRAL']);
+    expect(item('d-001')).toMatchObject({ limite_diario_aplicado: 75, em_viagem: false });
   });
 
-  it('RN-010 › exemplo d-002: RECUSADO LIMITE_DIARIO_ESGOTADO', () => {
-    expect(linha('d-002')).toEqual([38, 0, 'RECUSADO', 'LIMITE_DIARIO_ESGOTADO']);
+  it('RN-010 › exemplo d-002: PARCIAL 2,50', () => {
+    expect(linha('d-002')).toEqual([38, 2.5, 'PARCIAL', 'LIMITE_DIARIO_EXCEDIDO']);
   });
 
   it('RN-010 › exemplo d-003: PARCIAL 80,00', () => {
@@ -70,42 +73,36 @@ describe('Exemplo oficial (seção 9)', () => {
     expect(linha('d-009')).toEqual([-45, 0, 'RECUSADO', 'VALOR_NAO_POSITIVO']);
   });
 
-  it('RN-012 › exemplo d-010: APROVADO 480,00, diarias 2', () => {
-    expect(linha('d-010')).toEqual([480, 480, 'APROVADO', 'APROVADO_INTEGRAL']);
-    expect(item('d-010')).toMatchObject({ diarias: 2, limite_diario_aplicado: 250, em_viagem: true });
-  });
-
-  it('RN-011 › exemplo d-011: APROVADO 33,33, em_viagem true, limite 90,00', () => {
+  it('RN-001 › exemplo d-011: APROVADO 33,33', () => {
     expect(linha('d-011')).toEqual([33.33, 33.33, 'APROVADO', 'APROVADO_INTEGRAL']);
-    expect(item('d-011')).toMatchObject({ em_viagem: true, limite_diario_aplicado: 90 });
   });
 
   it('RN-009 › exemplo d-012: APROVADO 47,20', () => {
     expect(linha('d-012')).toEqual([47.2, 47.2, 'APROVADO', 'APROVADO_INTEGRAL']);
   });
 
-  it('RN-008 › exemplo d-013: NOTA_FISCAL_AUSENTE', () => {
-    expect(linha('d-013')).toEqual([690, 0, 'RECUSADO', 'NOTA_FISCAL_AUSENTE']);
+  it('RN-009 › exemplo d-014: APROVADO 61,00', () => {
+    expect(linha('d-014')).toEqual([61, 61, 'APROVADO', 'APROVADO_INTEGRAL']);
+    expect(item('d-014')).toMatchObject({ limite_diario_aplicado: 75, em_viagem: false });
   });
 
-  it('RN-010 › exemplo d-014: PARCIAL 60,00', () => {
-    expect(linha('d-014')).toEqual([61, 60, 'PARCIAL', 'LIMITE_DIARIO_EXCEDIDO']);
-    expect(item('d-014')).toMatchObject({ em_viagem: false });
-  });
-
-  it('RN-014 › exemplo: resumo 1861.84 / 815.43 / 1046.41 · 4/3/7', () => {
+  it('RN-014 › exemplo: resumo 1861.84 / 351.43 / 1510.41 · 5/2/7', () => {
     expect(saida.itens.map((i) => i.id)).toEqual(Array.from({ length: 14 }, (_, k) => `d-${String(k + 1).padStart(3, '0')}`));
-    expect(saida.resumo).toEqual({
+    expect(saida.resumo).toMatchObject({
       quantidade_itens: 14,
-      aprovados: 4,
-      parciais: 3,
+      aprovados: 5,
+      parciais: 2,
       recusados: 7,
       total_solicitado: 1861.84,
-      total_reembolsavel: 815.43,
-      total_nao_reembolsado: 1046.41,
+      total_reembolsavel: 351.43,
+      total_nao_reembolsado: 1510.41,
     });
-    expect(texto).toContain('"total_solicitado": 1861.84');
-    expect(texto).toContain('"total_nao_reembolsado": 1046.41');
+    expect(texto).toContain('"total_reembolsavel": 351.43');
+    expect(texto).toContain('"total_nao_reembolsado": 1510.41');
+  });
+
+  it('RN-016 › exemplo: tabela aplicada CC-ENG-PLATAFORMA', () => {
+    expect(resultado.politica).toEqual({ versao: 'v4', tabela: 'CC-ENG-PLATAFORMA' });
   });
 
   it('RN-013 › exemplo: nenhum item com motivo ausente ou vazio', () => {

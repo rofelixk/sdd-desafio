@@ -83,11 +83,11 @@ describe('CLI', () => {
     const r = calcular('exemplos/despesas-exemplo.json', saida);
     expect(r.codigo).toBe(0);
     expect(r.stderr).toBe('');
-    expect(r.stdout).toBe('14 itens processados; total reembolsável R$ 815,43\n');
+    expect(r.stdout).toBe('14 itens processados; total reembolsável R$ 351,43\n');
     const texto = readFileSync(saida, 'utf8');
     expect(texto.startsWith('{\n  "colaborador": {\n    "id": "c-0417",')).toBe(true);
     expect(texto.endsWith('}\n')).toBe(true);
-    expect(JSON.parse(texto).resumo.total_reembolsavel).toBe(815.43);
+    expect(JSON.parse(texto).resumo.total_reembolsavel).toBe(351.43);
   });
 
   it('Infra › CLI: subcomando ou opção ausente → código 2 com "uso:"', () => {

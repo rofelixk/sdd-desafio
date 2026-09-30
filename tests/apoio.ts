@@ -105,9 +105,9 @@ export function entrada(despesas: (Record<string, unknown> | Cru)[], opcoes: Opc
   };
 }
 
-/** Resultado do motor para uma `Entrada`, com a fixture da v4. */
-export function calcularV4(e: Entrada, opcoes: Opcoes = {}): Resultado {
-  return calcular(e, tabela(opcoes));
+/** Resultado do motor para uma `Entrada` (com o centro de custo dela), com a fixture da v4. */
+export function calcularV4(e: Entrada, opcoes: Pick<Opcoes, 'politica'> = {}): Resultado {
+  return calcular(e, opcoes.politica ?? POLITICA_V4);
 }
 
 /** Código de recusa de cada despesa na passada 1 do motor (`null` = elegível). */
