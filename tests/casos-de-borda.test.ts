@@ -549,3 +549,69 @@ describe('Casos de borda — arquivo', () => {
     expect(cliComErro('[]')).toMatch(/^erro: /);
   });
 });
+
+describe('Casos de borda — centro de custo e tabela aplicável', () => {
+  const comercial = { centroCusto: 'CC-COMERCIAL' };
+  const engenharia = { centroCusto: 'CC-ENG-PLATAFORMA' };
+  const hotel = { categoria: 'hospedagem', data: '2026-07-14', descricao: 'Hotel', fornecedor: 'Hotel', valor: 200 };
+
+  it('Borda › Centro de custo sem entrada na tabela', () => {
+    const r = calcularV4(entrada([{ valor: 65 }], { centroCusto: 'CC-SUPORTE-N2' }));
+    expect(r.politica.tabela).toBe('padrao');
+    expect(decisao(r.itens[0])).toMatchObject({ status: 'PARCIAL', reembolsavel: 6000n });
+  });
+
+  it('Borda › Colaborador sem centro de custo', () => {
+    const r = calcularV4(entrada([{ valor: 65 }]));
+    expect(r.politica.tabela).toBe('padrao');
+    expect(decisao(r.itens[0])).toMatchObject({ status: 'PARCIAL', reembolsavel: 6000n });
+  });
+
+  it('Borda › Centro de custo com outra grafia', () => {
+    const r = calcularV4(entrada([{ valor: 85 }], { centroCusto: ' cc-comercial ' }));
+    expect(r.politica.tabela).toBe('CC-COMERCIAL');
+    expect(decisao(r.itens[0])).toMatchObject({ status: 'APROVADO', reembolsavel: 8500n });
+  });
+
+  it('Borda › Categoria herdada do padrão', () => {
+    const [i] = rodar([{ ...hotel, valor: 300 }], { centroCusto: 'CC-ADM' });
+    expect(decisao(i)).toMatchObject({ status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', reembolsavel: 25000n });
+    expect(i?.limiteDiarioAplicado).toBe(25000n);
+  });
+
+  it('Borda › Categoria só em outro centro de custo', () => {
+    const [i] = rodar([{ categoria: 'representacao', valor: 190 }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CATEGORIA_NAO_REEMBOLSAVEL' });
+  });
+
+  it('Borda › Categoria nova no centro de custo', () => {
+    const [i] = rodar([{ categoria: 'representacao', valor: 340, tem_nota_fiscal: true }], comercial);
+    expect(decisao(i)).toMatchObject({ status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', reembolsavel: 30000n });
+  });
+
+  it('Borda › Categoria com limite zero', () => {
+    const [i] = rodar([{ ...hotel, tem_nota_fiscal: true }], engenharia);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CATEGORIA_NAO_REEMBOLSAVEL' });
+    expect(i?.motivo.descricao).toContain('CC-ENG-PLATAFORMA');
+  });
+
+  it('Borda › Limite zero não gera viagem', () => {
+    const itens = rodar([hotel, { categoria: 'alimentacao', data: '2026-07-14', valor: 80 }], engenharia);
+    expect(itens.map(decisao)).toEqual([
+      { status: 'RECUSADO', codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', solicitado: 20000n, reembolsavel: 0n },
+      { status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', solicitado: 8000n, reembolsavel: 7500n },
+    ]);
+    expect(itens[1]).toMatchObject({ limiteDiarioAplicado: 7500n, emViagem: false });
+  });
+
+  it('Borda › Limite zero vem antes da nota fiscal', () => {
+    const [i] = rodar([{ ...hotel, descricao: 'Airbnb 3 noites', valor: 690, tem_nota_fiscal: false }], engenharia);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CATEGORIA_NAO_REEMBOLSAVEL' });
+  });
+
+  it('Borda › Representação em dia de viagem', () => {
+    const [, r] = rodar([hotel, { categoria: 'representacao', data: '2026-07-14', valor: 420, tem_nota_fiscal: true }], comercial);
+    expect(decisao(r)).toMatchObject({ status: 'APROVADO', codigo: 'APROVADO_INTEGRAL', reembolsavel: 42000n });
+    expect(r).toMatchObject({ limiteDiarioAplicado: 45000n, emViagem: true });
+  });
+});
