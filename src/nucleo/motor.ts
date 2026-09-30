@@ -69,7 +69,15 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): Result
   return avaliacoes.map((a): ResultadoItem => {
     if (a.tipo === 'invalida') {
       const { eco, valorSolicitado } = a.recusa;
-      return { ...eco, valorSolicitado, valorReembolsavel: 0n, motivo: montarMotivo(a.recusa), ...foraDoLimite };
+      return {
+        id: eco.id,
+        data: eco.data,
+        categoria: eco.categoria,
+        valorSolicitado,
+        valorReembolsavel: 0n,
+        motivo: montarMotivo(a.recusa),
+        ...foraDoLimite,
+      };
     }
     if (a.tipo === 'recusada') {
       const d = a.despesa;

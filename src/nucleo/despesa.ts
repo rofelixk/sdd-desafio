@@ -2,9 +2,9 @@
 
 import { ehDataValida } from './datas.ts';
 import { paraCentavos } from './dinheiro.ts';
-import { comoTexto, normalizar, normalizarFornecedor } from './texto.ts';
+import { comoTexto, normalizar, normalizarFornecedor, normalizarMoeda } from './texto.ts';
 import { NumeroJson } from './tipos.ts';
-import type { Centavos, DespesaValida, ProblemaDado, RecusaDadoInvalido } from './tipos.ts';
+import type { Centavos, DespesaValida, Moeda, ProblemaDado, RecusaDadoInvalido } from './tipos.ts';
 
 type Bruta = Readonly<Record<string, unknown>>;
 
@@ -30,6 +30,12 @@ function lerValor(v: unknown): Centavos | null {
   return null;
 }
 
+/** `moeda`: vazio vale `BRL`; texto é normalizado, sem checar formato; outro tipo é inválido (`null`) (RN-003, AMB-036). */
+function lerMoeda(v: unknown): Moeda | null {
+  if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) return 'BRL';
+  return typeof v === 'string' ? normalizarMoeda(v) : null;
+}
+
 /** `tem_nota_fiscal`: só booleano; vazio vale `false`; o resto é inválido (`null`) (RN-003, AMB-022). */
 function lerNotaFiscal(v: unknown): boolean | null {
   if (typeof v === 'boolean') return v;
@@ -47,9 +53,14 @@ export function validarDespesa(
   idsVistos: ReadonlySet<string> = new Set(),
 ): DespesaValida | RecusaDadoInvalido {
   if (!ehObjeto(bruta)) {
-    return recusar({ id: null, data: null, categoria: null }, null, 'despesa', 'nao_objeto');
+    return recusar({ id: null, data: null, categoria: null, moeda: null }, null, 'despesa', 'nao_objeto');
   }
-  const eco = { id: bruta.id ?? null, data: bruta.data ?? null, categoria: bruta.categoria ?? null };
+  const eco = {
+    id: bruta.id ?? null,
+    data: bruta.data ?? null,
+    categoria: bruta.categoria ?? null,
+    moeda: bruta.moeda ?? null,
+  };
   const valor = lerValor(bruta.valor);
   const { id, data, categoria } = bruta;
 
@@ -61,6 +72,8 @@ export function validarDespesa(
   if (valor === null) return recusar(eco, valor, 'valor', 'nao_numerico');
   const temNotaFiscal = lerNotaFiscal(bruta.tem_nota_fiscal);
   if (temNotaFiscal === null) return recusar(eco, valor, 'tem_nota_fiscal', 'nao_booleano');
+  const moeda = lerMoeda(bruta.moeda);
+  if (moeda === null) return recusar(eco, valor, 'moeda', 'nao_textual');
   const idNormalizado = normalizar(id);
   if (idsVistos.has(idNormalizado)) return recusar(eco, valor, 'id', 'repetido');
 
@@ -73,6 +86,7 @@ export function validarDespesa(
     categoria: normalizar(categoria),
     descricao: comoTexto(bruta.descricao),
     fornecedorChave: normalizarFornecedor(comoTexto(bruta.fornecedor)),
+    moeda,
     valorSolicitado: valor,
     temNotaFiscal,
   };

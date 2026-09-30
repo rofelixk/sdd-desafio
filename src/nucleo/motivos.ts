@@ -30,6 +30,7 @@ const PROBLEMA: Record<ProblemaDado, (campo: string) => string> = {
   data_invalida: () => "Campo 'data' não é uma data de calendário válida no formato AAAA-MM-DD.",
   nao_numerico: () => "Campo 'valor' não é numérico.",
   nao_booleano: () => "Campo 'tem_nota_fiscal' não é booleano (true ou false).",
+  nao_textual: (campo) => `Campo '${campo}' não é texto.`,
   repetido: () => "O 'id' repete o de uma despesa anterior do arquivo.",
 };
 

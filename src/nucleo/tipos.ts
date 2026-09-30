@@ -50,6 +50,8 @@ export interface DespesaValida {
   readonly descricao: string;
   /** RN-003, AMB-026, RN-007. */
   readonly fornecedorChave: string;
+  /** RN-003, AMB-036: normalizada; ausente, nula ou vazia → `BRL`. */
+  readonly moeda: Moeda;
   /** RN-001. */
   readonly valorSolicitado: Centavos;
   /** RN-003. */
@@ -80,7 +82,14 @@ export type CodigoLimite = 'APROVADO_INTEGRAL' | 'LIMITE_DIARIO_EXCEDIDO' | 'LIM
 export type CodigoRecusa = Exclude<CodigoMotivo, CodigoLimite>;
 
 /** Por que a RN-003 recusou. */
-export type ProblemaDado = 'nao_objeto' | 'ausente' | 'data_invalida' | 'nao_numerico' | 'nao_booleano' | 'repetido';
+export type ProblemaDado =
+  | 'nao_objeto'
+  | 'ausente'
+  | 'data_invalida'
+  | 'nao_numerico'
+  | 'nao_booleano'
+  | 'nao_textual'
+  | 'repetido';
 
 /** Recusa de uma etapa, com os dados para a descrição do motivo (RN-013). */
 export type Recusa =
@@ -108,7 +117,7 @@ export type Recusa =
 /** Recusa da RN-003: leva os ecos brutos e o valor, se numérico (AMB-023). */
 export type RecusaDadoInvalido = Extract<Recusa, { codigo: 'DADO_INVALIDO' }> & {
   /** Como vieram; ausente → `null`. */
-  readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown };
+  readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown; readonly moeda: unknown };
   readonly valorSolicitado: Centavos | null;
 };
 

@@ -82,7 +82,7 @@ describe('RN-003 — Validação dos dados do item', () => {
   it('RN-003 › item que não é objeto (42, "x", null) → DADO_INVALIDO com ecos e valor_solicitado nulos', () => {
     for (const bruta of [lerJson('42'), 'x', null, lerJson('[1]')]) {
       const r = recusada(validar(bruta));
-      expect(r.eco).toEqual({ id: null, data: null, categoria: null });
+      expect(r.eco).toEqual({ id: null, data: null, categoria: null, moeda: null });
       expect(r.valorSolicitado).toBeNull();
     }
   });
@@ -158,6 +158,40 @@ describe('RN-003 — Validação dos dados do item', () => {
       expect(r.detalhes.campo, tem_nota_fiscal).toBe('tem_nota_fiscal');
       expect(r.valorSolicitado).toBe(4500n);
     }
+  });
+
+  it('RN-003 › "moeda": " eur " vale EUR', () => {
+    expect(valida(validar(despesa({ moeda: '" eur "' }))).moeda).toBe('EUR');
+    expect(valida(validar(despesa({ moeda: '"Usd"' }))).moeda).toBe('USD');
+  });
+
+  it('RN-003 › moeda ausente, null, "" ou "  " vale BRL', () => {
+    for (const moeda of [undefined, 'null', '""', '"  "']) {
+      expect(valida(validar(despesa({ moeda }))).moeda, String(moeda)).toBe('BRL');
+    }
+    expect(valida(validar(despesa({ moeda: '"brl"' }))).moeda).toBe('BRL');
+  });
+
+  it('RN-003 › "moeda": 978, true, [] ou {} → DADO_INVALIDO com a moeda como veio no eco', () => {
+    for (const [moeda, eco] of [
+      ['978', new NumeroJson('978')],
+      ['true', true],
+      ['[]', []],
+      ['{}', {}],
+      ['false', false],
+    ] as const) {
+      const r = recusada(validar(despesa({ moeda })));
+      expect(r.detalhes, moeda).toEqual({ campo: 'moeda', problema: 'nao_textual' });
+      expect(r.eco.moeda, moeda).toEqual(eco);
+      expect(r.valorSolicitado).toBe(4500n);
+    }
+    expect(recusada(validar(despesa({ data: '"2026-07-32"', moeda: undefined }))).eco.moeda).toBeNull();
+    expect(recusada(validar(despesa({ data: '"2026-07-32"', moeda: '" eur "' }))).eco.moeda).toBe(' eur ');
+  });
+
+  it('RN-003 › "moeda": "EURO" passa pela validação (moeda EURO)', () => {
+    expect(valida(validar(despesa({ moeda: '"EURO"' }))).moeda).toBe('EURO');
+    expect(valida(validar(despesa({ moeda: '" r$ "' }))).moeda).toBe('R$');
   });
 
   /** Valida em sequência, registrando os ids como o motor faz. */
