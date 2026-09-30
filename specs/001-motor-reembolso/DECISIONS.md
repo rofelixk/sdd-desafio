@@ -17,6 +17,54 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-021 — Lacunas achadas no `/speckit-plan` da v4 (AMB-042, AMB-043, AMB-044) · `2026-09-30`
+
+**Gatilho:** `/speckit-plan` sobre a spec 2.1. Ao desenhar a leitura dos
+arquivos externos e os campos de conversão da saída, o Claude encontrou três
+pontos que o plano teria de decidir sozinho. Parou e perguntou antes de
+escrever o plano, como na D-015.
+
+**O que mudou na spec (versão 2.1 → 2.2):**
+- RN-017 e seção 4 (`taxas`): o código de moeda do arquivo de câmbio é
+  comparado sem diferenciar maiúsculas. Se duas moedas ficam iguais nessa
+  comparação na mesma data, vale a taxa da última que aparece no arquivo. O
+  valor de uma data que não é objeto invalida o arquivo.
+- Seção 4 (`taxa_cambio`, `data_cotacao` e o parágrafo sobre itens
+  `DADO_INVALIDO`): os três campos de conversão saem nulos juntos quando não
+  houve conversão, inclusive em BRL com `valor` inválido.
+- Seção 4 (arquivos externos), RN-016 e RN-017: "seguir o formato" quer dizer
+  que todo campo não informativo das tabelas da seção 4 está presente e tem o
+  tipo declarado. Campos informativos e desconhecidos são ignorados.
+- Novas AMB-042, AMB-043 e AMB-044. Cinco casos de borda novos: "Tabela sem
+  versão", "Moeda repetida no câmbio", "Moeda minúscula no câmbio", "Valor
+  inválido em moeda estrangeira" e "Valor inválido em BRL".
+- Três entradas em `Clarifications`.
+
+**Como se chegou lá:** o Claude recomendou (a) na AMB-043 (a cotação sai mesmo
+sem valor). O usuário escolheu (b), os três nulos. Na AMB-042 o usuário
+respondeu "`usd` casa com `USD`, maiúscula e minúscula é irrelevante". Para
+`"usd"` e `"USD"` na mesma data, o Claude complementou sozinho com "arquivo
+inválido", pelo critério das categorias repetidas da RN-016, e pediu
+confirmação ao relatar o plano. O usuário recusou: "use o último valor
+disponível". A versão com arquivo inválido ficou só na área de trabalho e
+nunca foi commitada. Na AMB-044 o usuário aceitou a recomendação.
+
+**Por quê:** ver AMB-042 a AMB-044.
+
+**O que isso invalidou:** nada implementado da v4. A leitura "`taxa_cambio` 1
+em todo item BRL", que só existia no rascunho do plano, não vale num item com
+`valor` inválido. A recusa do câmbio com moeda repetida, que só existiu na
+área de trabalho.
+
+**Tasks afetadas:** nenhuma concluída. Entram nas tasks novas da v4 (leitura
+dos arquivos externos, conversão e saída), ainda não geradas.
+
+**Custo:** `spec.md` (9 trechos, 5 deles refeitos na 2ª rodada), `DECISIONS.md`
+e os artefatos do plano (`research.md`, `data-model.md`,
+`contracts/arquivos-externos.md`).
+
+---
+
 ## D-020 — Revisão das ambiguidades da v4 decididas pelo Claude (AMB-036) · `2026-09-30`
 
 **Gatilho:** revisão pelo usuário dos pontos que o Claude propôs sozinho na

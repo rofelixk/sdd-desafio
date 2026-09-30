@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 2.1 · **Status:** rascunho · **Última alteração:** `2026-09-30`
+**Versão:** 2.2 · **Status:** rascunho · **Última alteração:** `2026-09-30`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -61,6 +61,12 @@ motivo padronizado e separa os itens que precisam de aprovação manual.
 - Q: O item C (aprovação manual) entra agora? Qual valor dispara a pendência? → A: Entra, por decisão do usuário. O gatilho é o **valor reembolsável**, depois dos limites e já em BRL, **estritamente maior** que R$ 500,00. O item sai PENDENTE/`REQUER_APROVACAO` (RN-018, AMB-040).
 - Q: (revisão) `"moeda": "EURO"` ou outro texto fora do padrão de 3 letras é dado inválido? → A: Não. Texto de moeda só é descartado se não tiver um igual no arquivo de câmbio, e aí é `CAMBIO_INDISPONIVEL`, como o GBP. `DADO_INVALIDO` fica só para tipo que não é texto (RN-003, RN-017, AMB-036).
 - Q: Como um item PENDENTE aparece na saída e no resumo? → A: `valor_reembolsavel` mostra o valor calculado. O item consome o limite do dia normalmente, mas fica **fora** do `total_reembolsavel`. O resumo ganha `pendentes` e `total_pendente` (RN-014, RN-018, AMB-041).
+
+### Session 2026-09-30 (plano da v4)
+
+- Q: No arquivo de câmbio, `"usd"` é o mesmo que `USD`? → A: Sim. Maiúsculas e minúsculas são irrelevantes também no arquivo. Se duas moedas ficam iguais nessa comparação na mesma data (`"usd"` e `"USD"`), vale a taxa da **última** que aparece no arquivo, e o arquivo não é recusado (RN-017, AMB-042).
+- Q: Num item com `valor` inválido, em que a moeda e a data permitiriam achar a cotação, o que sai em `taxa_cambio` e `data_cotacao`? → A: Nulo. Os três campos de conversão (`valor_solicitado`, `taxa_cambio`, `data_cotacao`) saem nulos juntos, inclusive em BRL (seção 4, AMB-043).
+- Q: O que torna a tabela de limites ou o câmbio inválidos além das listas da RN-016 e da RN-017? → A: Todo campo das tabelas da seção 4 é obrigatório e tem o tipo declarado. Campos informativos e campos que não estão na seção 4 são ignorados (RN-015, AMB-044).
 
 ## 3. Fora de escopo
 
@@ -139,12 +145,17 @@ comando, AMB-028). Os formatos são os de `exemplos/envelope/politica-v4.json` e
 | Campo | Tipo | Significado |
 |---|---|---|
 | `moeda_base` | texto | Moeda para a qual se converte. Tem de ser `BRL` |
-| `taxas` | objeto | Data `AAAA-MM-DD` → objeto moeda (ISO 4217) → quantos reais vale 1 unidade da moeda (número > 0). Só existem datas com cotação publicada (dias úteis) |
+| `taxas` | objeto | Data `AAAA-MM-DD` → objeto moeda (ISO 4217, sem diferenciar maiúsculas, AMB-042) → quantos reais vale 1 unidade da moeda (número > 0). Só existem datas com cotação publicada (dias úteis) |
 | `fonte`, `observacao` | texto | Informativos, ignorados |
 
 Os nomes de categoria e de centro de custo da tabela são comparados com a
 mesma normalização da RN-002. Um arquivo externo ausente, que não é JSON ou
-que não segue estes formatos, interrompe a execução (RN-015).
+que não segue estes formatos, interrompe a execução (RN-015). "Seguir o
+formato" quer dizer: todo campo das duas tabelas acima, exceto os
+informativos (`observacao`, `fonte`), está presente e tem o tipo declarado
+(`versao` texto não vazio, `vigencia` data válida, e assim por diante). Os
+campos informativos e qualquer campo que não aparece nessas tabelas são
+ignorados (AMB-044).
 
 **Saída:** definida por mim. Estrutura e significado de cada campo:
 
@@ -160,8 +171,8 @@ que não segue estes formatos, interrompe a execução (RN-015).
 | `itens[].categoria` | texto | Categoria normalizada (RN-002), ou a original, como veio, se não for reconhecida |
 | `itens[].moeda` | texto ou nulo | Moeda normalizada da despesa (`"BRL"` se ausente). Num item `DADO_INVALIDO`, sai como veio (ausente → nulo) |
 | `itens[].valor_original` | número ou nulo | `valor` da entrada arredondado para centavos (RN-001), **na moeda da despesa**. Nulo se o `valor` é ausente ou não numérico (RN-003) |
-| `itens[].taxa_cambio` | número ou nulo | Taxa usada na conversão (RN-017), como está no arquivo de câmbio. `1` em BRL. Nulo se não houve conversão |
-| `itens[].data_cotacao` | texto ou nulo | Data da cotação usada (a da despesa ou a última anterior, RN-017). Nulo em BRL ou se não houve conversão |
+| `itens[].taxa_cambio` | número ou nulo | Taxa usada na conversão (RN-017), como está no arquivo de câmbio. `1` em BRL. Nulo se não houve conversão, ou seja, sempre que `valor_solicitado` é nulo (AMB-043) |
+| `itens[].data_cotacao` | texto ou nulo | Data da cotação usada (a da despesa ou a última anterior, RN-017). Nulo em BRL ou se não houve conversão (`valor_solicitado` nulo, AMB-043) |
 | `itens[].valor_solicitado` | número ou nulo | Valor solicitado **em reais**: `valor_original` convertido (RN-017), ou igual a ele em BRL. Nulo se o `valor` é ausente ou não numérico (RN-003) ou se não há cotação para a moeda (RN-017) |
 | `itens[].valor_reembolsavel` | número | Valor a reembolsar em reais, `0 ≤ valor_reembolsavel ≤ max(valor_solicitado, 0)` (nulo conta como 0). Num item PENDENTE, é o valor que será pago se o gestor aprovar |
 | `itens[].status` | texto | `APROVADO` (reembolsável = solicitado), `PARCIAL` (0 < reembolsável < solicitado), `RECUSADO` (reembolsável = 0) ou `PENDENTE` (reembolsável > R$ 500,00, aguardando aprovação do gestor, RN-018) |
@@ -188,6 +199,14 @@ dado que causou a recusa. O `valor_original` é o valor arredondado quando o
 `valor` é numérico (a recusa veio de outro campo) e nulo quando não é
 (AMB-023). O `valor_solicitado` segue a RN-017 quando `valor`, `data` e
 `moeda` permitem a conversão, e é nulo nos demais casos.
+
+Os três campos de conversão (`valor_solicitado`, `taxa_cambio` e
+`data_cotacao`) andam juntos em qualquer item: ou houve conversão e eles saem
+preenchidos (`data_cotacao` continua nulo em BRL), ou não houve e os três
+saem nulos. Um `valor` ausente ou não numérico anula os três, mesmo em BRL ou
+quando haveria cotação para a moeda e a data (AMB-043). Em BRL a conversão
+não precisa da data, então uma despesa BRL com `valor` numérico e `data`
+inválida sai com `taxa_cambio` 1.
 
 Em qualquer item, se a moeda não tem cotação até a data da despesa,
 `valor_solicitado`, `taxa_cambio` e `data_cotacao` saem nulos, mesmo que o
@@ -626,8 +645,10 @@ negativo ou tem mais de 2 casas decimais; a periodicidade não é `dia` ou
 `hospedagem` não é `diaria`; `nota_fiscal_obrigatoria_acima_de` ou
 `acrescimo_em_viagem_percentual` estão ausentes, não são números ou são
 negativos; dois centros de custo (ou duas categorias da mesma tabela) ficam
-iguais depois da normalização.
-**Origem:** política do RH v4, item A (AMB-028, AMB-029, AMB-030, AMB-031, AMB-032, AMB-034)
+iguais depois da normalização; ou falta um campo da seção 4, ou ele tem outro
+tipo (`versao` que não é texto preenchido, `vigencia` que não é data válida,
+um centro de custo ou uma categoria que não é objeto) (AMB-044).
+**Origem:** política do RH v4, item A (AMB-028, AMB-029, AMB-030, AMB-031, AMB-032, AMB-034, AMB-044)
 **Aceite:** colaborador do `CC-SUPORTE-N2` (sem entrada) → `politica.tabela`
 `"padrao"`, alimentação limitada a 60,00. `" cc-comercial "` → tabela do
 CC-COMERCIAL. Colaborador sem `centro_custo` → padrão. Hospedagem de 300,00
@@ -662,11 +683,18 @@ seção 8. Uma despesa recusada antes (fora do período, categoria não
 reembolsável...) mantém o motivo dessa etapa (AMB-039). Todos os limites e o
 limiar de nota fiscal são comparados com o valor em reais.
 
+O código de moeda do arquivo é comparado com a moeda da despesa sem
+diferenciar maiúsculas de minúsculas: `"usd"` no arquivo é `USD`. Se a
+mesma moeda aparece mais de uma vez na mesma data com grafias diferentes
+(`"usd"` e `"USD"`), vale a taxa da última que aparece no arquivo (AMB-042).
+
 O arquivo de câmbio é **inválido** (RN-015) quando: não é um objeto;
 `moeda_base` não é `BRL`; `taxas` não é objeto; uma chave de `taxas` não é
-uma data válida; uma moeda não tem 3 letras; uma taxa não é número ou não é
-maior que zero.
-**Origem:** política do RH v4, item B (AMB-035, AMB-036, AMB-037, AMB-038, AMB-039)
+uma data válida; o valor de uma data não é objeto; uma moeda não tem 3
+letras; uma taxa não é número ou não é maior que zero (inclusive a de uma
+moeda repetida que acaba não sendo usada); ou falta um campo da seção 4
+(AMB-044).
+**Origem:** política do RH v4, item B (AMB-035, AMB-036, AMB-037, AMB-038, AMB-039, AMB-042, AMB-043, AMB-044)
 **Aceite:** `e-002` (22,00 EUR em 14/07) → taxa 5,93 de 14/07 → R$ 130,46.
 `e-004` (30,00 EUR no sábado 18/07) → taxa 5,96 de sexta 17/07 →
 `data_cotacao` "2026-07-17", R$ 178,80. `e-006` (55,00 GBP) →
@@ -1319,6 +1347,54 @@ reprocessar depois da aprovação, e o sistema não guarda histórico entre
 execuções (seção 3).
 **Regra afetada:** RN-011, RN-014, RN-018
 
+### AMB-042 — Grafia da moeda no arquivo de câmbio
+
+**Texto original do RH (v4):** "A entrada agora pode trazer um campo `moeda`
+(ISO 4217)." O arquivo de câmbio traz `"USD"` e `"EUR"`.
+**O que não está claro:** a moeda da despesa é comparada sem diferenciar
+maiúsculas (AMB-036), mas nada se diz sobre o arquivo. `"usd"` no arquivo casa
+com `USD`? E `"usd"` e `"USD"` na mesma data?
+**Decisão:** maiúsculas e minúsculas são irrelevantes também no arquivo:
+`"usd"` é `USD`. Se duas moedas da mesma data ficam iguais nessa comparação,
+vale a taxa da **última** que aparece no arquivo, e o arquivo não é recusado.
+**Justificativa:** decisão do usuário: "maiúscula e minúscula é irrelevante" e,
+para a repetição, "use o último valor disponível". O Claude tinha proposto
+recusar o arquivo, pelo critério das categorias repetidas da RN-016. O usuário
+preferiu não interromper a execução por uma repetição que tem leitura única:
+a última entrada do arquivo é a mais recente que o financeiro escreveu.
+**Regra afetada:** RN-017
+
+### AMB-043 — Campos de conversão num item sem valor válido
+
+**Texto original do RH (v4):** a política não fala do assunto.
+**O que não está claro:** num item com `valor` ausente ou não numérico
+(`DADO_INVALIDO`), a moeda e a data podem permitir achar a cotação. Saem
+(a) a taxa e a data da cotação, com só o `valor_solicitado` nulo, ou (b) os
+três nulos?
+**Decisão:** (b). `valor_solicitado`, `taxa_cambio` e `data_cotacao` saem
+nulos juntos sempre que não houve conversão, inclusive em BRL.
+**Justificativa:** decisão do usuário. Sem valor não há conversão, e mostrar
+uma taxa usada numa conta que não aconteceu daria a entender que ela
+aconteceu.
+**Regra afetada:** seção 4, RN-017
+
+### AMB-044 — O que é "não seguir o formato" dos arquivos externos
+
+**Texto original do RH (v4):** a política não fala do assunto.
+**O que não está claro:** a RN-016 e a RN-017 listam os casos de arquivo
+inválido, mas a seção 4 também declara campos que essas listas não citam
+(`versao`, `vigencia`). Um `versao` ausente ou uma `vigencia` que não é data
+invalidam o arquivo? E um campo que a seção 4 não conhece?
+**Decisão:** todo campo das tabelas da seção 4 é obrigatório e tem o tipo
+declarado. Os campos informativos (`observacao`, `fonte`) e os campos que a
+seção 4 não conhece são ignorados.
+**Justificativa:** decisão do usuário. Um arquivo que só parece certo pode
+esconder um erro do financeiro (uma `vigencia` digitada errado indica que a
+tabela inteira pode estar errada), e o erro deve aparecer, não passar em
+silêncio. Ignorar campos desconhecidos deixa o financeiro acrescentar
+anotações sem quebrar o motor.
+**Regra afetada:** RN-015, RN-016, RN-017
+
 ---
 
 ## 7. Casos de borda
@@ -1418,6 +1494,11 @@ execuções (seção 3).
 | Representação em dia de viagem | CC-COMERCIAL, hospedagem elegível + `representacao` 420,00 com NF, mesma data | limite 450,00 → APROVADO 420,00 | RN-011 |
 | Tabela de limites inválida | limite negativo na tabela | erro que cita a tabela de limites, nenhuma saída gerada | RN-015, RN-016 |
 | Arquivo de câmbio ausente | — | erro que cita o arquivo de câmbio, nenhuma saída gerada | RN-015, RN-017 |
+| Tabela sem versão | tabela de limites sem `versao` | erro que cita a tabela de limites e `versao`, nenhuma saída gerada | RN-015, RN-016 |
+| Moeda repetida no câmbio | `"USD": 5.42` e depois `"usd": 5.50` na mesma data; despesa 10,00 USD nessa data | sem erro; usa a última, taxa 5,50 → `valor_solicitado` 55,00 | RN-017 |
+| Moeda minúscula no câmbio | arquivo com `"eur"`; despesa 10,00 `"EUR"` em data com cotação | convertida normalmente pela taxa de `"eur"` | RN-017 |
+| Valor inválido em moeda estrangeira | `"valor": "R$ 45,00"`, `"moeda": "EUR"`, data com cotação | RECUSADO `DADO_INVALIDO`; `valor_solicitado`, `taxa_cambio` e `data_cotacao` nulos | RN-003, RN-017 |
+| Valor inválido em BRL | `"valor": true`, sem `moeda` | RECUSADO `DADO_INVALIDO`; `taxa_cambio` nulo (não 1) | RN-003, RN-017 |
 | Moeda ausente | sem `moeda`, 45,00 | BRL, `taxa_cambio` 1, `valor_solicitado` 45,00 | RN-003, RN-017 |
 | Moeda nula ou vazia | `"moeda": null` / `""` | vale BRL | RN-003 |
 | Moeda em minúsculas | `"moeda": " eur "` | tratada como EUR | RN-003, RN-017 |
