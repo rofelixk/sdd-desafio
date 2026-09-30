@@ -615,3 +615,58 @@ describe('Casos de borda — centro de custo e tabela aplicável', () => {
     expect(r).toMatchObject({ limiteDiarioAplicado: 45000n, emViagem: true });
   });
 });
+
+/** Moeda, valor original e os três campos de conversão de um item (seção 4). */
+function conversao(i: ResultadoItem | undefined) {
+  if (!i) throw new Error('item ausente');
+  return {
+    moeda: i.moeda,
+    original: i.valorOriginal,
+    taxa: i.conversao?.taxa.texto ?? null,
+    cotacao: i.conversao?.dataCotacao ?? null,
+    solicitado: i.valorSolicitado,
+  };
+}
+
+describe('Casos de borda — moeda e valor inválido com conversão', () => {
+  it('Borda › Valor inválido em moeda estrangeira', () => {
+    const [i] = rodar([{ data: '2026-07-14', valor: 'R$ 45,00', moeda: 'EUR' }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'DADO_INVALIDO' });
+    expect(conversao(i)).toEqual({ moeda: 'EUR', original: null, taxa: null, cotacao: null, solicitado: null });
+  });
+
+  it('Borda › Valor inválido em BRL', () => {
+    const [i] = rodar([{ valor: true, moeda: undefined }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'DADO_INVALIDO' });
+    expect(conversao(i)).toEqual({ moeda: null, original: null, taxa: null, cotacao: null, solicitado: null });
+  });
+
+  it('Borda › Moeda ausente', () => {
+    const [i] = rodar([{ valor: 45, moeda: undefined }]);
+    expect(conversao(i)).toEqual({ moeda: 'BRL', original: 4500n, taxa: '1', cotacao: null, solicitado: 4500n });
+    expect(decisao(i).codigo).toBe('APROVADO_INTEGRAL');
+  });
+
+  it('Borda › Moeda nula ou vazia', () => {
+    for (const moeda of [null, '']) {
+      expect(conversao(rodar([{ valor: 45, moeda }])[0]), String(moeda)).toMatchObject({ moeda: 'BRL', taxa: '1', solicitado: 4500n });
+    }
+  });
+
+  it('Borda › Moeda em minúsculas', () => {
+    const [i] = rodar([{ data: '2026-07-14', valor: 10, moeda: ' eur ' }]);
+    expect(conversao(i)).toEqual({ moeda: 'EUR', original: 1000n, taxa: '5.93', cotacao: '2026-07-14', solicitado: 5930n });
+  });
+
+  it('Borda › Moeda não textual', () => {
+    const [i] = rodar([{ valor: 45, moeda: 978 }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'DADO_INVALIDO' });
+    expect(i?.moeda).toEqual(new NumeroJson('978'));
+  });
+
+  it('Borda › Moeda fora do câmbio', () => {
+    const [i] = rodar([{ valor: 10, moeda: 'EURO' }]);
+    expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CAMBIO_INDISPONIVEL' });
+    expect(i?.moeda).toBe('EURO');
+  });
+});
