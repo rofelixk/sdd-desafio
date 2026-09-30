@@ -758,3 +758,64 @@ describe('Casos de borda — nota fiscal e duplicata em moeda estrangeira', () =
     expect(codigos([{ moeda: undefined }, { moeda: 'BRL' }])).toEqual(['APROVADO_INTEGRAL', 'DUPLICATA']);
   });
 });
+
+describe('Casos de borda — aprovação manual', () => {
+  const comercial = { centroCusto: 'CC-COMERCIAL' };
+  const hospedagem = { categoria: 'hospedagem', data: '2026-07-22', fornecedor: 'Hotel', tem_nota_fiscal: true };
+
+  it('Borda › Reembolsável exatamente 500,00', () => {
+    const [i] = rodar([{ ...hospedagem, descricao: '2 diarias', valor: 500 }], comercial);
+    expect(decisao(i)).toMatchObject({ status: 'APROVADO', codigo: 'APROVADO_INTEGRAL', reembolsavel: 50000n });
+  });
+
+  it('Borda › Reembolsável acima de 500,00', () => {
+    const [i] = rodar([{ ...hospedagem, descricao: '2 diarias', valor: 500.02 }], comercial);
+    expect(decisao(i)).toMatchObject({ status: 'PENDENTE', codigo: 'REQUER_APROVACAO', reembolsavel: 50002n });
+  });
+
+  it('Borda › Solicitado alto cortado pelo limite', () => {
+    const [i] = rodar([{ ...hospedagem, descricao: 'Hotel', valor: 1200 }]);
+    expect(decisao(i)).toMatchObject({ status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', reembolsavel: 25000n });
+  });
+
+  it('Borda › Pendente com corte de limite', () => {
+    const [i] = rodar([{ ...hospedagem, descricao: '2 diarias', valor: 1000 }], comercial);
+    expect(decisao(i)).toEqual({ status: 'PENDENTE', codigo: 'REQUER_APROVACAO', solicitado: 100000n, reembolsavel: 80000n });
+    expect(i?.motivo.descricao).toContain('R$ 200,00');
+  });
+
+  it('Borda › Pendente consome o limite', () => {
+    const itens = rodar(
+      [
+        { ...hospedagem, descricao: '2 diarias', valor: 800 },
+        { ...hospedagem, descricao: '1 diaria', valor: 100, fornecedor: 'Pousada' },
+      ],
+      comercial,
+    );
+    expect(itens.map((i) => [decisao(i).status, decisao(i).codigo, decisao(i).reembolsavel])).toEqual([
+      ['PENDENTE', 'REQUER_APROVACAO', 80000n],
+      ['RECUSADO', 'LIMITE_DIARIO_ESGOTADO', 0n],
+    ]);
+  });
+
+  it('Borda › Hospedagem pendente gera viagem', () => {
+    const [h, a] = rodar(
+      [
+        { ...hospedagem, descricao: '3 noites', valor: 1200 },
+        { categoria: 'alimentacao', data: '2026-07-23', valor: 95 },
+      ],
+      comercial,
+    );
+    expect(decisao(h).status).toBe('PENDENTE');
+    expect(decisao(a)).toMatchObject({ status: 'APROVADO', reembolsavel: 9500n });
+    expect(a).toMatchObject({ limiteDiarioAplicado: 13500n, emViagem: true });
+  });
+
+  it('Borda › Pendente fora do total reembolsável', () => {
+    const r = calcularV4(
+      entrada([{ ...hospedagem, descricao: '3 noites', valor: 1200 }, { data: '2026-07-27', valor: 88 }], comercial),
+    );
+    expect(r.itens.map((i) => decisao(i).status)).toEqual(['PENDENTE', 'APROVADO']);
+    expect(r.resumo).toMatchObject({ totalReembolsavel: 8800n, totalPendente: 120000n, pendentes: 1 });
+  });
+});
