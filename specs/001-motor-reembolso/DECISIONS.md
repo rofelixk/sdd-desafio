@@ -17,6 +17,61 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-020 — Revisão das ambiguidades da v4 decididas pelo Claude (AMB-036) · `2026-09-30`
+
+**Gatilho:** revisão pelo usuário dos pontos que o Claude propôs sozinho na
+D-019 (AMB-029, AMB-032 a AMB-034, AMB-036 a AMB-038, AMB-040).
+
+**O que mudou na spec (versão 2.0 → 2.1):**
+- RN-003 e AMB-036: sai a checagem de formato da `moeda` (3 letras). Todo
+  texto é procurado no arquivo de câmbio. Um texto que não está lá (`"EURO"`,
+  `"R$"`) sai RECUSADO/`CAMBIO_INDISPONIVEL`, como o GBP, e não mais
+  `DADO_INVALIDO`. `DADO_INVALIDO` fica só para tipo que não é texto.
+- Seção 4 (campo `moeda`), RN-017 (item 3 e aceite) e seção 7 ("Moeda com
+  formato inválido" vira "Moeda fora do câmbio") atualizadas.
+- AMB-029: a justificativa ganhou o motivo do usuário.
+- AMB-033: a decisão diz que o percentual é um campo único da tabela e vale
+  para todos os centros de custo.
+- Uma entrada em `Clarifications`.
+
+**Como se chegou lá:** a resposta do usuário foi "texto de moeda só é
+descartado como inválido caso não tenha um igual nos câmbios". O Claude viu
+duas leituras: texto fora do câmbio vira `DADO_INVALIDO` (o que mudaria o
+`e-006`) ou vira `CAMBIO_INDISPONIVEL`. Perguntou, e o usuário escolheu a
+segunda. A comparação sem diferenciar maiúsculas e sem espaços nas bordas
+continua valendo. O arquivo de câmbio continua exigindo moedas de 3 letras
+(validação do arquivo, RN-017), o que o usuário não contestou.
+
+As demais foram confirmadas como estavam:
+
+| AMB | Confirmação | Justificativa do usuário |
+|---|---|---|
+| 029 | bloco `padrao` da tabela vigente | nunca usar valores de fora da tabela; sem centro de custo já é coberto pelo texto da v4 |
+| 032 | normalização da RN-002; tipo errado recusa o arquivo | — |
+| 033 | ampliação vale para `representacao` (item 1); percentual vem da tabela (item 2) | o `acrescimo_em_viagem_percentual` deve ser usado no cálculo; é um campo único, no fim do arquivo, separado dos centros de custo |
+| 034 | tabela vigente vale para toda a execução | a vigência é retroativa; só o período decide a elegibilidade |
+| 037 | arredonda o original e o convertido, meio para o par | garante o mesmo resultado em várias execuções |
+| 038 | NF compara em reais; duplicata por moeda e valor original | — |
+| 040 | > R$ 500,00; valor reembolsável; limiar fixo | 500,00 não exige aprovação, 500,01 exige; o limiar é fixo porque não está no `politica-v4.json` |
+
+Sobre o item 2 da AMB-033, o Claude explicou errado na primeira vez: disse que
+o percentual aparecia em cada bloco da tabela. O usuário corrigiu: o campo é
+único, fica no fim do arquivo e é separado dos centros de custo. A RN-016 já
+dizia isso. A decisão da AMB-033 passou a dizer também.
+
+**Por quê:** ver AMB-036.
+
+**O que isso invalidou:** o caso de borda "Moeda com formato inválido"
+(`"EURO"` → `DADO_INVALIDO`). Nenhum item do envelope muda: o `e-006` (GBP)
+continua `CAMBIO_INDISPONIVEL`.
+
+**Tasks afetadas:** nenhuma concluída. A validação de `moeda` (T-008) e as
+bordas de câmbio entram nas tasks novas da v4, ainda não geradas.
+
+**Custo:** `spec.md` (10 trechos) e `DECISIONS.md`.
+
+---
+
 ## D-019 — Envelope do Dia 2: Política v4 (itens A, B e C) · `2026-09-30`
 
 **Gatilho:** envelope lacrado do Dia 2 (`exemplos/envelope/00-ENVELOPE-LACRADO.md`),

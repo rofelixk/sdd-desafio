@@ -1,6 +1,6 @@
 # Spec — Motor de Cálculo de Reembolso
 
-**Versão:** 2.0 · **Status:** rascunho · **Última alteração:** `2026-09-30`
+**Versão:** 2.1 · **Status:** rascunho · **Última alteração:** `2026-09-30`
 
 > **Regra de ouro deste arquivo:** ele descreve o QUÊ e o PORQUÊ. Nenhuma linha
 > aqui pode citar linguagem, biblioteca, classe, função ou estrutura de pasta.
@@ -59,6 +59,7 @@ motivo padronizado e separa os itens que precisam de aprovação manual.
 - Q: O câmbio muda o tratamento de uma despesa fora do período? → A: Não. Uma despesa fora do período continua `FORA_DO_PERIODO`, tenha ou não cotação (seção 8, AMB-039).
 - Q: Despesa sem `moeda`? E com moeda sem cotação? → A: Sem `moeda` vale BRL. Moeda informada sem nenhuma cotação até a data → RECUSADO com o novo código `CAMBIO_INDISPONIVEL`, só aquele item (RN-017, AMB-036).
 - Q: O item C (aprovação manual) entra agora? Qual valor dispara a pendência? → A: Entra, por decisão do usuário. O gatilho é o **valor reembolsável**, depois dos limites e já em BRL, **estritamente maior** que R$ 500,00. O item sai PENDENTE/`REQUER_APROVACAO` (RN-018, AMB-040).
+- Q: (revisão) `"moeda": "EURO"` ou outro texto fora do padrão de 3 letras é dado inválido? → A: Não. Texto de moeda só é descartado se não tiver um igual no arquivo de câmbio, e aí é `CAMBIO_INDISPONIVEL`, como o GBP. `DADO_INVALIDO` fica só para tipo que não é texto (RN-003, RN-017, AMB-036).
 - Q: Como um item PENDENTE aparece na saída e no resumo? → A: `valor_reembolsavel` mostra o valor calculado. O item consome o limite do dia normalmente, mas fica **fora** do `total_reembolsavel`. O resumo ganha `pendentes` e `total_pendente` (RN-014, RN-018, AMB-041).
 
 ## 3. Fora de escopo
@@ -110,7 +111,7 @@ motivo padronizado e separa os itens que precisam de aprovação manual.
 | `despesas[].descricao` | qualquer valor, tratado como texto | Texto livre. Em hospedagem, é de onde se extrai o número de diárias (RN-012). Ausente ou nulo = vazio = 1 diária (RN-003) | não |
 | `despesas[].fornecedor` | qualquer valor, tratado como texto | Fornecedor, usado na detecção de duplicata. Ausente ou nulo equivale a vazio (RN-003, RN-007) | não |
 | `despesas[].valor` | número ou texto numérico | Valor solicitado **na moeda da despesa** (`moeda`), pode ter qualquer número de casas decimais. Também é aceito como texto no formato fechado da RN-003 (`"45.00"`, `"45,00"`) | sim |
-| `despesas[].moeda` | texto, código ISO 4217 de 3 letras | Moeda em que o `valor` foi pago. Ausente, nulo ou vazio = `BRL`. Comparado sem diferenciar maiúsculas e sem espaços nas bordas (`"eur"` = `EUR`). Outro tipo ou texto que não tem 3 letras é `DADO_INVALIDO` (RN-003, RN-017) | não |
+| `despesas[].moeda` | texto, código ISO 4217 | Moeda em que o `valor` foi pago. Ausente, nulo ou vazio = `BRL`. Comparado sem diferenciar maiúsculas e sem espaços nas bordas (`"eur"` = `EUR`). Tipo diferente de texto é `DADO_INVALIDO`. Texto que não está no arquivo de câmbio é `CAMBIO_INDISPONIVEL` (RN-003, RN-017) | não |
 | `despesas[].tem_nota_fiscal` | booleano | Se há nota fiscal. Vazio (ausente, nulo ou texto vazio) equivale a `false`. Qualquer outro valor não booleano é `DADO_INVALIDO` (RN-003) | não |
 
 **Dados externos:** além do arquivo de entrada, toda execução lê dois arquivos
@@ -337,10 +338,10 @@ objetos) é `DADO_INVALIDO`.
 
 `moeda` ausente, nula, ou texto vazio ou só com espaços vale `BRL`. Um texto
 é comparado sem espaços nas bordas e sem diferenciar maiúsculas de
-minúsculas, e precisa ter exatamente 3 letras de A a Z. Qualquer outro valor
-(número, booleano, lista, objeto, texto como `"R$"` ou `"EURO"`) é
-`DADO_INVALIDO`. Uma moeda com formato válido mas sem cotação não é dado
-inválido: ela é tratada pela RN-017 (AMB-036).
+minúsculas. Não há checagem de formato: todo texto é procurado no arquivo de
+câmbio, e um texto que não está lá (`"GBP"`, `"EURO"`, `"R$"`) não é dado
+inválido, e sim moeda sem cotação, tratada pela RN-017. Só um valor que não é
+texto (número, booleano, lista, objeto) é `DADO_INVALIDO` (AMB-036).
 
 `fornecedor` e `descricao` nunca causam `DADO_INVALIDO`: qualquer valor é
 aceito e tratado como texto. Ausente ou nulo vale texto **vazio**. Texto é
@@ -361,8 +362,9 @@ a 2ª segue normalmente e a 3ª RECUSADO/`DADO_INVALIDO`. `"45.00"`,
 `"tem_nota_fiscal": null` vale `false`.
 `"categoria": ""` e `"categoria": 123` → RECUSADO/`DADO_INVALIDO`, e não
 `CATEGORIA_NAO_REEMBOLSAVEL`. `"fornecedor": 123` e `"descricao": null`
-não recusam a despesa. `"moeda": " eur "` vale `EUR`. `"moeda": 978` e
-`"moeda": "EURO"` → RECUSADO/`DADO_INVALIDO`.
+não recusam a despesa. `"moeda": " eur "` vale `EUR`. `"moeda": 978` →
+RECUSADO/`DADO_INVALIDO`. `"moeda": "EURO"` passa pela validação (e sai
+`CAMBIO_INDISPONIVEL` pela RN-017).
 
 ### RN-004 — Valores não positivos
 
@@ -647,8 +649,9 @@ câmbio:
    limite de dias para trás (AMB-035).
 2. `valor_solicitado` = `valor_original` × taxa, arredondado para centavos
    pela regra da RN-001 (AMB-037).
-3. Se a moeda não tem nenhuma cotação até a data da despesa (moeda que não
-   está no arquivo, ou despesa anterior à primeira cotação dela), a despesa é
+3. Se a moeda não tem nenhuma cotação até a data da despesa (texto que não
+   está no arquivo, como `"GBP"` ou `"EURO"`, ou despesa anterior à primeira
+   cotação dela), a despesa é
    **RECUSADA** com `CAMBIO_INDISPONIVEL`, e `valor_solicitado`,
    `taxa_cambio` e `data_cotacao` saem nulos. Só aquele item é afetado
    (AMB-036).
@@ -667,7 +670,8 @@ maior que zero.
 **Aceite:** `e-002` (22,00 EUR em 14/07) → taxa 5,93 de 14/07 → R$ 130,46.
 `e-004` (30,00 EUR no sábado 18/07) → taxa 5,96 de sexta 17/07 →
 `data_cotacao` "2026-07-17", R$ 178,80. `e-006` (55,00 GBP) →
-RECUSADO/`CAMBIO_INDISPONIVEL`, `valor_solicitado` nulo. EUR em 2026-07-10
+RECUSADO/`CAMBIO_INDISPONIVEL`, `valor_solicitado` nulo. 10,00 `"EURO"` →
+RECUSADO/`CAMBIO_INDISPONIVEL`, e não `DADO_INVALIDO`. EUR em 2026-07-10
 (antes da primeira cotação, 13/07) → RECUSADO/`CAMBIO_INDISPONIVEL`. EUR em
 2026-06-30 num período de julho → RECUSADO/`FORA_DO_PERIODO`, e não
 `CAMBIO_INDISPONIVEL`. `e-010` (sem `moeda`) → BRL, `taxa_cambio` 1.
@@ -1116,7 +1120,9 @@ custo (ausente, nulo ou vazio) também usa o padrão.
 **Justificativa:** a v4 manda ler a política de fora do código. Usar as
 constantes da v3 manteria uma política escondida no sistema, que não mudaria
 quando o financeiro alterasse o padrão. Hoje os valores coincidem, mas só por
-acaso.
+acaso. Confirmado pelo usuário na revisão: nenhum valor de fora da tabela
+vigente entra no cálculo, e o colaborador sem centro de custo já é coberto
+pelo texto da v4 ("centros de custo [que] não têm entrada na tabela").
 **Regra afetada:** RN-016
 
 ### AMB-030 — Centro de custo que não lista todas as categorias
@@ -1174,7 +1180,9 @@ AMB-027.
 nova `representacao`.
 **O que não está claro:** a ampliação vale para `representacao`? E o
 percentual continua fixo em 50%?
-**Decisão:** o percentual vem da tabela. Ele vale para **toda categoria de
+**Decisão:** o percentual vem do campo `acrescimo_em_viagem_percentual` da
+tabela. O campo é único, fica fora de `padrao` e de `centros_custo`, e vale
+para todos os centros de custo (RN-016). Ele vale para **toda categoria de
 periodicidade `dia`** (alimentação, transporte urbano, representação), e
 nunca para a hospedagem (`diaria`). Um limite ampliado que não dá centavos
 exatos é arredondado pela RN-001.
@@ -1220,14 +1228,20 @@ gasto, e recusar (c) puniria o colaborador por viajar num fim de semana.
 moeda válida que não está no arquivo de câmbio (`e-006`, GBP), ou uma despesa
 anterior à primeira cotação?
 **Decisão:** (1) nulo ou vazio vale `BRL`, como ausente. Um texto é comparado
-sem diferenciar maiúsculas e sem espaços nas bordas. Formato que não é de 3
-letras ou tipo que não é texto → `DADO_INVALIDO`. (2) RECUSADO com o novo
-código `CAMBIO_INDISPONIVEL`, só aquele item, com `valor_solicitado` nulo.
-**Justificativa:** decisão do usuário para (2). Falta de cotação não é erro de
-preenchimento do colaborador (então não é `DADO_INVALIDO`) e não deve impedir o
-cálculo das outras despesas (então não é erro do arquivo). O valor em reais sai
-nulo porque ele não existe, pelo mesmo motivo da AMB-023. O tratamento de (1)
-segue o da AMB-022 e o da AMB-014.
+sem diferenciar maiúsculas e sem espaços nas bordas, sem checagem de formato.
+Só um tipo que não é texto → `DADO_INVALIDO`. (2) Todo texto que não tem
+cotação até a data (inclusive um que não está no arquivo, como `"GBP"` ou
+`"EURO"`) → RECUSADO com o novo código `CAMBIO_INDISPONIVEL`, só aquele item,
+com `valor_solicitado` nulo.
+**Justificativa:** decisão do usuário para (1) e (2), na revisão: "texto de
+moeda só é descartado como inválido caso não tenha um igual nos câmbios". O
+arquivo de câmbio é quem diz quais moedas o sistema conhece, e uma regra de
+formato à parte seria um segundo critério que pode discordar dele. Falta de
+cotação não é erro de preenchimento do colaborador (então não é
+`DADO_INVALIDO`) e não deve impedir o cálculo das outras despesas (então não é
+erro do arquivo). O valor em reais sai nulo porque ele não existe, pelo mesmo
+motivo da AMB-023. Nulo e vazio seguem a AMB-022, e a comparação segue a
+AMB-014.
 **Regra afetada:** RN-003, RN-017
 
 ### AMB-037 — Arredondamento na conversão
@@ -1408,7 +1422,7 @@ execuções (seção 3).
 | Moeda nula ou vazia | `"moeda": null` / `""` | vale BRL | RN-003 |
 | Moeda em minúsculas | `"moeda": " eur "` | tratada como EUR | RN-003, RN-017 |
 | Moeda não textual | `"moeda": 978` | RECUSADO `DADO_INVALIDO`, `moeda` sai `978` | RN-003 |
-| Moeda com formato inválido | `"moeda": "EURO"` | RECUSADO `DADO_INVALIDO` | RN-003 |
+| Moeda fora do câmbio | `"moeda": "EURO"` | RECUSADO `CAMBIO_INDISPONIVEL` (não `DADO_INVALIDO`), `moeda` sai `"EURO"` | RN-003, RN-017 |
 | Conversão em dia útil | 22,00 EUR em 2026-07-14 | taxa 5,93, `data_cotacao` 2026-07-14, `valor_solicitado` 130,46 | RN-017 |
 | Conversão no fim de semana | 30,00 EUR em 2026-07-18 (sábado) | taxa 5,96 de 2026-07-17, `valor_solicitado` 178,80 | RN-017 |
 | Antes da primeira cotação | 10,00 EUR em 2026-07-10 | RECUSADO `CAMBIO_INDISPONIVEL`, `valor_solicitado` nulo | RN-017 |
