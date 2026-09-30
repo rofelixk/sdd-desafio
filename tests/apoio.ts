@@ -1,7 +1,9 @@
 // Apoio aos testes: monta despesas brutas como sairiam do leitor de JSON.
 
+import { readFileSync } from 'node:fs';
 import { expect } from 'vitest';
 import { lerJson } from '../src/io/json.ts';
+import { lerPolitica } from '../src/io/politica.ts';
 import { validarDespesa } from '../src/nucleo/despesa.ts';
 import { gerarParcelas } from '../src/nucleo/diarias.ts';
 import { alocar } from '../src/nucleo/limites.ts';
@@ -10,6 +12,12 @@ import { calcularItens, passada1 } from '../src/nucleo/motor.ts';
 import { statusDe } from '../src/nucleo/status.ts';
 import { POLITICA } from '../src/nucleo/politica.ts';
 import type { DespesaElegivel, DespesaValida, Entrada, ResultadoItem } from '../src/nucleo/tipos.ts';
+
+/** Texto da tabela de limites da fixture da v4 (R-10: nunca `dados/`). */
+export const TEXTO_POLITICA_V4 = readFileSync('exemplos/envelope/politica-v4.json', 'utf8');
+
+/** Tabela de limites da fixture da v4. */
+export const POLITICA_V4 = lerPolitica(TEXTO_POLITICA_V4);
 
 export const DESPESA_PADRAO = {
   id: 'd-001',
