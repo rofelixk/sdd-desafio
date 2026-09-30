@@ -32,14 +32,14 @@ const titulos = arquivosDeTeste.flatMap((caminho) =>
 
 describe('Infra › rastreabilidade', () => {
   it('Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste', () => {
-    expect(regras.length).toBeGreaterThanOrEqual(15);
+    expect(regras.length).toBeGreaterThanOrEqual(18);
     const semTeste = regras.filter((rn) => !titulos.some((t) => t.startsWith(`${rn} ›`)));
     expect(semTeste, `RNs sem teste: ${semTeste.join(', ')}`).toEqual([]);
   });
 
   it('Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>', () => {
     const casos = casosDeBorda();
-    expect(casos.length).toBeGreaterThanOrEqual(80);
+    expect(casos.length).toBeGreaterThanOrEqual(121);
     const semTeste = casos.filter((caso) => !titulos.includes(`Borda › ${caso}`));
     expect(semTeste, `casos de borda sem teste:\n${semTeste.join('\n')}`).toEqual([]);
   });
