@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ErroEntrada, lerEntrada } from '../../src/io/entrada.ts';
+import { lerCambio } from '../../src/io/cambio.ts';
 import { lerPolitica } from '../../src/io/politica.ts';
+import { NumeroJson } from '../../src/nucleo/tipos.ts';
 
 const VALIDO = {
   colaborador: { id: 'c-0417', nome: 'Marina' },
@@ -223,5 +225,77 @@ describe('RN-015 — Arquivo de entrada inválido (tabela de limites)', () => {
       expect(erroDe(lerPolitica, texto), texto).toMatch(/^tabela de limites \(dados\/politica\.json\): .*JSON/);
     }
     expect(erroDe((t) => lerPolitica(t, 'tabela X'), '{')).toMatch(/^tabela X: /);
+  });
+});
+
+const CAMBIO = readFileSync('exemplos/envelope/cambio.json', 'utf8');
+
+/** Mensagem do erro do câmbio para o objeto `c`. */
+function erroCambio(c: unknown): string {
+  return erroDe(lerCambio, JSON.stringify(c));
+}
+
+/** Câmbio mínimo válido com `taxas` trocadas. */
+function cambio(taxas: unknown): Record<string, unknown> {
+  return { moeda_base: 'BRL', taxas };
+}
+
+describe('RN-015 — Arquivo de entrada inválido (câmbio)', () => {
+  it('RN-015 › câmbio de exemplos/envelope/cambio.json é lido: USD e EUR com 12 cotações cada, em ordem de data', () => {
+    const c = lerCambio(CAMBIO);
+    expect([...c.keys()]).toEqual(['USD', 'EUR']);
+    for (const moeda of ['USD', 'EUR']) {
+      const datas = c.get(moeda)!.map((k) => k.data);
+      expect(datas).toHaveLength(12);
+      expect(datas).toEqual([...datas].sort());
+    }
+    expect(c.get('EUR')![1]).toEqual({ data: '2026-07-14', taxa: new NumeroJson('5.93') });
+    expect(c.get('EUR')![3]?.taxa.texto).toBe('5.90');
+  });
+
+  it('RN-015 › câmbio: moeda_base diferente de BRL, ou taxas ausente ou que não é objeto → erro que cita o arquivo de câmbio', () => {
+    expect(erroCambio({ moeda_base: 'USD', taxas: {} })).toMatch(/^arquivo de câmbio \(dados\/cambio\.json\): .*moeda_base/);
+    expect(erroCambio({ taxas: {} })).toContain('moeda_base');
+    for (const taxas of [undefined, [], 'x', null, 5]) {
+      expect(erroCambio(cambio(taxas)), String(taxas)).toMatch(/^arquivo de câmbio .*taxas/);
+    }
+    for (const texto of ['[]', '42', 'null']) {
+      expect(erroDe(lerCambio, texto), texto).toMatch(/^arquivo de câmbio .*objeto/);
+    }
+  });
+
+  it('RN-015 › câmbio: chave de taxas que não é data válida (2026-07-32) ou valor de data que não é objeto → erro que cita o campo', () => {
+    expect(erroCambio(cambio({ '2026-07-32': { USD: 5 } }))).toContain('taxas.2026-07-32');
+    expect(erroCambio(cambio({ '13/07/2026': { USD: 5 } }))).toContain('taxas.13/07/2026');
+    expect(erroCambio(cambio({ '2026-07-13': 5.42 }))).toContain('taxas.2026-07-13');
+    expect(erroCambio(cambio({ '2026-07-13': [5.42] }))).toContain('taxas.2026-07-13');
+  });
+
+  it('RN-015 › câmbio: moeda sem 3 letras ("EURO", "US") → erro', () => {
+    for (const moeda of ['EURO', 'US', 'U$D', '123', '']) {
+      expect(erroCambio(cambio({ '2026-07-13': { [moeda]: 5 } })), moeda).toContain(`taxas.2026-07-13.${moeda}`);
+    }
+  });
+
+  it('RN-015 › câmbio: taxa 0, negativa ou texto → erro, inclusive numa moeda repetida que acaba sobrescrita', () => {
+    for (const taxa of [0, -5.42, '5.42', null, true]) {
+      expect(erroCambio(cambio({ '2026-07-13': { EUR: taxa } })), String(taxa)).toContain('taxas.2026-07-13.EUR');
+    }
+    expect(erroDe(lerCambio, '{"moeda_base": "BRL", "taxas": {"2026-07-13": {"USD": 0, "usd": 5.50}}}')).toMatch(
+      /taxas\.2026-07-13\.USD .*zero \(0\)/,
+    );
+  });
+
+  it('RN-015 › câmbio: fonte, observacao e campos desconhecidos são ignorados', () => {
+    const c = lerCambio(
+      JSON.stringify({ moeda_base: 'BRL', fonte: 42, observacao: ['x'], atualizado_em: 'ontem', taxas: { '2026-07-13': { USD: 5.42 } } }),
+    );
+    expect([...c.keys()]).toEqual(['USD']);
+  });
+
+  it('RN-015 › câmbio que não é JSON → erro que cita o arquivo de câmbio', () => {
+    for (const texto of ['', 'não é json', '{"taxas": ']) {
+      expect(erroDe(lerCambio, texto), texto).toMatch(/^arquivo de câmbio \(dados\/cambio\.json\): .*JSON/);
+    }
   });
 });

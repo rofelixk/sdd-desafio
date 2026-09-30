@@ -12,6 +12,11 @@ export function normalizarFornecedor(texto: string): string {
   return texto.trim().toLowerCase();
 }
 
+/** Moeda: sem espaços nas bordas e maiúsculas (RN-003, RN-017, AMB-036, AMB-042). */
+export function normalizarMoeda(texto: string): string {
+  return texto.trim().toUpperCase();
+}
+
 /** Qualquer valor bruto como texto (RN-003, AMB-026). */
 export function comoTexto(bruto: unknown): string {
   if (bruto === undefined || bruto === null) return '';
