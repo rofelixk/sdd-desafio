@@ -416,10 +416,10 @@
   - **Aceite:** em `tests/cli.test.ts` passam `RN-015 › CLI: "centro_custo": 42 → código 1, stderr cita colaborador.centro_custo, nenhum arquivo de saída`, `RN-015 › CLI: dados/cambio.json ausente (cópia temporária) → código 1, stderr cita o arquivo de câmbio, nenhum arquivo de saída`, `RN-015 › CLI: limite negativo em dados/politica.json (cópia temporária) → código 1, stderr cita a tabela de limites e o campo`, `RN-016 › CLI: padrao.hospedagem.limite 320.00 em dados/ (cópia temporária) muda f-002 de PARCIAL 250,00 para APROVADO 310,00 sem mudar o código`, `Infra › CLI: chamado de outra pasta lê o mesmo dados/`, `Infra › CLI: envelope → código 0, stdout cita o total pendente` e `Infra › CLI: duas execuções do envelope geram bytes idênticos`; os testes da T-038 e da T-039 continuam passando
   - **Commit:** `4ac2d5f`
 
-- [ ] **T-069** — Casos de borda de arquivo da v4 em `tests/casos-de-borda.test.ts`: "Centro de custo não textual" por `validarEntrada`; "Tabela de limites inválida" e "Tabela sem versão" por `lerPolitica` com o texto do arquivo; "Arquivo de câmbio ausente" por `lerExternos` com um caminho inexistente **e** pelo CLI numa cópia temporária (helper da T-068), conferindo que o arquivo de saída não existe
+- [x] **T-069** — Casos de borda de arquivo da v4 em `tests/casos-de-borda.test.ts`: "Centro de custo não textual" por `validarEntrada`; "Tabela de limites inválida" e "Tabela sem versão" por `lerPolitica` com o texto do arquivo; "Arquivo de câmbio ausente" por `lerExternos` com um caminho inexistente **e** pelo CLI numa cópia temporária (helper da T-068), conferindo que o arquivo de saída não existe
   - **Atende:** RN-015, RN-016, RN-017, AMB-028, AMB-032, AMB-044
   - **Aceite:** passam `Borda › Centro de custo não textual`, `Borda › Tabela de limites inválida`, `Borda › Arquivo de câmbio ausente` e `Borda › Tabela sem versão`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `f7da03d`
 
 - [ ] **T-070** — Fechar a rastreabilidade (estende T-041, DT-005): em `tests/rastreabilidade.test.ts`, subir os mínimos para 18 RNs e 121 casos de borda; nada mais muda no teste
   - **Atende:** RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007, RN-008, RN-009, RN-010, RN-011, RN-012, RN-013, RN-014, RN-015, RN-016, RN-017, RN-018 (seção 9, critérios 3 e 4)
