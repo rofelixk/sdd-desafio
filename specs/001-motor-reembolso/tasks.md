@@ -394,10 +394,10 @@
   - **Aceite:** passam `Borda › Nota fiscal sobre o valor convertido`, `Borda › Estrangeira abaixo do limiar de NF`, `Borda › Mesmo valor em moedas diferentes` e `Borda › BRL explícito e implícito`
   - **Commit:** `c04c857`
 
-- [ ] **T-065** — Casos de borda de aprovação manual em `tests/casos-de-borda.test.ts`
+- [x] **T-065** — Casos de borda de aprovação manual em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-010, RN-011, RN-012, RN-014, RN-018, AMB-040, AMB-041
   - **Aceite:** passam `Borda › Reembolsável exatamente 500,00`, `Borda › Reembolsável acima de 500,00`, `Borda › Solicitado alto cortado pelo limite`, `Borda › Pendente com corte de limite`, `Borda › Pendente consome o limite`, `Borda › Hospedagem pendente gera viagem` e `Borda › Pendente fora do total reembolsável`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `4462f33`
 
 ### 5.4 Saída e CLI da v4
 
