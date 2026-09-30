@@ -361,10 +361,10 @@
   - **Aceite:** em `tests/nucleo/rn-014-resumo.test.ts` passam `RN-014 › PENDENTE entra em total_solicitado e total_pendente, e não em total_reembolsavel`, `RN-014 › total_nao_reembolsado = total_solicitado − total_reembolsavel − total_pendente, exato em centavos`, `RN-014 › contagens (aprovados, parciais, recusados, pendentes) somam quantidade_itens` e `RN-014 › lista vazia → pendentes 0 e total_pendente 0,00`; o teste da T-024 `RN-014 › soma de valor_reembolsavel dos itens = total_reembolsavel ...` passa a somar só os itens não PENDENTE
   - **Commit:** `2d38319`
 
-- [ ] **T-060** — [P] Descrições da v4 em `src/nucleo/motivos.ts` (RN-013): todo item com conversão em moeda estrangeira traz `"<MOEDA> <original> × <taxa> (cotação de <data>) = R$ <reais>"` antes do texto do código; `CAMBIO_INDISPONIVEL` cita a moeda e a data da despesa; `NOTA_FISCAL_AUSENTE` em moeda estrangeira cita o valor em reais e o limiar
+- [x] **T-060** — [P] Descrições da v4 em `src/nucleo/motivos.ts` (RN-013): todo item com conversão em moeda estrangeira traz `"<MOEDA> <original> × <taxa> (cotação de <data>) = R$ <reais>"` antes do texto do código; `CAMBIO_INDISPONIVEL` cita a moeda e a data da despesa; `NOTA_FISCAL_AUSENTE` em moeda estrangeira cita o valor em reais e o limiar
   - **Atende:** RN-013, RN-017, RN-008
   - **Aceite:** em `tests/nucleo/rn-013-motivos.test.ts` passam `RN-013 › item em moeda estrangeira: descrição traz valor original × taxa, data da cotação e valor em reais`, `RN-013 › CAMBIO_INDISPONIVEL cita a moeda e a data da despesa` e `RN-013 › NOTA_FISCAL_AUSENTE em moeda estrangeira cita o valor em reais e o limiar`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `2a23dd4`
 
 ### 5.3 Casos de borda da v4
 
