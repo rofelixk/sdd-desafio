@@ -384,10 +384,10 @@
   - **Aceite:** passam `Borda › Valor inválido em moeda estrangeira`, `Borda › Valor inválido em BRL`, `Borda › Moeda ausente`, `Borda › Moeda nula ou vazia`, `Borda › Moeda em minúsculas`, `Borda › Moeda não textual` e `Borda › Moeda fora do câmbio`
   - **Commit:** `b7f5630`
 
-- [ ] **T-063** — Casos de borda de conversão e do arquivo de câmbio em `tests/casos-de-borda.test.ts` ("Moeda repetida no câmbio" e "Moeda minúscula no câmbio" montam o câmbio a partir do texto com `lerCambio`, R-14)
+- [x] **T-063** — Casos de borda de conversão e do arquivo de câmbio em `tests/casos-de-borda.test.ts` ("Moeda repetida no câmbio" e "Moeda minúscula no câmbio" montam o câmbio a partir do texto com `lerCambio`, R-14)
   - **Atende:** RN-001, RN-004, RN-005, RN-014, RN-017, AMB-035, AMB-037, AMB-039, AMB-042
   - **Aceite:** passam `Borda › Conversão em dia útil`, `Borda › Conversão no fim de semana`, `Borda › Antes da primeira cotação`, `Borda › Moeda sem cotação`, `Borda › Estrangeira fora do período`, `Borda › Estrangeira negativa sem cotação`, `Borda › Arredondamento da conversão`, `Borda › Moeda repetida no câmbio` e `Borda › Moeda minúscula no câmbio`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `ff88cbe`
 
 - [ ] **T-064** — Casos de borda de nota fiscal e duplicata em moeda estrangeira em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-007, RN-008, AMB-038
