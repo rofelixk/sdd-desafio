@@ -426,10 +426,10 @@
   - **Aceite:** passam `Infra › rastreabilidade: toda RN-NNN da spec aparece no início de um título de teste`, `Infra › rastreabilidade: toda linha da seção 7 tem um teste Borda › <Caso>` e `Infra › rastreabilidade: toda RN-NNN tem exatamente um arquivo rn-NNN-*.test.ts`; `npm test` inteiro verde, sem falhas conhecidas
   - **Commit:** `3d44b6b`
 
-- [ ] **T-071** — Atualizar `README.md` (estende T-042): os dois arquivos em `dados/` (o que são, que simulam o serviço do financeiro, como trocá-los e restaurá-los com `git checkout dados/`), os três exemplos da seção 9 e o apontamento para `quickstart.md` e `contracts/arquivos-externos.md`
+- [x] **T-071** — Atualizar `README.md` (estende T-042): os dois arquivos em `dados/` (o que são, que simulam o serviço do financeiro, como trocá-los e restaurá-los com `git checkout dados/`), os três exemplos da seção 9 e o apontamento para `quickstart.md` e `contracts/arquivos-externos.md`
   - **Atende:** AMB-028 (seção 9, entrega: "como rodar e como testar")
   - **Aceite:** seguir o README do zero num clone limpo reproduz as seções 1 a 6 do `quickstart.md` com o resultado esperado
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `c689604`
 
 ---
 
