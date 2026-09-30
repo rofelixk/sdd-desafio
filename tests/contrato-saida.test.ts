@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { lerEntrada } from '../src/io/entrada.ts';
 import { serializarJson } from '../src/io/json.ts';
 import { montarSaida } from '../src/io/saida.ts';
-import { calcular } from '../src/nucleo/motor.ts';
+import { calcularV4 } from './apoio.ts';
 
 const schema = JSON.parse(readFileSync('specs/001-motor-reembolso/contracts/saida.schema.json', 'utf8'));
 // multipleOf: 0.01 com float dá falso negativo (ex.: 0.07) sem a precisão (plan §7).
@@ -14,7 +14,7 @@ const validar = new Ajv2020({ multipleOfPrecision: 2, allErrors: true }).compile
 
 /** Saída como o CLI a gravaria, relida como JSON. */
 function saida(texto: string): unknown {
-  return JSON.parse(serializarJson(montarSaida(calcular(lerEntrada(texto)))));
+  return JSON.parse(serializarJson(montarSaida(calcularV4(lerEntrada(texto)))));
 }
 
 function conferir(json: unknown): void {

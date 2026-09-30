@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { limiteDiario } from '../../src/nucleo/limites.ts';
-import { alocarDespesas } from '../apoio.ts';
+import { TABELA_PADRAO, alocarDespesas } from '../apoio.ts';
 
 /** `[código, reembolsável]` de cada despesa. */
 function resumo(despesas: Record<string, unknown>[], dias?: ReadonlySet<string>): [string, bigint][] {
@@ -32,10 +32,10 @@ describe('RN-009 — Limites diários por categoria', () => {
 
   it('RN-009 › em dia de viagem alimentação vai a 90,00 e transporte a 120,00, hospedagem fica em 250,00', () => {
     const viagem = new Set(['2026-07-03']);
-    expect(limiteDiario('alimentacao', '2026-07-03', viagem)).toBe(9000n);
-    expect(limiteDiario('transporte_urbano', '2026-07-03', viagem)).toBe(12000n);
-    expect(limiteDiario('hospedagem', '2026-07-03', viagem)).toBe(25000n);
-    expect(limiteDiario('alimentacao', '2026-07-04', viagem)).toBe(6000n);
+    expect(limiteDiario('alimentacao', '2026-07-03', viagem, TABELA_PADRAO)).toBe(9000n);
+    expect(limiteDiario('transporte_urbano', '2026-07-03', viagem, TABELA_PADRAO)).toBe(12000n);
+    expect(limiteDiario('hospedagem', '2026-07-03', viagem, TABELA_PADRAO)).toBe(25000n);
+    expect(limiteDiario('alimentacao', '2026-07-04', viagem, TABELA_PADRAO)).toBe(6000n);
     expect(
       resumo(
         [

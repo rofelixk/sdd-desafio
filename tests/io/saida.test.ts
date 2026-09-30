@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { lerEntrada } from '../../src/io/entrada.ts';
 import { serializarJson } from '../../src/io/json.ts';
 import { montarSaida } from '../../src/io/saida.ts';
-import { calcular } from '../../src/nucleo/motor.ts';
+import { calcularV4 } from '../apoio.ts';
 
 /** Texto da saída para o arquivo de entrada `texto`. */
 function saida(texto: string): string {
-  return serializarJson(montarSaida(calcular(lerEntrada(texto))));
+  return serializarJson(montarSaida(calcularV4(lerEntrada(texto))));
 }
 
 const cabecalho = '"colaborador": {"id": "c-1"}, "periodo": {"inicio": "2026-07-01", "fim": "2026-07-31"}';

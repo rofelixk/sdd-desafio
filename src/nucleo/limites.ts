@@ -1,7 +1,7 @@
 // Etapa 9 da seção 8: limite diário por (data, categoria) (RN-009, RN-010).
 
-import { POLITICA } from './politica.ts';
-import type { Categoria, Centavos, CodigoLimite, DataISO, Parcela } from './tipos.ts';
+import { dividirMeioParaPar } from './decimal.ts';
+import type { Categoria, Centavos, CodigoLimite, DataISO, Parcela, TabelaAplicavel } from './tipos.ts';
 
 /** Resultado do limite para uma despesa (soma das suas parcelas). */
 export interface Alocacao {
@@ -17,28 +17,38 @@ export interface Alocacao {
   readonly codigo: CodigoLimite;
 }
 
-/** Limite de (data, categoria): ampliado só em dia de viagem e se a categoria amplia (RN-009, RN-011, AMB-020). */
-export function limiteDiario(categoria: Categoria, data: DataISO, diasDeViagem: ReadonlySet<DataISO>): Centavos {
-  const { diario, ampliaEmViagem } = POLITICA.limites[categoria];
-  if (!ampliaEmViagem || !diasDeViagem.has(data)) return diario;
-  const { num, den } = POLITICA.fatorViagem;
-  if ((diario * num) % den !== 0n) {
-    // A spec não define arredondamento de limite ampliado (plan §7).
-    throw new Error(`limite ampliado de ${categoria} não é exato em centavos`);
-  }
-  return (diario * num) / den;
+/**
+ * Limite de (data, categoria) na tabela aplicável: em dia de viagem, a
+ * periodicidade `dia` é ampliada pelo percentual da tabela, meio para o par
+ * (RN-009, RN-011, AMB-020, AMB-033).
+ */
+export function limiteDiario(
+  categoria: Categoria,
+  data: DataISO,
+  diasDeViagem: ReadonlySet<DataISO>,
+  tabela: TabelaAplicavel,
+): Centavos {
+  const { limite, periodicidade } = tabela.categorias.get(categoria)!;
+  if (periodicidade !== 'dia' || !diasDeViagem.has(data)) return limite;
+  const { digitos, escala } = tabela.acrescimoViagemPercentual;
+  const cem = 100n * 10n ** BigInt(escala);
+  return dividirMeioParaPar(limite * (cem + digitos), cem);
 }
 
 /**
  * Cada parcela, na ordem recebida (a da entrada), leva `min(valor, saldo)` do
  * saldo de (data, categoria). Devolve uma alocação por despesa, na ordem.
  */
-export function alocar(parcelas: readonly Parcela[], diasDeViagem: ReadonlySet<DataISO>): Alocacao[] {
+export function alocar(
+  parcelas: readonly Parcela[],
+  diasDeViagem: ReadonlySet<DataISO>,
+  tabela: TabelaAplicavel,
+): Alocacao[] {
   const saldos = new Map<string, Centavos>();
   const porDespesa = new Map<number, Omit<Alocacao, 'codigo'>>();
 
   for (const p of parcelas) {
-    const limite = limiteDiario(p.categoria, p.data, diasDeViagem);
+    const limite = limiteDiario(p.categoria, p.data, diasDeViagem, tabela);
     const chave = `${p.data}|${p.categoria}`;
     const saldo = saldos.get(chave) ?? limite;
     const recebe = p.valor < saldo ? p.valor : saldo;

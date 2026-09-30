@@ -1,6 +1,6 @@
 // Justificativa de cada item (RN-013): um modelo de texto por código da seção 4.
 
-import { formatarReais } from './dinheiro.ts';
+import { formatarReais, formatarReaisDecimal } from './dinheiro.ts';
 import type { Categoria, CodigoLimite, CodigoMotivo, DecisaoLimite, Motivo, ProblemaDado, Recusa } from './tipos.ts';
 
 /** O que decidiu o item: a recusa de uma etapa ou a decisão do limite. */
@@ -12,11 +12,17 @@ type DetalhesDe<C extends CodigoMotivo> = C extends CodigoLimite
 
 type Modelos = { [C in CodigoMotivo]: (detalhes: DetalhesDe<C>) => string };
 
-const NOME_CATEGORIA: Record<Categoria, string> = {
+/** Só apresentação (R-15): categoria fora do mapa aparece pela própria chave. */
+const NOMES_CATEGORIA: Readonly<Record<string, string>> = {
   alimentacao: 'alimentação',
   transporte_urbano: 'transporte urbano',
   hospedagem: 'hospedagem',
+  representacao: 'representação',
 };
+
+function nomeCategoria(categoria: Categoria): string {
+  return Object.hasOwn(NOMES_CATEGORIA, categoria) ? NOMES_CATEGORIA[categoria]! : categoria;
+}
 
 const PROBLEMA: Record<ProblemaDado, (campo: string) => string> = {
   nao_objeto: () => 'A despesa não é um objeto com os campos esperados.',
@@ -27,19 +33,19 @@ const PROBLEMA: Record<ProblemaDado, (campo: string) => string> = {
   repetido: () => "O 'id' repete o de uma despesa anterior do arquivo.",
 };
 
-/** Limite da categoria na data; em hospedagem, por diária e com o período das noites. */
+/** Limite da categoria na data; na periodicidade `diaria`, por diária e com o período das noites. */
 function limiteDoDia(d: DecisaoLimite['detalhes']): string {
-  const nome = NOME_CATEGORIA[d.categoria];
-  if (d.categoria !== 'hospedagem') return `Limite diário de ${nome} ${formatarReais(d.limite)} em ${d.data}`;
+  const nome = nomeCategoria(d.categoria);
+  if (d.periodicidade !== 'diaria') return `Limite diário de ${nome} ${formatarReais(d.limite)} em ${d.data}`;
   const noites = d.diarias === 1 ? `1 diária em ${d.data}` : `${d.diarias} diárias a partir de ${d.data}`;
   return `Limite de ${nome} ${formatarReais(d.limite)} por diária (${noites})`;
 }
 
 export const MODELOS: Modelos = {
   APROVADO_INTEGRAL: (d) =>
-    d.categoria === 'hospedagem'
-      ? `Dentro do limite de hospedagem (${formatarReais(d.limite)} por diária, ${d.diarias === 1 ? '1 diária' : `${d.diarias} diárias`}); saldo após este item: ${formatarReais(d.saldoApos)}.`
-      : `Dentro do limite diário de ${NOME_CATEGORIA[d.categoria]} (${formatarReais(d.limite)}); saldo do dia após este item: ${formatarReais(d.saldoApos)}.`,
+    d.periodicidade === 'diaria'
+      ? `Dentro do limite de ${nomeCategoria(d.categoria)} (${formatarReais(d.limite)} por diária, ${d.diarias === 1 ? '1 diária' : `${d.diarias} diárias`}); saldo após este item: ${formatarReais(d.saldoApos)}.`
+      : `Dentro do limite diário de ${nomeCategoria(d.categoria)} (${formatarReais(d.limite)}); saldo do dia após este item: ${formatarReais(d.saldoApos)}.`,
   LIMITE_DIARIO_EXCEDIDO: (d) =>
     `${limiteDoDia(d)}; saldo disponível ${formatarReais(d.saldoDisponivel)}; excedente de ${formatarReais(d.solicitado - d.reembolsavel)} não reembolsado.`,
   LIMITE_DIARIO_ESGOTADO: (d) =>
@@ -52,7 +58,7 @@ export const MODELOS: Modelos = {
   DUPLICATA: (d) =>
     `Mesma data, categoria, fornecedor e valor da despesa '${d.idAceito}', que já foi considerada; este lançamento repetido não é reembolsado.`,
   NOTA_FISCAL_AUSENTE: (d) =>
-    `Valor ${formatarReais(d.valor)} acima de ${formatarReais(d.limiar)} exige nota fiscal, que não foi informada.`,
+    `Valor ${formatarReais(d.valor)} acima de ${formatarReaisDecimal(d.limiar)} exige nota fiscal, que não foi informada.`,
 };
 
 export function montarMotivo(decisao: Decisao): Motivo {

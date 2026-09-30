@@ -1,4 +1,5 @@
-// Apoio aos testes: monta despesas brutas como sairiam do leitor de JSON.
+// Apoio aos testes: monta despesas brutas como sairiam do leitor de JSON, com
+// a tabela de limites da fixture da v4 (R-10).
 
 import { readFileSync } from 'node:fs';
 import { expect } from 'vitest';
@@ -8,16 +9,46 @@ import { validarDespesa } from '../src/nucleo/despesa.ts';
 import { gerarParcelas } from '../src/nucleo/diarias.ts';
 import { alocar } from '../src/nucleo/limites.ts';
 import type { Alocacao } from '../src/nucleo/limites.ts';
-import { calcularItens, passada1 } from '../src/nucleo/motor.ts';
+import { calcular, calcularItens, passada1 } from '../src/nucleo/motor.ts';
+import { tabelaAplicavel } from '../src/nucleo/politica.ts';
 import { statusDe } from '../src/nucleo/status.ts';
-import { POLITICA } from '../src/nucleo/politica.ts';
-import type { DespesaElegivel, DespesaValida, Entrada, ResultadoItem } from '../src/nucleo/tipos.ts';
+import type {
+  DespesaElegivel,
+  DespesaValida,
+  Entrada,
+  Politica,
+  Resultado,
+  ResultadoItem,
+  TabelaAplicavel,
+} from '../src/nucleo/tipos.ts';
 
 /** Texto da tabela de limites da fixture da v4 (R-10: nunca `dados/`). */
 export const TEXTO_POLITICA_V4 = readFileSync('exemplos/envelope/politica-v4.json', 'utf8');
 
 /** Tabela de limites da fixture da v4. */
 export const POLITICA_V4 = lerPolitica(TEXTO_POLITICA_V4);
+
+/** Tabela de limites da fixture com `trocar` aplicado ao JSON (ex.: um limite alterado). */
+export function politicaCom(trocar: (json: Record<string, any>) => void): Politica {
+  const json = JSON.parse(TEXTO_POLITICA_V4);
+  trocar(json);
+  return lerPolitica(JSON.stringify(json));
+}
+
+/** O que muda em relação ao cenário padrão (tabela padrão da v4, período de julho). */
+export interface Opcoes {
+  readonly periodo?: { inicio: string; fim: string };
+  readonly centroCusto?: string | null;
+  readonly politica?: Politica;
+}
+
+/** Tabela aplicável da fixture para as `opcoes` (sem centro de custo: a padrão). */
+export function tabela(opcoes: Opcoes = {}): TabelaAplicavel {
+  return tabelaAplicavel(opcoes.politica ?? POLITICA_V4, opcoes.centroCusto ?? null);
+}
+
+/** Tabela padrão da v4 (mesmos valores da v3). */
+export const TABELA_PADRAO = tabela();
 
 export const DESPESA_PADRAO = {
   id: 'd-001',
@@ -61,13 +92,12 @@ export function cru(texto: string): Cru {
  * `Entrada` com as despesas do padrão com `campos` trocados; sem `id`
  * explícito, cada uma recebe `e-1`, `e-2`...
  */
-export function entrada(
-  despesas: (Record<string, unknown> | Cru)[],
-  periodo: { inicio: string; fim: string } = PERIODO_PADRAO,
-): Entrada {
+export function entrada(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoes = {}): Entrada {
+  const periodo = opcoes.periodo ?? PERIODO_PADRAO;
+  const centroCusto = opcoes.centroCusto ?? null;
   return {
-    colaborador: { id: 'c-0001' },
-    centroCusto: null,
+    colaborador: centroCusto === null ? { id: 'c-0001' } : { id: 'c-0001', centro_custo: centroCusto },
+    centroCusto,
     periodo,
     inicio: periodo.inicio,
     fim: periodo.fim,
@@ -75,35 +105,43 @@ export function entrada(
   };
 }
 
-/** Código de recusa de cada despesa na passada 1 do motor (`null` = elegível). */
-export function codigosPassada1(e: Entrada): (string | null)[] {
-  return passada1(e).map((a) => (a.tipo === 'elegivel' ? null : a.recusa.codigo));
+/** Resultado do motor para uma `Entrada`, com a fixture da v4. */
+export function calcularV4(e: Entrada, opcoes: Opcoes = {}): Resultado {
+  return calcular(e, tabela(opcoes));
 }
 
-/** `DespesaElegivel` a partir do padrão com `campos` trocados. */
-export function elegivel(campos: Record<string, unknown> = {}, indice = 0): DespesaElegivel {
+/** Código de recusa de cada despesa na passada 1 do motor (`null` = elegível). */
+export function codigosPassada1(e: Entrada, opcoes: Opcoes = {}): (string | null)[] {
+  return passada1(e, tabela(opcoes)).map((a) => (a.tipo === 'elegivel' ? null : a.recusa.codigo));
+}
+
+/** `DespesaElegivel` a partir do padrão com `campos` trocados, com a regra da tabela aplicável. */
+export function elegivel(campos: Record<string, unknown> = {}, indice = 0, opcoes: Opcoes = {}): DespesaElegivel {
   const d = valida(campos, indice);
-  expect(Object.hasOwn(POLITICA.limites, d.categoria), d.categoria).toBe(true);
-  return d as DespesaElegivel;
+  const regra = tabela(opcoes).categorias.get(d.categoria);
+  expect(regra, d.categoria).toBeDefined();
+  return { ...d, regra: regra! };
 }
 
 /** Aloca o limite para despesas elegíveis montadas do padrão, na ordem dada. */
-export function alocarDespesas(despesas: Record<string, unknown>[], diasDeViagem: ReadonlySet<string> = new Set()): Alocacao[] {
+export function alocarDespesas(
+  despesas: Record<string, unknown>[],
+  diasDeViagem: ReadonlySet<string> = new Set(),
+  opcoes: Opcoes = {},
+): Alocacao[] {
   return alocar(
-    despesas.flatMap((campos, i) => gerarParcelas(elegivel({ id: `e-${i + 1}`, ...campos }, i))),
+    despesas.flatMap((campos, i) => gerarParcelas(elegivel({ id: `e-${i + 1}`, ...campos }, i, opcoes))),
     diasDeViagem,
+    tabela(opcoes),
   );
 }
 
 /** Itens do motor para as despesas montadas do padrão (ver `entrada`). */
-export function rodar(
-  despesas: (Record<string, unknown> | Cru)[],
-  periodo?: { inicio: string; fim: string },
-): ResultadoItem[] {
-  return calcularItens(entrada(despesas, periodo));
+export function rodar(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoes = {}): ResultadoItem[] {
+  return calcularItens(entrada(despesas, opcoes), tabela(opcoes));
 }
 
 /** `[status, código, reembolsável]` de cada item do motor. */
-export function decisoes(despesas: (Record<string, unknown> | Cru)[], periodo?: { inicio: string; fim: string }) {
-  return rodar(despesas, periodo).map((i) => [statusDe(i), i.motivo.codigo, i.valorReembolsavel] as const);
+export function decisoes(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoes = {}) {
+  return rodar(despesas, opcoes).map((i) => [statusDe(i), i.motivo.codigo, i.valorReembolsavel] as const);
 }

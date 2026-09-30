@@ -1,7 +1,7 @@
 // Dinheiro em centavos `bigint` (R-02).
 
 import { decimalDe, dividirMeioParaPar } from './decimal.ts';
-import type { Centavos } from './tipos.ts';
+import type { Centavos, Decimal } from './tipos.ts';
 
 function partes(c: Centavos): { sinal: string; inteiros: string; centavos: string } {
   const abs = c < 0n ? -c : c;
@@ -23,6 +23,15 @@ export function formatarReais(c: Centavos): string {
   const { sinal, inteiros, centavos } = partes(c);
   const milhar = inteiros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return `${sinal}R$ ${milhar},${centavos}`;
+}
+
+/** Valor exato da tabela em reais: `100.00` → `"R$ 100,00"`; mais de 2 casas aparecem todas. */
+export function formatarReaisDecimal(d: Decimal): string {
+  if (d.escala <= 2) return formatarReais(d.digitos * 10n ** BigInt(2 - d.escala));
+  const { sinal, inteiros } = partes(d.digitos / 10n ** BigInt(d.escala - 2));
+  const abs = d.digitos < 0n ? -d.digitos : d.digitos;
+  const fracao = (abs % 10n ** BigInt(d.escala)).toString().padStart(d.escala, '0');
+  return `${sinal}R$ ${inteiros.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fracao}`;
 }
 
 /**

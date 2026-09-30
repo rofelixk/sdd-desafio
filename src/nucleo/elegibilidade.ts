@@ -1,8 +1,7 @@
 // Etapas 3 a 7 da seção 8. Cada função devolve a recusa da etapa ou `null`;
 // a ordem das etapas vive só no `motor.ts` (DT-002).
 
-import { POLITICA } from './politica.ts';
-import type { Categoria, DataISO, DespesaValida, Recusa } from './tipos.ts';
+import type { Centavos, DataISO, Decimal, DespesaValida, Recusa, TabelaAplicavel } from './tipos.ts';
 
 /** Etapa 3 (RN-004, AMB-012). */
 export function verificarValorPositivo(d: DespesaValida): Recusa | null {
@@ -18,14 +17,14 @@ export function verificarPeriodo(d: DespesaValida, inicio: DataISO, fim: DataISO
     : null;
 }
 
-/** Categoria reconhecida: chave de `POLITICA.limites` (RN-006). */
-export function ehCategoria(categoria: string): categoria is Categoria {
-  return Object.hasOwn(POLITICA.limites, categoria);
+/** Categoria reconhecida: chave da tabela aplicável (RN-002, RN-006, R-15). */
+export function ehCategoria(categoria: string, tabela: TabelaAplicavel): boolean {
+  return tabela.categorias.has(categoria);
 }
 
 /** Etapa 5 (RN-006, AMB-019): sem reclassificar. */
-export function verificarCategoria(d: DespesaValida): Recusa | null {
-  return ehCategoria(d.categoria)
+export function verificarCategoria(d: DespesaValida, tabela: TabelaAplicavel): Recusa | null {
+  return ehCategoria(d.categoria, tabela)
     ? null
     : { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: d.categoriaOriginal } };
 }
@@ -46,9 +45,14 @@ export function verificarDuplicata(d: DespesaValida, aceitas: ChavesDuplicata): 
   return null;
 }
 
-/** Etapa 7 (RN-008, AMB-004, AMB-005, AMB-006): estritamente acima do limiar, sem nota. */
-export function verificarNotaFiscal(d: DespesaValida): Recusa | null {
-  return d.valorSolicitado > POLITICA.limiarNotaFiscal && !d.temNotaFiscal
-    ? { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: d.valorSolicitado, limiar: POLITICA.limiarNotaFiscal } }
+/** `valor` (centavos) > `limiar` (reais), exato, sem arredondar (R-13). */
+function acimaDe(valor: Centavos, limiar: Decimal): boolean {
+  return valor * 10n ** BigInt(limiar.escala) > limiar.digitos * 100n;
+}
+
+/** Etapa 7 (RN-008, AMB-004, AMB-005, AMB-006): estritamente acima do limiar da tabela, sem nota. */
+export function verificarNotaFiscal(d: DespesaValida, tabela: TabelaAplicavel): Recusa | null {
+  return acimaDe(d.valorSolicitado, tabela.limiarNotaFiscal) && !d.temNotaFiscal
+    ? { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: d.valorSolicitado, limiar: tabela.limiarNotaFiscal } }
     : null;
 }

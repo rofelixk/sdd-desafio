@@ -14,9 +14,9 @@ export function extrairDiarias(descricao: string): number {
   return n > 0 ? n : 1;
 }
 
-/** N da despesa: extraído da descrição na hospedagem, 1 nas demais. */
+/** N da despesa: extraído da descrição na periodicidade `diaria` (hospedagem), 1 nas demais (R-15). */
 export function diariasDe(d: DespesaElegivel): number {
-  return d.categoria === 'hospedagem' ? extrairDiarias(d.descricao) : 1;
+  return d.regra.periodicidade === 'diaria' ? extrairDiarias(d.descricao) : 1;
 }
 
 /**

@@ -10,9 +10,8 @@ import { serializarJson } from '../src/io/json.ts';
 import { montarSaida } from '../src/io/saida.ts';
 import { statusDe } from '../src/nucleo/status.ts';
 import type { ResultadoItem } from '../src/nucleo/tipos.ts';
-import { calcular } from '../src/nucleo/motor.ts';
 import { NumeroJson } from '../src/nucleo/tipos.ts';
-import { cru, entrada, rodar } from './apoio.ts';
+import { calcularV4, cru, entrada, rodar } from './apoio.ts';
 
 /** O que a seção 7 verifica em cada item. */
 function decisao(i: ResultadoItem | undefined) {
@@ -142,7 +141,7 @@ describe('Casos de borda — período, valor não positivo e categoria', () => {
   });
 
   it('Borda › Estorno', () => {
-    const r = calcular(entrada([{ valor: -45 }, { valor: 10, fornecedor: 'Y' }]));
+    const r = calcularV4(entrada([{ valor: -45 }, { valor: 10, fornecedor: 'Y' }]));
     expect(decisao(r.itens[0])).toEqual({ status: 'RECUSADO', codigo: 'VALOR_NAO_POSITIVO', solicitado: -4500n, reembolsavel: 0n });
     expect(r.resumo.totalSolicitado).toBe(1000n);
   });
@@ -388,7 +387,7 @@ describe('Casos de borda — id, data, categoria e eco inválidos', () => {
   });
 
   it('Borda › Valor inválido na saída', () => {
-    const r = calcular(entrada([{ valor: 'R$ 45,00' }, { valor: 10, fornecedor: 'Y' }]));
+    const r = calcularV4(entrada([{ valor: 'R$ 45,00' }, { valor: 10, fornecedor: 'Y' }]));
     expect(decisao(r.itens[0])).toEqual({ status: 'RECUSADO', codigo: 'DADO_INVALIDO', solicitado: null, reembolsavel: 0n });
     expect(r.resumo.totalSolicitado).toBe(1000n);
   });
@@ -520,7 +519,7 @@ describe('Casos de borda — arquivo', () => {
   };
 
   it('Borda › Lista de despesas vazia', () => {
-    const texto = serializarJson(montarSaida(calcular(entrada([]))));
+    const texto = serializarJson(montarSaida(calcularV4(entrada([]))));
     expect(JSON.parse(texto).itens).toEqual([]);
     expect(texto).toContain('"total_solicitado": 0.00');
     expect(texto).toContain('"total_reembolsavel": 0.00');

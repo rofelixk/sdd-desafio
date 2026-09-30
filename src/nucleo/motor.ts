@@ -3,20 +3,19 @@
 import { registrarId, validarDespesa } from './despesa.ts';
 import { diariasDe, gerarParcelas } from './diarias.ts';
 import {
+  ehCategoria,
   verificarCategoria,
   verificarDuplicata,
   verificarNotaFiscal,
   verificarPeriodo,
   verificarValorPositivo,
 } from './elegibilidade.ts';
-import { ehCategoria } from './elegibilidade.ts';
 import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
 import { montarMotivo } from './motivos.ts';
 import { calcularResumo } from './resumo.ts';
 import type {
-  Categoria,
   DespesaElegivel,
   DespesaValida,
   Entrada,
@@ -24,6 +23,7 @@ import type {
   RecusaDadoInvalido,
   Resultado,
   ResultadoItem,
+  TabelaAplicavel,
 } from './tipos.ts';
 import { diasDeViagem } from './viagem.ts';
 
@@ -34,7 +34,7 @@ export type Avaliacao =
   | { readonly tipo: 'elegivel'; readonly despesa: DespesaElegivel };
 
 /** Passada 1: etapas 1 a 7, na ordem da entrada; a primeira recusa encerra a avaliação. */
-export function passada1(entrada: Entrada): Avaliacao[] {
+export function passada1(entrada: Entrada, tabela: TabelaAplicavel): Avaliacao[] {
   const idsVistos = new Set<string>();
   const aceitas: ChavesDuplicata = new Map();
   return entrada.despesas.map((bruta, indice): Avaliacao => {
@@ -45,23 +45,23 @@ export function passada1(entrada: Entrada): Avaliacao[] {
     const recusa =
       verificarValorPositivo(validada) ?? // etapa 3
       verificarPeriodo(validada, entrada.inicio, entrada.fim) ?? // etapa 4
-      verificarCategoria(validada) ?? // etapa 5
+      verificarCategoria(validada, tabela) ?? // etapa 5
       verificarDuplicata(validada, aceitas) ?? // etapa 6
-      verificarNotaFiscal(validada); // etapa 7
+      verificarNotaFiscal(validada, tabela); // etapa 7
     if (recusa) return { tipo: 'recusada', despesa: validada, recusa };
 
-    // A etapa 5 garante que a categoria é reconhecida.
-    return { tipo: 'elegivel', despesa: { ...validada, categoria: validada.categoria as Categoria } };
+    // A etapa 5 garante que a categoria está na tabela aplicável.
+    return { tipo: 'elegivel', despesa: { ...validada, regra: tabela.categorias.get(validada.categoria)! } };
   });
 }
 
 /** Passada 2: etapas 8 e 9 sobre as elegíveis; monta um item por despesa, na ordem da entrada. */
-export function calcularItens(entrada: Entrada): ResultadoItem[] {
-  const avaliacoes = passada1(entrada);
+export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel): ResultadoItem[] {
+  const avaliacoes = passada1(entrada, tabela);
   const elegiveis = avaliacoes.flatMap((a) => (a.tipo === 'elegivel' ? [a.despesa] : []));
   const viagem = diasDeViagem(elegiveis); // etapa 8
   const alocacoes = new Map<number, Alocacao>(
-    alocar(elegiveis.flatMap(gerarParcelas), viagem).map((a) => [a.indiceDespesa, a]), // etapa 9
+    alocar(elegiveis.flatMap(gerarParcelas), viagem, tabela).map((a) => [a.indiceDespesa, a]), // etapa 9
   );
 
   return avaliacoes.map((a): ResultadoItem => {
@@ -74,7 +74,7 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
       return {
         id: d.id,
         data: d.data,
-        categoria: ehCategoria(d.categoria) ? d.categoria : d.categoriaOriginal,
+        categoria: ehCategoria(d.categoria, tabela) ? d.categoria : d.categoriaOriginal,
         valorSolicitado: d.valorSolicitado,
         valorReembolsavel: 0n,
         motivo: montarMotivo(a.recusa),
@@ -94,6 +94,7 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
         codigo: alocacao.codigo,
         detalhes: {
           categoria: d.categoria,
+          periodicidade: d.regra.periodicidade,
           data: d.data,
           diarias,
           limite: alocacao.limiteAplicado,
@@ -105,7 +106,7 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
       }),
       limiteDiarioAplicado: alocacao.limiteAplicado,
       emViagem: viagem.has(d.data),
-      diarias: d.categoria === 'hospedagem' ? diarias : null,
+      diarias: d.regra.periodicidade === 'diaria' ? diarias : null,
     };
   });
 }
@@ -114,7 +115,7 @@ export function calcularItens(entrada: Entrada): ResultadoItem[] {
 const foraDoLimite = { limiteDiarioAplicado: null, emViagem: null, diarias: null } as const;
 
 /** Resultado completo: ecos, itens na ordem da entrada e resumo (RN-014). */
-export function calcular(entrada: Entrada): Resultado {
-  const itens = calcularItens(entrada);
+export function calcular(entrada: Entrada, tabela: TabelaAplicavel): Resultado {
+  const itens = calcularItens(entrada, tabela);
   return { colaborador: entrada.colaborador, periodo: entrada.periodo, itens, resumo: calcularResumo(itens) };
 }

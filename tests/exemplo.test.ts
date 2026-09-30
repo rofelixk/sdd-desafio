@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { lerEntrada } from '../src/io/entrada.ts';
 import { serializarJson } from '../src/io/json.ts';
 import { montarSaida } from '../src/io/saida.ts';
-import { calcular } from '../src/nucleo/motor.ts';
+import { calcularV4 } from './apoio.ts';
 
 interface ItemSaida {
   id: string;
@@ -18,7 +18,7 @@ interface ItemSaida {
   diarias: number | null;
 }
 
-const texto = serializarJson(montarSaida(calcular(lerEntrada(readFileSync('exemplos/despesas-exemplo.json', 'utf8')))));
+const texto = serializarJson(montarSaida(calcularV4(lerEntrada(readFileSync('exemplos/despesas-exemplo.json', 'utf8')))));
 const saida = JSON.parse(texto) as { itens: ItemSaida[]; resumo: Record<string, number> };
 
 function item(id: string): ItemSaida {

@@ -5,6 +5,7 @@ import { rodar } from '../apoio.ts';
 
 const LIMITE = {
   categoria: 'alimentacao',
+  periodicidade: 'dia',
   data: '2026-07-03',
   diarias: 1,
   limite: 6000n,
@@ -24,7 +25,7 @@ const EXEMPLOS: Decisao[] = [
   { codigo: 'FORA_DO_PERIODO', detalhes: { data: '2026-04-15', inicio: '2026-07-01', fim: '2026-07-31' } },
   { codigo: 'CATEGORIA_NAO_REEMBOLSAVEL', detalhes: { categoria: 'coworking' } },
   { codigo: 'DUPLICATA', detalhes: { idAceito: 'd-006' } },
-  { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: 10001n, limiar: 10000n } },
+  { codigo: 'NOTA_FISCAL_AUSENTE', detalhes: { valor: 10001n, limiar: { digitos: 10000n, escala: 2 } } },
 ];
 
 describe('RN-013 — Justificativa obrigatória', () => {

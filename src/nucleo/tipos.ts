@@ -1,15 +1,13 @@
 // Tipos do núcleo (data-model.md). Nenhuma regra nasce aqui.
 
-import type { POLITICA } from './politica.ts';
-
 /** Dinheiro em centavos inteiros (R-02). */
 export type Centavos = bigint;
 
 /** Texto `AAAA-MM-DD` já validado (R-05). */
 export type DataISO = string;
 
-/** Categorias reconhecidas: as chaves de `POLITICA.limites` (RN-006, plan §4). */
-export type Categoria = keyof typeof POLITICA.limites;
+/** Categoria normalizada (RN-002); reconhecida quando é chave da tabela aplicável (R-15). */
+export type Categoria = string;
 
 /**
  * Número como apareceu no arquivo, ex.: `{ texto: "33.333" }` (R-03).
@@ -58,9 +56,9 @@ export interface DespesaValida {
   readonly temNotaFiscal: boolean;
 }
 
-/** Despesa que passou das etapas 3 a 7. */
-export interface DespesaElegivel extends Omit<DespesaValida, 'categoria'> {
-  readonly categoria: Categoria;
+/** Despesa que passou das etapas 3 a 7, com a regra da sua categoria na tabela aplicável. */
+export interface DespesaElegivel extends DespesaValida {
+  readonly regra: RegraCategoria;
 }
 
 /** Códigos de motivo da seção 4 da spec. */
@@ -94,7 +92,7 @@ export type Recusa =
     }
   | { readonly codigo: 'CATEGORIA_NAO_REEMBOLSAVEL'; readonly detalhes: { readonly categoria: string } }
   | { readonly codigo: 'DUPLICATA'; readonly detalhes: { readonly idAceito: string } }
-  | { readonly codigo: 'NOTA_FISCAL_AUSENTE'; readonly detalhes: { readonly valor: Centavos; readonly limiar: Centavos } };
+  | { readonly codigo: 'NOTA_FISCAL_AUSENTE'; readonly detalhes: { readonly valor: Centavos; readonly limiar: Decimal } };
 
 /** Recusa da RN-003: leva os ecos brutos e o valor, se numérico (AMB-023). */
 export type RecusaDadoInvalido = Extract<Recusa, { codigo: 'DADO_INVALIDO' }> & {
@@ -108,6 +106,7 @@ export interface DecisaoLimite {
   readonly codigo: CodigoLimite;
   readonly detalhes: {
     readonly categoria: Categoria;
+    readonly periodicidade: Periodicidade;
     readonly data: DataISO;
     readonly diarias: number;
     readonly limite: Centavos;

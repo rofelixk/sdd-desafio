@@ -1,5 +1,6 @@
-// Única fonte dos valores da política (plan §4). Mudar um valor exige mudar a
-// spec antes.
+// Montagem da tabela aplicável (RN-016) e o único número de política que a
+// spec fixa e a tabela não traz (AMB-040). Os limites, o limiar de nota
+// fiscal e o percentual de viagem vêm da tabela de limites.
 
 import { normalizar } from './texto.ts';
 import type { Politica, RegraCategoria, TabelaAplicavel } from './tipos.ts';
@@ -28,13 +29,3 @@ export function tabelaAplicavel(politica: Politica, centroCusto: string | null):
     acrescimoViagemPercentual: politica.acrescimoViagemPercentual,
   };
 }
-
-export const POLITICA = {
-  limites: {
-    alimentacao:       { diario: 60_00n,  ampliaEmViagem: true  }, // RN-009
-    transporte_urbano: { diario: 80_00n,  ampliaEmViagem: true  }, // RN-009
-    hospedagem:        { diario: 250_00n, ampliaEmViagem: false }, // RN-009, AMB-020
-  },
-  fatorViagem: { num: 3n, den: 2n },                               // RN-011
-  limiarNotaFiscal: 100_00n,                                       // RN-008 (estritamente maior)
-} as const;
