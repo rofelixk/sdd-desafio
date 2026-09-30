@@ -72,6 +72,44 @@ describe('RN-013 — Justificativa obrigatória', () => {
     expect(d002?.motivo.descricao).toMatch(/R\$ 60,00.*saldo disponível R\$ 0,00/);
   });
 
+  it('RN-013 › item em moeda estrangeira: descrição traz valor original × taxa, data da cotação e valor em reais', () => {
+    const [d, e002, e004, fora] = rodar([
+      { data: '2026-07-14', valor: 10, moeda: 'EUR' },
+      { data: '2026-07-14', valor: 22, moeda: 'EUR', fornecedor: 'Taberna', categoria: 'transporte_urbano' },
+      { data: '2026-07-18', valor: 30, moeda: 'eur' },
+      { data: '2026-08-03', valor: 10, moeda: 'USD' },
+    ]);
+    expect(d?.motivo.descricao).toBe(
+      'EUR 10,00 × 5,93 (cotação de 2026-07-14) = R$ 59,30; dentro do limite diário de alimentação (R$ 60,00); saldo do dia após este item: R$ 0,70.',
+    );
+    expect(e002?.motivo.descricao).toMatch(/^EUR 22,00 × 5,93 \(cotação de 2026-07-14\) = R\$ 130,46; /);
+    expect(e004?.motivo.descricao).toMatch(/^EUR 30,00 × 5,96 \(cotação de 2026-07-17\) = R\$ 178,80; limite diário/);
+    // também nos recusados antes do limite
+    expect(fora?.motivo.descricao).toMatch(/^USD 10,00 × 5,51 \(cotação de 2026-07-28\) = R\$ 55,10; data 2026-08-03 fora do período/);
+    // BRL não traz a conta
+    expect(rodar([{ valor: 45 }])[0]?.motivo.descricao).not.toMatch(/×/);
+  });
+
+  it('RN-013 › CAMBIO_INDISPONIVEL cita a moeda e a data da despesa', () => {
+    const [gbp, eur] = rodar([
+      { data: '2026-07-21', valor: 55, moeda: 'GBP' },
+      { data: '2026-07-10', valor: 10, moeda: ' eur ' },
+    ]);
+    expect(gbp?.motivo).toEqual({
+      codigo: 'CAMBIO_INDISPONIVEL',
+      descricao: 'Sem cotação de GBP até 2026-07-21 no arquivo de câmbio; o valor não pode ser convertido para reais.',
+    });
+    expect(eur?.motivo.descricao).toMatch(/EUR até 2026-07-10/);
+  });
+
+  it('RN-013 › NOTA_FISCAL_AUSENTE em moeda estrangeira cita o valor em reais e o limiar', () => {
+    const [e005] = rodar([{ categoria: 'transporte_urbano', data: '2026-07-20', valor: 40, moeda: 'USD', tem_nota_fiscal: false }]);
+    expect(e005?.motivo.codigo).toBe('NOTA_FISCAL_AUSENTE');
+    expect(e005?.motivo.descricao).toBe(
+      'USD 40,00 × 5,50 (cotação de 2026-07-20) = R$ 220,00; valor R$ 220,00 acima de R$ 100,00 exige nota fiscal, que não foi informada.',
+    );
+  });
+
   it('RN-013 › hospedagem cita o limite por diária', () => {
     const [h] = rodar([{ categoria: 'hospedagem', descricao: '2 diarias', valor: 600 }]);
     expect(h?.motivo.descricao).toMatch(/R\$ 250,00 por diária.*2 diárias.*saldo disponível R\$ 500,00.*R\$ 100,00/);

@@ -15,6 +15,7 @@ import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
 import { montarMotivo } from './motivos.ts';
+import type { ContaConversao } from './motivos.ts';
 import { LIMIAR_APROVACAO, tabelaAplicavel } from './politica.ts';
 import { calcularResumo } from './resumo.ts';
 import type {
@@ -26,6 +27,7 @@ import type {
   DespesaElegivel,
   DespesaValida,
   Entrada,
+  Moeda,
   Politica,
   Recusa,
   RecusaDadoInvalido,
@@ -84,7 +86,7 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio:
         moeda: eco.moeda,
         ...valores(valorOriginal, conversao),
         valorReembolsavel: 0n,
-        motivo: montarMotivo(a.recusa),
+        motivo: montarMotivo(a.recusa, conta(a.recusa.moedaLida, valorOriginal, conversao)),
         ...foraDoLimite,
       };
     }
@@ -97,7 +99,7 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio:
         moeda: d.moeda,
         ...valores(d.valorOriginal, d.conversao),
         valorReembolsavel: 0n,
-        motivo: montarMotivo(a.recusa),
+        motivo: montarMotivo(a.recusa, conta(d.moeda, d.valorOriginal, d.conversao)),
         ...foraDoLimite,
       };
     }
@@ -126,6 +128,7 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio:
             reembolsavel: alocacao.reembolsavel,
           },
         }), // etapa 11
+        conta(d.moeda, d.valorOriginal, d.conversao),
       ),
       limiteDiarioAplicado: alocacao.limiteAplicado,
       emViagem: viagem.has(d.data),
@@ -140,6 +143,11 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio:
  */
 function aprovacaoManual(decisao: DecisaoLimite): DecisaoLimite | DecisaoAprovacao {
   return decisao.detalhes.reembolsavel > LIMIAR_APROVACAO ? { codigo: 'REQUER_APROVACAO', detalhes: decisao.detalhes } : decisao;
+}
+
+/** Conta da conversão para a descrição, quando houve conversão (RN-013). */
+function conta(moeda: Moeda | null, valorOriginal: Centavos | null, conversao: Conversao | null): ContaConversao | null {
+  return moeda !== null && valorOriginal !== null && conversao !== null ? { moeda, valorOriginal, conversao } : null;
 }
 
 /** Valor original e conversão; o solicitado em reais sai só da conversão (AMB-043). */

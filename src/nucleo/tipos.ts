@@ -130,6 +130,8 @@ export type RecusaDadoInvalido = Extract<Recusa, { codigo: 'DADO_INVALIDO' }> & 
   readonly eco: { readonly id: unknown; readonly data: unknown; readonly categoria: unknown; readonly moeda: unknown };
   /** Nulo se `valor` não é numérico. */
   readonly valorOriginal: Centavos | null;
+  /** `moeda` normalizada (vazia → `BRL`); nula se não é texto. */
+  readonly moedaLida: Moeda | null;
   /** Nula se `valor` não é numérico, se a moeda não é texto, ou sem data válida/cotação numa moeda estrangeira. */
   readonly conversao: Conversao | null;
 };

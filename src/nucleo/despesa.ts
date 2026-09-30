@@ -57,7 +57,7 @@ export function validarDespesa(
   cambio: Cambio,
 ): DespesaValida | RecusaDadoInvalido {
   if (!ehObjeto(bruta)) {
-    return recusar({ id: null, data: null, categoria: null, moeda: null }, null, null, 'despesa', 'nao_objeto');
+    return recusar({ id: null, data: null, categoria: null, moeda: null }, null, null, null, 'despesa', 'nao_objeto');
   }
   const eco = {
     id: bruta.id ?? null,
@@ -75,7 +75,7 @@ export function validarDespesa(
     valor !== null && moeda !== null && (moeda === 'BRL' || dataValida !== null)
       ? converter(valor, moeda, dataValida ?? '', cambio)
       : null;
-  const recusa = (campo: string, problema: ProblemaDado) => recusar(eco, valor, conversao, campo, problema);
+  const recusa = (campo: string, problema: ProblemaDado) => recusar(eco, valor, moeda, conversao, campo, problema);
 
   if (!textoPreenchido(id)) return recusa('id', 'ausente');
   if (!textoPreenchido(data)) return recusa('data', 'ausente');
@@ -113,9 +113,10 @@ export function registrarId(idsVistos: Set<string>, resultado: DespesaValida | R
 function recusar(
   eco: RecusaDadoInvalido['eco'],
   valorOriginal: Centavos | null,
+  moedaLida: Moeda | null,
   conversao: Conversao | null,
   campo: string,
   problema: ProblemaDado,
 ): RecusaDadoInvalido {
-  return { codigo: 'DADO_INVALIDO', detalhes: { campo, problema }, eco, valorOriginal, conversao };
+  return { codigo: 'DADO_INVALIDO', detalhes: { campo, problema }, eco, valorOriginal, moedaLida, conversao };
 }

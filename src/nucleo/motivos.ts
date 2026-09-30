@@ -1,5 +1,6 @@
 // Justificativa de cada item (RN-013): um modelo de texto por código da seção 4.
 
+import { decimalDe } from './decimal.ts';
 import { formatarReais, formatarReaisDecimal } from './dinheiro.ts';
 import { LIMIAR_APROVACAO } from './politica.ts';
 import type {
@@ -7,8 +8,10 @@ import type {
   Centavos,
   CodigoLimite,
   CodigoMotivo,
+  Conversao,
   DecisaoAprovacao,
   DecisaoLimite,
+  Moeda,
   Motivo,
   ProblemaDado,
   Recusa,
@@ -95,7 +98,33 @@ export const MODELOS: Modelos = {
   },
 };
 
-export function montarMotivo(decisao: Decisao): Motivo {
+/** A conta da conversão, quando a despesa está em moeda estrangeira (RN-013, RN-017). */
+export interface ContaConversao {
+  readonly moeda: Moeda;
+  readonly valorOriginal: Centavos;
+  readonly conversao: Conversao;
+}
+
+/** Taxa como está no arquivo, com vírgula decimal: `5.93` → `5,93`. */
+function formatarTaxa(taxa: Conversao['taxa']): string {
+  const { digitos, escala } = decimalDe(taxa.texto)!;
+  const texto = digitos.toString().padStart(escala + 1, '0');
+  return escala === 0 ? texto : `${texto.slice(0, -escala)},${texto.slice(-escala)}`;
+}
+
+/** `EUR 22,00 × 5,93 (cotação de 2026-07-14) = R$ 130,46`. */
+function contaConversao({ moeda, valorOriginal, conversao }: ContaConversao): string {
+  const cotacao = conversao.dataCotacao === null ? '' : ` (cotação de ${conversao.dataCotacao})`;
+  return `${formatarValor(valorOriginal, moeda)} × ${formatarTaxa(conversao.taxa)}${cotacao} = ${formatarReais(conversao.valorSolicitado)}`;
+}
+
+/**
+ * Motivo do item. Em moeda estrangeira com conversão, a descrição começa pela
+ * conta da conversão, antes do texto do código.
+ */
+export function montarMotivo(decisao: Decisao, conta: ContaConversao | null = null): Motivo {
   const modelo = MODELOS[decisao.codigo] as (detalhes: Decisao['detalhes']) => string;
-  return { codigo: decisao.codigo, descricao: modelo(decisao.detalhes) };
+  const texto = modelo(decisao.detalhes);
+  if (conta === null || conta.moeda === 'BRL') return { codigo: decisao.codigo, descricao: texto };
+  return { codigo: decisao.codigo, descricao: `${contaConversao(conta)}; ${texto.charAt(0).toLowerCase()}${texto.slice(1)}` };
 }
