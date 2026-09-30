@@ -1,7 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
 import { ErroEntrada, lerEntrada } from '../../src/io/entrada.ts';
 import { lerCambio } from '../../src/io/cambio.ts';
+import { CAMINHO_CAMBIO, CAMINHO_POLITICA, lerExternos } from '../../src/io/externos.ts';
 import { lerPolitica } from '../../src/io/politica.ts';
 import { NumeroJson } from '../../src/nucleo/tipos.ts';
 
@@ -297,5 +300,47 @@ describe('RN-015 — Arquivo de entrada inválido (câmbio)', () => {
     for (const texto of ['', 'não é json', '{"taxas": ']) {
       expect(erroDe(lerCambio, texto), texto).toMatch(/^arquivo de câmbio \(dados\/cambio\.json\): .*JSON/);
     }
+  });
+});
+
+describe('RN-015 — Arquivo de entrada inválido (local fixo)', () => {
+  const pasta = mkdtempSync(join(tmpdir(), 'reembolso-externos-'));
+  afterAll(() => rmSync(pasta, { recursive: true, force: true }));
+
+  /** Caminho na pasta temporária; com `conteudo`, o arquivo é criado. */
+  function arq(nome: string, conteudo?: string): string {
+    const caminho = join(pasta, nome);
+    if (conteudo !== undefined) writeFileSync(caminho, conteudo);
+    return caminho;
+  }
+
+  /** Mensagem do `ErroEntrada` de `lerExternos(caminhos)`. */
+  function erroExternos(caminhos: { politica: string; cambio: string }): string {
+    return erroDe(() => lerExternos(caminhos), '');
+  }
+
+  it('RN-015 › arquivo de câmbio ausente → erro que cita o arquivo de câmbio', () => {
+    const m = erroExternos({ politica: CAMINHO_POLITICA, cambio: arq('nao-existe-cambio.json') });
+    expect(m).toMatch(/^arquivo de câmbio \(.*nao-existe-cambio\.json\): arquivo não encontrado$/);
+  });
+
+  it('RN-015 › tabela de limites ausente → erro que cita a tabela de limites', () => {
+    const m = erroExternos({ politica: arq('nao-existe-politica.json'), cambio: CAMINHO_CAMBIO });
+    expect(m).toMatch(/^tabela de limites \(.*nao-existe-politica\.json\): arquivo não encontrado$/);
+  });
+
+  it('RN-015 › tabela e câmbio inválidos → a mensagem é a da tabela (ordem de leitura)', () => {
+    const m = erroExternos({ politica: arq('politica-invalida.json', '{"versao": '), cambio: arq('cambio-invalido.json', '[]') });
+    expect(m).toMatch(/^tabela de limites \(.*politica-invalida\.json\): /);
+    expect(erroExternos({ politica: CAMINHO_POLITICA, cambio: arq('cambio-invalido.json') })).toMatch(/^arquivo de câmbio /);
+  });
+
+  it('RN-015 › local fixo: dados/ é lido com o caminho relativo à raiz na mensagem', () => {
+    const { politica, cambio } = lerExternos();
+    expect(politica.versao).toBe('v4');
+    expect(cambio.has('EUR')).toBe(true);
+    expect(erroExternos({ politica: CAMINHO_POLITICA.replace('politica.json', 'nada.json'), cambio: CAMINHO_CAMBIO })).toBe(
+      'tabela de limites (dados/nada.json): arquivo não encontrado',
+    );
   });
 });
