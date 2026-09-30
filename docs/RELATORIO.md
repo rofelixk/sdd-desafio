@@ -26,12 +26,12 @@
 | Escrever testes | Claude | Tasks próprias de teste (T-026 a T-034, T-036 a T-041, T-053, T-061 a T-065, T-067, T-069, T-070). O `tests/rastreabilidade.test.ts` (T-041, `65e8dc0`; T-070, `3d44b6b`) falha se alguma RN ou algum caso de borda da seção 7 da spec ficar sem teste com o título correspondente. Hoje exige 18 RNs e 121 casos de borda. |
 | Absorver o envelope | Claude executou, eu decidi | Copiei o envelope para `exemplos/envelope/` (`540c05a`). O Claude leu o envelope e fez três rodadas de perguntas (D-019). Revisei o que ele decidiu sozinho (D-020) e rodei de novo plan → tasks → analyze → implement. |
 
-**Onde deleguei e me arrependi:**
+**Onde deleguei e me arrependi:** Não atuei muito na direção que o código seria feito, não tenho muita experiência em gerar comandos executaveis pelo prompt, mas entendi que essa era somente parte da proposta. Dito isso, foi complciado entender a disposição de arquivos e as alterações específicas que teriam que ser feitas nele para v2.
 
-**Onde não deleguei e deveria ter delegado:**
+**Onde não deleguei e deveria ter delegado:** Eu acho que foi um erro deixar ele me trazer as ambiguidades iniciais, acredito que isso era parte do exercício. Mesmo assim, validei todas para construir o produto final.
 
 **Usei subagentes / skills / MCP / hooks?** <se sim: o quê, como configurou,
-valeu a pena. Se não: por que não.>
+valeu a pena. Se não: por que não.> Sim, utilizei o speckit do github, perguntei ao proprio claude quais seriam os passos para configurar e aceitar os overrides de tempaltes exigidos pelo desafio, o log completo está na sessão 01.
 
 ---
 
@@ -104,7 +104,7 @@ cada uma aberta por uma pergunta diferente:
    diferentes nunca são duplicatas (D-019, AMB-038).
 
 **Como percebi:** <testando? o Claude perguntou? bateu o olho no JSON de exemplo
-e não soube dizer qual era a resposta certa?>
+e não soube dizer qual era a resposta certa?> Cada decisão levou a uma nova possivel ambiguidade, meu trabalho foi entender a nuance de uso de uma aplicação (como na primeira ambiguidade) e alguns casos mais diretos como resolução de comparação de valores ou valores em tipos diferentes.
 
 **Commit da mudança:** a RN-007 mudou em quatro commits:
 `ee19638` (tratamento, D-004), `8b3290b` (fornecedor vazio, D-011), `08523a5`
@@ -142,7 +142,7 @@ todos os centros de custo). O erro estava na explicação que embasava a minha
 decisão.
 
 **Como eu detectei:** <li o diff? o teste quebrou? só percebi dias depois?
-"como detectei" é a informação mais útil deste relatório inteiro>
+"como detectei" é a informação mais útil deste relatório inteiro> comparando o arquivo provido de politicas com a politica v4 e a spec gerada. A resposta do Claude não batia com os exemplos disponíveis.
 
 **O que eu fiz:**
 
@@ -170,7 +170,7 @@ derrubaria o cálculo de todas as despesas, inclusive das que estão em BRL. A
 analogia também não se sustenta: categoria repetida na tabela deixa o limite
 indefinido, e a cotação repetida tem um desempate natural (a última).
 
-**Como eu detectei:**
+**Como eu detectei:** O próprio Claude apontou como uma decisão não tomada por mim e revisei a lista de ambiguidades.
 
 **O que eu fiz:**
 
@@ -183,7 +183,7 @@ commitada"). A versão final está na spec, `Clarifications` (linha 67) e
 RN-017 (linha 690). Commit `f37183d`.
 
 **Padrão que eu notei:** <em que tipo de tarefa ele erra mais? teve um sinal
-recorrente que passou a te deixar em alerta?>
+recorrente que passou a te deixar em alerta?> Com esse desafio percebi que ele tem dificuldades com grande snueros de regras, provavelmente pela própria natureza do desafio.
 
 ---
 
@@ -192,15 +192,15 @@ recorrente que passou a te deixar em alerta?>
 *O que você verificou antes de aceitar.*
 
 **Meu procedimento de verificação:** <o que você de fato fazia — não o que
-deveria ter feito>
+deveria ter feito> Eu revisei todas as ambiguidades geradas na spec antes de passar para o próximo passo, rodei os comandos de geração e verificação em sessões diferentes para pegar mais furos no fluxo, não avancei até ter uma boa noção de quais regras estavam em lugar e o comparei o resultado final com o meu próprio (fazendo a regra funcionar no papel)
 
 **Li o diff inteiro em que porcentagem das entregas?** <seja honesto; a
-honestidade aqui vale ponto e a maquiagem custa>
+honestidade aqui vale ponto e a maquiagem custa> Inteiro? Somente a primeira sessão de setup, a terceira de ambiguidades e as três primeiras tarefas da primeira implementação. Sessões seguintes eu foquei no conceito do trabalho sendo feito e suas repercursões, mas deleguei a implementação.
 
-**O que aceitei sem verificar direito, e o que me custou:**
+**O que aceitei sem verificar direito, e o que me custou:** Eu não consigo lembrar agora um caso específico, mas tiveram vários momentos que um aceite de uma ambiguidade gerava novas e isso virou um loop bem chatinho de sair. me custou vários tokens e tempo.
 
 **Testes: quem escreveu, e como você sabe que eles testam a coisa certa?**
-<teste escrito pelo mesmo agente que escreveu o código passa com muita facilidade>
+<teste escrito pelo mesmo agente que escreveu o código passa com muita facilidade> não vou mentir, acreditei 100% no claude e no seu funcionamento por conta das tabelas de resultado descritas na spec e o resultado ao rodar o projeto.
 
 ---
 
@@ -278,18 +278,23 @@ da spec. Os timestamps dos commits:
 | 17:43 | `d04a184` | ajustes do analyze (D-022) |
 | 17:47 → 18:21 | `063c073` → `171683b` | implementação, um commit por task |
 
-**Se eu tivesse escrito a spec original sabendo desta mudança:**
+**Se eu tivesse escrito a spec original sabendo desta mudança:** A quantidade de ambiguidades teria sido alta de qualquer jeito, mas o planejamento, divisão de tasks e implementação teriam sido bem mais eficientes.
 
-**O que a spec me poupou, em concreto:**
+**O que a spec me poupou, em concreto:** revalidar todas as decisões já feitas antes, foi possível absorver grande parte das alterações e editar exatamente os pontos que precisavam de mudança.
 
 ---
 
 ## Fechamento
 
 **Para qual tamanho de projeto isto valeu a pena?**
+Do jeito que o desafio é proposto? Para nenhum, tem ambiguidades demais antes da primeira especificação que deixa o uso desse processo inviável
 
-**Para qual não valeria?**
+**Para qual não valeria?** Não valeria para todos
 
-**O que eu faria diferente:**
+**O que eu faria diferente:** 
+- Sessões de brainstorm com a equipe de RH para avaliar todas as nuances e dados extras que precisariamos para garantir o funcionamento correto do produto;
+- Uma spec para cada momento da implementação, a politica v4 teria sido feita em uma spec separada para garantir uma boa evolução do projeto e não ficar requentando conceitos anteriores;
+- Um layout para uso da aplicação (teria levado um tanto mais de tempo, mas testaria melhor meus conehcimentos);
+- Não teria gerado a spec inicial com base no DESAFIO.md para ter tido um pouco mais de controle na geração inicial
 
-**A coisa mais desconfortável que aprendi sobre como eu trabalho com IA:**
+**A coisa mais desconfortável que aprendi sobre como eu trabalho com IA:** Que depois de usar por quase um mês estou ficando um pouco preguiçoso na leitura do diff, especialmente partes que não entendo muito.
