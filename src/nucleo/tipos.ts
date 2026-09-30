@@ -164,3 +164,72 @@ export interface Resultado {
   readonly itens: readonly ResultadoItem[];
   readonly resumo: Resumo;
 }
+
+// ---------------------------------------------------------------------------
+// Política v4 (data-model.md §2 e §3)
+// ---------------------------------------------------------------------------
+
+/** Número exato do arquivo: `digitos × 10^−escala` (R-13). */
+export interface Decimal {
+  readonly digitos: bigint;
+  readonly escala: number;
+}
+
+/** Código de moeda em maiúsculas, sem espaços nas bordas (R-06). */
+export type Moeda = string;
+
+/** `dia`: limite por data (RN-009); `diaria`: limite por noite (RN-012). */
+export type Periodicidade = 'dia' | 'diaria';
+
+export interface RegraCategoria {
+  readonly limite: Centavos;
+  readonly periodicidade: Periodicidade;
+}
+
+/** Categoria normalizada (RN-002) → regra. */
+export type TabelaCategorias = ReadonlyMap<string, RegraCategoria>;
+
+/** Tabela de limites válida (RN-016, AMB-044). */
+export interface Politica {
+  readonly versao: string;
+  /** Só validada (AMB-034). */
+  readonly vigencia: DataISO;
+  readonly padrao: TabelaCategorias;
+  /** Nome normalizado → nome como está escrito e as categorias do centro de custo. */
+  readonly centrosCusto: ReadonlyMap<string, { readonly nome: string; readonly categorias: TabelaCategorias }>;
+  /** RN-008. */
+  readonly limiarNotaFiscal: Decimal;
+  /** RN-011, AMB-033. */
+  readonly acrescimoViagemPercentual: Decimal;
+}
+
+/** Taxa publicada numa data; o texto original sai na saída (R-04). */
+export interface Cotacao {
+  readonly data: DataISO;
+  readonly taxa: NumeroJson;
+}
+
+/** Índice do câmbio: moeda → cotações em ordem crescente de data (R-14). */
+export type Cambio = ReadonlyMap<Moeda, readonly Cotacao[]>;
+
+/** Tabela montada uma vez por execução (RN-016). */
+export interface TabelaAplicavel {
+  /** `"padrao"` ou o centro de custo como está na tabela (`politica.tabela`). */
+  readonly nome: string;
+  readonly versao: string;
+  /** Nome do centro de custo quando há entrada na tabela (RN-006). */
+  readonly centroCusto: string | null;
+  readonly categorias: ReadonlyMap<string, RegraCategoria & { readonly origem: 'centro_custo' | 'padrao' }>;
+  readonly limiarNotaFiscal: Decimal;
+  readonly acrescimoViagemPercentual: Decimal;
+}
+
+/** Conversão para reais (RN-017); os três campos andam juntos (AMB-043). */
+export interface Conversao {
+  /** Do câmbio; `1` em BRL. */
+  readonly taxa: NumeroJson;
+  /** `null` em BRL. */
+  readonly dataCotacao: DataISO | null;
+  /** Em reais, meio para o par (AMB-037). */
+  readonly valorSolicitado: Centavos;
+}
