@@ -17,6 +17,110 @@ Ordem cronológica inversa: a mais recente primeiro.
 
 ---
 
+## D-019 — Envelope do Dia 2: Política v4 (itens A, B e C) · `2026-09-30`
+
+**Gatilho:** envelope lacrado do Dia 2 (`exemplos/envelope/00-ENVELOPE-LACRADO.md`),
+com o comunicado do RH "Política de Reembolso v4" e quatro arquivos: tabela de
+limites por centro de custo (`politica-v4.json`), taxas de câmbio
+(`cambio.json`) e dois conjuntos de despesas. O usuário pediu primeiro só os
+itens A e B. Durante as perguntas, decidiu incluir também o item C (opcional),
+por considerá-lo pequeno.
+
+**O que mudou na spec (versão 1.3 → 2.0):**
+- §1, §2: contexto da v4 (política por centro de custo, moeda estrangeira,
+  aprovação manual).
+- §3: sai "Não converte moeda" e sai a lista fixa de três categorias. Entram:
+  não busca cotações, não mantém a tabela nem as taxas, não guarda versões
+  antigas da política, só marca a pendência (a aprovação fica fora do motor).
+- §4 entrada: `centro_custo` passa a decidir a tabela; novo campo
+  `despesas[].moeda`; `valor` passa a ser na moeda da despesa; formato dos dois
+  arquivos externos (tabela de limites e câmbio).
+- §4 saída: `politica.versao` e `politica.tabela`; por item `moeda`,
+  `valor_original`, `taxa_cambio`, `data_cotacao`; `valor_solicitado` passa a
+  ser em reais; status `PENDENTE`; resumo com `pendentes` e `total_pendente`;
+  `total_nao_reembolsado = solicitado − reembolsável − pendente`. Códigos novos
+  `CAMBIO_INDISPONIVEL` (RECUSADO) e `REQUER_APROVACAO` (PENDENTE). Exemplo
+  refeito com um item em EUR.
+- RNs alteradas: RN-001 (arredonda o original e o convertido), RN-002
+  (categorias reconhecidas vêm da tabela), RN-003 (validação de `moeda`;
+  `CAMBIO_INDISPONIVEL` reserva o `id`), RN-004 (sinal pelo valor original),
+  RN-006 (limite > 0 na tabela aplicável; limite 0 = não reembolsável no
+  centro de custo), RN-007 (duplicata compara moeda e valor original), RN-008
+  (limiar vem da tabela, comparado em reais), RN-009 (limites da tabela; a
+  tabela da v3 vira referência dos valores da v4), RN-010 e RN-012 (aceites
+  refeitos), RN-011 (percentual vem da tabela; vale para toda categoria de
+  periodicidade `dia`; hospedagem PENDENTE gera viagem; "etapas 2 a 8"),
+  RN-014 (pendentes), RN-015 (centro de custo não textual e arquivos externos
+  inválidos).
+- RNs novas: RN-016 (política por centro de custo), RN-017 (moeda e
+  conversão), RN-018 (aprovação manual acima de R$ 500).
+- Novas AMB-028 a AMB-041. AMB-020 recebeu nota de atualização.
+- §7: 36 casos de borda novos. Os casos antigos continuam valendo na tabela
+  padrão e em BRL, o que foi explicitado na RN-009.
+- §8: nova etapa 6 (câmbio) e etapa 11 (aprovação manual). A conversão é
+  calculada na etapa 1. As etapas 6 a 9 antigas viraram 7 a 10.
+- §9: tabela de `despesas-exemplo.json` refeita e tabelas novas para os dois
+  arquivos do envelope. §10: seis pontos em aberto novos.
+- Nove entradas em `Clarifications` (Session 2026-09-30).
+
+**Como se chegou lá:** o Claude leu o envelope, a spec e os anexos e fez três
+rodadas de perguntas. Decisões do usuário:
+- política e câmbio em **local fixo**, porque a interface é fixa ("provavelmente
+  uma chamada de API num projeto real"), e o README precisa avisar como trocar
+  esses arquivos (AMB-028);
+- categoria que falta no centro de custo herda do padrão; se nem o padrão a
+  tem, não é reembolsável (AMB-030);
+- limite 0 → mesmo código `CATEGORIA_NAO_REEMBOLSAVEL` com descrição nova. A
+  primeira resposta, "recusado num novo motivo de CATEGORIA_NAO_REEMBOLSAVEL",
+  permitia duas leituras, e o Claude perguntou de novo (AMB-031);
+- dia sem cotação usa a última cotação anterior (AMB-035);
+- o câmbio não muda a recusa por período (AMB-039);
+- moeda sem cotação → código novo `CAMBIO_INDISPONIVEL` (AMB-036);
+- item C incluído. A resposta do usuário falava em "valor de despesa acima de
+  500", e o envelope diz "valor reembolsável". O Claude apontou a diferença e o
+  usuário escolheu o reembolsável (AMB-040). O pendente fica fora do total
+  reembolsável (AMB-041).
+
+O Claude propôs, e registrou para revisão, os pontos que as respostas não
+cobriam: normalização e tipo do centro de custo (AMB-032), significado de
+"política padrão" (AMB-029), vigência (AMB-034), formato da `moeda` e
+arredondamento da conversão (AMB-036, AMB-037), limiar de nota fiscal e
+duplicata em moeda estrangeira (AMB-038), ampliação de viagem para
+`representacao` (AMB-033) e o limiar de R$ 500 fixo na spec (AMB-040).
+
+**Por quê:** mudança de requisito do RH. Ver AMB-028 a AMB-041.
+
+**O que isso invalidou:**
+- As constantes da v3 fixas no sistema (limites, limiar de nota, 50% de
+  viagem) e a lista fechada de três categorias (RN-006, RN-009, RN-011, e AMB-020
+  em parte).
+- "Não converte moeda" e "não tem fluxo de aprovação" (§3).
+- `valor_solicitado` deixa de ser o `valor` arredondado: agora é o valor em
+  reais.
+- **A tabela da §9 de `despesas-exemplo.json`.** O colaborador do exemplo é do
+  `CC-ENG-PLATAFORMA`, e a v4 é retroativa a julho. Mudam d-001 (APROVADO
+  72,50), d-002 (PARCIAL 2,50), d-010 e d-013 (`CATEGORIA_NAO_REEMBOLSAVEL`,
+  sem dias de viagem) e d-014 (APROVADO 61,00). Total reembolsável: de 815,43
+  para 351,43.
+- O schema de saída (campos novos, status novo).
+
+**Tasks afetadas (a refazer ou estender em tasks novas, T-043 em diante):**
+T-002 (tipos), T-008 (validação de `moeda`), T-012 (sinal pelo valor
+original), T-014 (categoria pela tabela aplicável, limite 0), T-015 (duplicata
+com moeda), T-016 (limiar vindo da tabela, em reais), T-017 e T-022 (motor:
+conversão, etapas 6 e 11), T-020 (percentual e categorias `dia`), T-021
+(limites da tabela), T-023 (motivos novos), T-024 (pendentes), T-025 e T-038
+(leitura dos arquivos externos e erros), T-035 e T-037 (saída e schema), T-036
+(exemplo com a nova tabela), T-040 (bordas de arquivo), T-041 (RN-016 a RN-018
+na rastreabilidade) e T-042 (seção do README sobre os arquivos fixos). O
+`plan.md` precisa trocar o módulo de constantes da política pela leitura da
+tabela.
+
+**Custo:** `spec.md` (quase todas as seções) e `DECISIONS.md`. Pendentes:
+`plan.md`, `research.md`, `data-model.md`, `contracts/`, `tasks.md`.
+
+---
+
 ## D-018 — Lacunas achadas no `/speckit-analyze` (RN-003, RN-007, RN-012, RN-015, AMB-026, AMB-027) · `2026-09-29`
 
 **Gatilho:** `/speckit-analyze`, depois das tasks. A análise cruzada apontou
