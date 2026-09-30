@@ -274,10 +274,10 @@
 
 ### 5.1 Fundação da v4
 
-- [ ] **T-043** — Acrescentar em `src/nucleo/tipos.ts` os tipos novos do `data-model.md` §2–§3, **sem remover nem alterar** os da v1: `Decimal` (`{ digitos: bigint; escala: number }`), `Moeda`, `Periodicidade` (`'dia' | 'diaria'`), `RegraCategoria`, `TabelaCategorias`, `Politica`, `Cotacao`, `Cambio`, `TabelaAplicavel` e `Conversao` (`{ taxa: NumeroJson; dataCotacao: DataISO | null; valorSolicitado: Centavos }`). `Categoria`, `Status`, a união de códigos, `Entrada`, `DespesaValida` e `ResultadoItem` só mudam nas tasks que os usam (T-048, T-050, T-055, T-056, T-058)
+- [x] **T-043** — Acrescentar em `src/nucleo/tipos.ts` os tipos novos do `data-model.md` §2–§3, **sem remover nem alterar** os da v1: `Decimal` (`{ digitos: bigint; escala: number }`), `Moeda`, `Periodicidade` (`'dia' | 'diaria'`), `RegraCategoria`, `TabelaCategorias`, `Politica`, `Cotacao`, `Cambio`, `TabelaAplicavel` e `Conversao` (`{ taxa: NumeroJson; dataCotacao: DataISO | null; valorSolicitado: Centavos }`). `Categoria`, `Status`, a união de códigos, `Entrada`, `DespesaValida` e `ResultadoItem` só mudam nas tasks que os usam (T-048, T-050, T-055, T-056, T-058)
   - **Atende:** RN-016, RN-017, AMB-043
   - **Aceite:** `npm run typecheck` sem erros e `npm test` sem falhas além das duas conhecidas
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `063c073`
 
 - [ ] **T-044** — [P] Criar `src/nucleo/decimal.ts` (R-13): `decimalDe(texto)` lê sinal, dígitos, ponto e expoente (o mesmo leitor de `paraCentavos`) e devolve `Decimal`; `dividirMeioParaPar(numerador: bigint, denominador: bigint): bigint` é o único arredondamento do sistema. `paraCentavos` em `src/nucleo/dinheiro.ts` passa a usá-la
   - **Atende:** RN-001, AMB-013, AMB-037
