@@ -6,6 +6,7 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { lerCambio } from '../src/io/cambio.ts';
 import { serializarJson } from '../src/io/json.ts';
 import { montarSaida } from '../src/io/saida.ts';
 import { statusDe } from '../src/nucleo/status.ts';
@@ -668,5 +669,69 @@ describe('Casos de borda — moeda e valor inválido com conversão', () => {
     const [i] = rodar([{ valor: 10, moeda: 'EURO' }]);
     expect(decisao(i)).toMatchObject({ status: 'RECUSADO', codigo: 'CAMBIO_INDISPONIVEL' });
     expect(i?.moeda).toBe('EURO');
+  });
+});
+
+describe('Casos de borda — conversão e arquivo de câmbio', () => {
+  it('Borda › Conversão em dia útil', () => {
+    expect(conversao(rodar([{ data: '2026-07-14', valor: 22, moeda: 'EUR' }])[0])).toEqual({
+      moeda: 'EUR',
+      original: 2200n,
+      taxa: '5.93',
+      cotacao: '2026-07-14',
+      solicitado: 13046n,
+    });
+  });
+
+  it('Borda › Conversão no fim de semana', () => {
+    expect(conversao(rodar([{ data: '2026-07-18', valor: 30, moeda: 'EUR' }])[0])).toMatchObject({
+      taxa: '5.96',
+      cotacao: '2026-07-17',
+      solicitado: 17880n,
+    });
+  });
+
+  it('Borda › Antes da primeira cotação', () => {
+    const [i] = rodar([{ data: '2026-07-10', valor: 10, moeda: 'EUR' }]);
+    expect(decisao(i)).toEqual({ status: 'RECUSADO', codigo: 'CAMBIO_INDISPONIVEL', solicitado: null, reembolsavel: 0n });
+  });
+
+  it('Borda › Moeda sem cotação', () => {
+    const r = calcularV4(entrada([{ data: '2026-07-21', valor: 55, moeda: 'GBP' }, { valor: 10, fornecedor: 'Y' }]));
+    expect(decisao(r.itens[0])).toEqual({ status: 'RECUSADO', codigo: 'CAMBIO_INDISPONIVEL', solicitado: null, reembolsavel: 0n });
+    expect(conversao(r.itens[0])).toMatchObject({ taxa: null, cotacao: null });
+    expect(r.resumo.totalSolicitado).toBe(1000n);
+  });
+
+  it('Borda › Estrangeira fora do período', () => {
+    expect(decisao(rodar([{ data: '2026-06-30', valor: 10, moeda: 'EUR' }])[0])).toMatchObject({
+      status: 'RECUSADO',
+      codigo: 'FORA_DO_PERIODO',
+    });
+  });
+
+  it('Borda › Estrangeira negativa sem cotação', () => {
+    expect(decisao(rodar([{ valor: -10, moeda: 'GBP' }])[0])).toMatchObject({ status: 'RECUSADO', codigo: 'VALOR_NAO_POSITIVO' });
+  });
+
+  it('Borda › Arredondamento da conversão', () => {
+    expect(conversao(rodar([{ data: '2026-07-13', valor: 10.05, moeda: 'USD' }])[0])).toMatchObject({
+      original: 1005n,
+      taxa: '5.42',
+      solicitado: 5447n,
+    });
+  });
+
+  it('Borda › Moeda repetida no câmbio', () => {
+    const cambio = lerCambio('{"moeda_base": "BRL", "taxas": {"2026-07-14": {"USD": 5.42, "usd": 5.50}}}');
+    const [i] = rodar([{ data: '2026-07-14', valor: 10, moeda: 'USD' }], { cambio });
+    expect(conversao(i)).toMatchObject({ taxa: '5.50', cotacao: '2026-07-14', solicitado: 5500n });
+  });
+
+  it('Borda › Moeda minúscula no câmbio', () => {
+    const cambio = lerCambio('{"moeda_base": "BRL", "taxas": {"2026-07-14": {"eur": 5.93}}}');
+    const [i] = rodar([{ data: '2026-07-14', valor: 10, moeda: 'EUR' }], { cambio });
+    expect(conversao(i)).toMatchObject({ moeda: 'EUR', taxa: '5.93', solicitado: 5930n });
+    expect(decisao(i).codigo).toBe('APROVADO_INTEGRAL');
   });
 });
