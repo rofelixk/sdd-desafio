@@ -3,6 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { expect } from 'vitest';
+import { lerCambio } from '../src/io/cambio.ts';
 import { lerJson } from '../src/io/json.ts';
 import { lerPolitica } from '../src/io/politica.ts';
 import { validarDespesa } from '../src/nucleo/despesa.ts';
@@ -27,6 +28,9 @@ export const TEXTO_POLITICA_V4 = readFileSync('exemplos/envelope/politica-v4.jso
 
 /** Tabela de limites da fixture da v4. */
 export const POLITICA_V4 = lerPolitica(TEXTO_POLITICA_V4);
+
+/** Câmbio da fixture da v4 (R-10: nunca `dados/`). */
+export const CAMBIO_V4 = lerCambio(readFileSync('exemplos/envelope/cambio.json', 'utf8'));
 
 /** Tabela de limites da fixture com `trocar` aplicado ao JSON (ex.: um limite alterado). */
 export function politicaCom(trocar: (json: Record<string, any>) => void): Politica {
