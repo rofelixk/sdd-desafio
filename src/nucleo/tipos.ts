@@ -199,8 +199,13 @@ export interface Resumo {
   readonly aprovados: number;
   readonly parciais: number;
   readonly recusados: number;
+  readonly pendentes: number;
   readonly totalSolicitado: Centavos;
+  /** Só os itens que não estão PENDENTE (AMB-041). */
   readonly totalReembolsavel: Centavos;
+  /** Reembolsável dos itens PENDENTE. */
+  readonly totalPendente: Centavos;
+  /** `totalSolicitado − totalReembolsavel − totalPendente`. */
   readonly totalNaoReembolsado: Centavos;
 }
 
