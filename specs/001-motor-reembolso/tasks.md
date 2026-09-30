@@ -389,10 +389,10 @@
   - **Aceite:** passam `Borda › Conversão em dia útil`, `Borda › Conversão no fim de semana`, `Borda › Antes da primeira cotação`, `Borda › Moeda sem cotação`, `Borda › Estrangeira fora do período`, `Borda › Estrangeira negativa sem cotação`, `Borda › Arredondamento da conversão`, `Borda › Moeda repetida no câmbio` e `Borda › Moeda minúscula no câmbio`
   - **Commit:** `ff88cbe`
 
-- [ ] **T-064** — Casos de borda de nota fiscal e duplicata em moeda estrangeira em `tests/casos-de-borda.test.ts`
+- [x] **T-064** — Casos de borda de nota fiscal e duplicata em moeda estrangeira em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-007, RN-008, AMB-038
   - **Aceite:** passam `Borda › Nota fiscal sobre o valor convertido`, `Borda › Estrangeira abaixo do limiar de NF`, `Borda › Mesmo valor em moedas diferentes` e `Borda › BRL explícito e implícito`
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `c04c857`
 
 - [ ] **T-065** — Casos de borda de aprovação manual em `tests/casos-de-borda.test.ts`
   - **Atende:** RN-010, RN-011, RN-012, RN-014, RN-018, AMB-040, AMB-041
