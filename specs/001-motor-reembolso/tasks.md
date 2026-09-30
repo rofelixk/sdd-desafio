@@ -279,10 +279,10 @@
   - **Aceite:** `npm run typecheck` sem erros e `npm test` sem falhas além das duas conhecidas
   - **Commit:** `063c073`
 
-- [ ] **T-044** — [P] Criar `src/nucleo/decimal.ts` (R-13): `decimalDe(texto)` lê sinal, dígitos, ponto e expoente (o mesmo leitor de `paraCentavos`) e devolve `Decimal`; `dividirMeioParaPar(numerador: bigint, denominador: bigint): bigint` é o único arredondamento do sistema. `paraCentavos` em `src/nucleo/dinheiro.ts` passa a usá-la
+- [x] **T-044** — [P] Criar `src/nucleo/decimal.ts` (R-13): `decimalDe(texto)` lê sinal, dígitos, ponto e expoente (o mesmo leitor de `paraCentavos`) e devolve `Decimal`; `dividirMeioParaPar(numerador: bigint, denominador: bigint): bigint` é o único arredondamento do sistema. `paraCentavos` em `src/nucleo/dinheiro.ts` passa a usá-la
   - **Atende:** RN-001, AMB-013, AMB-037
   - **Aceite:** em `tests/nucleo/decimal.test.ts` passam `Infra › decimal: "5.93" → 593 × 10^-2, "50" → 50 × 10^0 e "1.00005e2" → 100005 × 10^-3` e `Infra › decimal: dividirMeioParaPar 25/10 → 2, 35/10 → 4, 26/10 → 3, 24/10 → 2 e -25/10 → -2`; todos os `RN-001 ›` de `tests/nucleo/rn-001-arredondamento.test.ts` continuam passando
-  - **Commit:** `<hash preenchido depois>`
+  - **Commit:** `d660733`
 
 - [ ] **T-045** — Criar `src/io/politica.ts` (R-12): `lerPolitica(texto, rotulo = 'tabela de limites (dados/politica.json)')` → `Politica` ou lança `ErroEntrada`, com a mensagem começando pelo `rotulo` e citando o caminho do campo (`centros_custo.CC-ADM.alimentacao.limite`). Valida a lista da RN-016 e a AMB-044: objeto; `versao` texto não vazio; `vigencia` data válida (T-004); `moeda_base` = `"BRL"`; `padrao` e `centros_custo` objetos; cada centro de custo e cada categoria objeto; `limite` número ≥ 0 exato em centavos; `periodicidade` `dia`/`diaria`, com `diaria` ⇔ `hospedagem`; `nota_fiscal_obrigatoria_acima_de` e `acrescimo_em_viagem_percentual` números ≥ 0 (viram `Decimal`); centros de custo e categorias de uma mesma tabela sem colisão depois de `normalizar` (T-007). `observacao` e campos desconhecidos são ignorados. Guarda o nome do centro de custo como está escrito
   - **Atende:** RN-015, RN-016, AMB-034, AMB-044
