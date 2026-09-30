@@ -64,6 +64,28 @@ describe('RN-007 — Duplicatas', () => {
     expect(codigos({ categoria: 'alimentacao' }, { categoria: 'ALIMENTAÇÃO', valor: '45,00' })).toEqual([null, 'DUPLICATA']);
   });
 
+  it('RN-007 › 20,00 EUR e 20,00 USD, resto igual → as duas seguem', () => {
+    const gasto = { data: '2026-07-14', valor: 20 };
+    expect(codigos({ ...gasto, moeda: 'EUR' }, { ...gasto, moeda: 'USD' })).toEqual([null, null]);
+    expect(codigos({ ...gasto, moeda: 'EUR' }, { ...gasto })).toEqual([null, null]);
+  });
+
+  it('RN-007 › sem moeda e "BRL", resto igual → a 2ª DUPLICATA', () => {
+    expect(codigos({ moeda: undefined }, { moeda: 'BRL' }, { moeda: null }, { moeda: ' brl ' })).toEqual([
+      null,
+      'DUPLICATA',
+      'DUPLICATA',
+      'DUPLICATA',
+    ]);
+  });
+
+  it('RN-007 › "eur" e "EUR", resto igual → a 2ª DUPLICATA', () => {
+    const gasto = { data: '2026-07-14', valor: 20 };
+    expect(codigos({ ...gasto, moeda: 'eur' }, { ...gasto, moeda: 'EUR' })).toEqual([null, 'DUPLICATA']);
+    // o valor comparado é o original, não o convertido
+    expect(codigos({ ...gasto, moeda: 'EUR' }, { ...gasto, moeda: 'EUR', valor: 20.01 })).toEqual([null, null]);
+  });
+
   it('RN-007 › cópia fora do período não gera duplicata (só compara quem passou das etapas 1 a 5)', () => {
     const copia = { data: '2026-08-01', fornecedor: 'Tavola', valor: 40 };
     expect(codigosPassada1(entrada([copia, copia, { ...copia, data: '2026-07-31' }]))).toEqual([

@@ -54,12 +54,13 @@ export function verificarCambio(d: DespesaValida): Recusa | null {
 export type ChavesDuplicata = Map<string, string>;
 
 /**
- * Etapa 7 (RN-007, AMB-011, AMB-026): mesma data, categoria normalizada,
- * fornecedor (`trim` + minúsculas; vazio é um valor) e valor original. A
- * primeira ocorrência é registrada em `aceitas` e segue; as seguintes são recusadas.
+ * Etapa 7 (RN-007, AMB-011, AMB-026, AMB-038): mesma data, categoria
+ * normalizada, fornecedor (`trim` + minúsculas; vazio é um valor), moeda
+ * normalizada e valor original. A primeira ocorrência é registrada em
+ * `aceitas` e segue; as seguintes são recusadas.
  */
 export function verificarDuplicata(d: DespesaValida, aceitas: ChavesDuplicata): Recusa | null {
-  const chave = JSON.stringify([d.data, d.categoria, d.fornecedorChave, d.valorOriginal.toString()]);
+  const chave = JSON.stringify([d.data, d.categoria, d.fornecedorChave, d.moeda, d.valorOriginal.toString()]);
   const idAceito = aceitas.get(chave);
   if (idAceito !== undefined) return { codigo: 'DUPLICATA', detalhes: { idAceito } };
   aceitas.set(chave, d.id);
