@@ -735,3 +735,26 @@ describe('Casos de borda — conversão e arquivo de câmbio', () => {
     expect(decisao(i).codigo).toBe('APROVADO_INTEGRAL');
   });
 });
+
+describe('Casos de borda — nota fiscal e duplicata em moeda estrangeira', () => {
+  it('Borda › Nota fiscal sobre o valor convertido', () => {
+    const [i] = rodar([{ categoria: 'transporte_urbano', data: '2026-07-20', valor: 40, moeda: 'USD', tem_nota_fiscal: false }]);
+    expect(decisao(i)).toEqual({ status: 'RECUSADO', codigo: 'NOTA_FISCAL_AUSENTE', solicitado: 22000n, reembolsavel: 0n });
+  });
+
+  it('Borda › Estrangeira abaixo do limiar de NF', () => {
+    const [i] = rodar([{ data: '2026-07-15', valor: 14.5, moeda: 'EUR', tem_nota_fiscal: false }]);
+    expect(i?.valorSolicitado).toBe(8526n);
+    // segue para o limite (alimentação 60,00 na tabela padrão)
+    expect(decisao(i)).toMatchObject({ status: 'PARCIAL', codigo: 'LIMITE_DIARIO_EXCEDIDO', reembolsavel: 6000n });
+  });
+
+  it('Borda › Mesmo valor em moedas diferentes', () => {
+    const gasto = { data: '2026-07-14', categoria: 'transporte_urbano', fornecedor: 'Bolt', valor: 20 };
+    expect(codigos([{ ...gasto, moeda: 'EUR' }, { ...gasto, moeda: 'USD' }])).not.toContain('DUPLICATA');
+  });
+
+  it('Borda › BRL explícito e implícito', () => {
+    expect(codigos([{ moeda: undefined }, { moeda: 'BRL' }])).toEqual(['APROVADO_INTEGRAL', 'DUPLICATA']);
+  });
+});
