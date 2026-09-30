@@ -45,4 +45,30 @@ describe('Contrato da saída', () => {
     expect(json.itens.slice(0, 4).map((i) => i.motivo.codigo)).toEqual(Array(4).fill('DADO_INVALIDO'));
     expect(json.itens[0]?.valor_solicitado).toBeNull();
   });
+
+  it('RN-013 › saída do envelope (PENDENTE, CAMBIO_INDISPONIVEL, moeda estrangeira) valida contra o schema', () => {
+    const json = saida(readFileSync('exemplos/envelope/despesas-envelope.json', 'utf8')) as {
+      itens: { status: string; motivo: { codigo: string }; moeda: string }[];
+    };
+    conferir(json);
+    expect(json.itens.map((i) => i.status)).toContain('PENDENTE');
+    expect(json.itens.map((i) => i.motivo.codigo)).toContain('CAMBIO_INDISPONIVEL');
+    expect(json.itens.map((i) => i.moeda)).toEqual(expect.arrayContaining(['EUR', 'USD', 'GBP', 'BRL']));
+    conferir(saida(readFileSync('exemplos/envelope/despesas-envelope-cc-desconhecido.json', 'utf8')));
+  });
+
+  it('RN-013 › item com taxa_cambio e valor_solicitado nulo é rejeitado pelo schema (AMB-043)', () => {
+    const json = saida(readFileSync('exemplos/envelope/despesas-envelope.json', 'utf8')) as { itens: Record<string, unknown>[] };
+    const e002 = json.itens[1]!;
+    expect(e002.taxa_cambio).toBe(5.93);
+    e002.valor_solicitado = null;
+    expect(validar(json)).toBe(false);
+    // os três nulos juntos são válidos
+    e002.taxa_cambio = null;
+    e002.data_cotacao = null;
+    expect(validar(json)).toBe(true);
+    // PENDENTE só com REQUER_APROVACAO
+    (json.itens[6]!.motivo as { codigo: string }).codigo = 'APROVADO_INTEGRAL';
+    expect(validar(json)).toBe(false);
+  });
 });
