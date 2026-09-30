@@ -71,6 +71,15 @@ describe('RN-011 — Colaborador em viagem', () => {
     expect(rodar([representacao], opcoes)[0]).toMatchObject({ valorReembolsavel: 30000n, limiteDiarioAplicado: 30000n });
   });
 
+  it('RN-011 › CC-COMERCIAL: e-008 (alimentação 95,00 em 23/07, noite de e-007 PENDENTE) → APROVADO 95,00 (limite 135,00)', () => {
+    const e007 = { id: 'e-007', categoria: 'hospedagem', data: '2026-07-22', descricao: 'Hotel Londres - 3 noites', valor: 1200 };
+    const e008 = { id: 'e-008', categoria: 'alimentacao', data: '2026-07-23', fornecedor: 'Restaurante Tavola', valor: 95 };
+    const [h, a] = rodar([e007, e008], { centroCusto: 'CC-COMERCIAL' });
+    expect(h?.motivo.codigo).toBe('REQUER_APROVACAO');
+    expect(a).toMatchObject({ valorReembolsavel: 9500n, limiteDiarioAplicado: 13500n, emViagem: true });
+    expect(a?.motivo.codigo).toBe('APROVADO_INTEGRAL');
+  });
+
   it('RN-011 › acréscimo trocado para 20 na tabela: alimentação em dia de viagem tem limite 72,00', () => {
     const politica = politicaCom((p) => (p.acrescimo_em_viagem_percentual = 20));
     const [, a] = rodar([hotel, { ...alimentacao80, data: '2026-07-14' }], { politica });

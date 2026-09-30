@@ -15,12 +15,14 @@ import type { ChavesDuplicata } from './elegibilidade.ts';
 import { alocar } from './limites.ts';
 import type { Alocacao } from './limites.ts';
 import { montarMotivo } from './motivos.ts';
-import { tabelaAplicavel } from './politica.ts';
+import { LIMIAR_APROVACAO, tabelaAplicavel } from './politica.ts';
 import { calcularResumo } from './resumo.ts';
 import type {
   Cambio,
   Centavos,
   Conversao,
+  DecisaoAprovacao,
+  DecisaoLimite,
   DespesaElegivel,
   DespesaValida,
   Entrada,
@@ -109,25 +111,35 @@ export function calcularItens(entrada: Entrada, tabela: TabelaAplicavel, cambio:
       moeda: d.moeda,
       ...valores(d.valorOriginal, d.conversao),
       valorReembolsavel: alocacao.reembolsavel,
-      motivo: montarMotivo({
-        codigo: alocacao.codigo,
-        detalhes: {
-          categoria: d.categoria,
-          periodicidade: d.regra.periodicidade,
-          data: d.data,
-          diarias,
-          limite: alocacao.limiteAplicado,
-          saldoDisponivel: alocacao.saldoDisponivel,
-          saldoApos: alocacao.saldoApos,
-          solicitado: alocacao.solicitado,
-          reembolsavel: alocacao.reembolsavel,
-        },
-      }),
+      motivo: montarMotivo(
+        aprovacaoManual({
+          codigo: alocacao.codigo,
+          detalhes: {
+            categoria: d.categoria,
+            periodicidade: d.regra.periodicidade,
+            data: d.data,
+            diarias,
+            limite: alocacao.limiteAplicado,
+            saldoDisponivel: alocacao.saldoDisponivel,
+            saldoApos: alocacao.saldoApos,
+            solicitado: alocacao.solicitado,
+            reembolsavel: alocacao.reembolsavel,
+          },
+        }), // etapa 11
+      ),
       limiteDiarioAplicado: alocacao.limiteAplicado,
       emViagem: viagem.has(d.data),
       diarias: d.regra.periodicidade === 'diaria' ? diarias : null,
     };
   });
+}
+
+/**
+ * Etapa 11 (RN-018, DT-008): reembolsável acima do limiar troca o motivo por
+ * `REQUER_APROVACAO`, com os números do limite; valor e saldo não mudam.
+ */
+function aprovacaoManual(decisao: DecisaoLimite): DecisaoLimite | DecisaoAprovacao {
+  return decisao.detalhes.reembolsavel > LIMIAR_APROVACAO ? { codigo: 'REQUER_APROVACAO', detalhes: decisao.detalhes } : decisao;
 }
 
 /** Valor original e conversão; o solicitado em reais sai só da conversão (AMB-043). */

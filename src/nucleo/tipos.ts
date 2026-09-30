@@ -77,13 +77,14 @@ export type CodigoMotivo =
   | 'CATEGORIA_NAO_REEMBOLSAVEL'
   | 'CAMBIO_INDISPONIVEL'
   | 'DUPLICATA'
-  | 'NOTA_FISCAL_AUSENTE';
+  | 'NOTA_FISCAL_AUSENTE'
+  | 'REQUER_APROVACAO';
 
-/** Códigos da etapa de limite (seção 8, etapa 9). */
+/** Códigos da etapa de limite (seção 8, etapa 10). */
 export type CodigoLimite = 'APROVADO_INTEGRAL' | 'LIMITE_DIARIO_EXCEDIDO' | 'LIMITE_DIARIO_ESGOTADO';
 
-/** Códigos de recusa das etapas 1 a 7 (seção 8 da spec). */
-export type CodigoRecusa = Exclude<CodigoMotivo, CodigoLimite>;
+/** Códigos de recusa das etapas 2 a 8 (seção 8 da spec). */
+export type CodigoRecusa = Exclude<CodigoMotivo, CodigoLimite | 'REQUER_APROVACAO'>;
 
 /** Por que a RN-003 recusou. */
 export type ProblemaDado =
@@ -149,6 +150,12 @@ export interface DecisaoLimite {
   };
 }
 
+/** Etapa 11 (RN-018, DT-008): só o motivo muda; leva os números do limite para citar o corte. */
+export interface DecisaoAprovacao {
+  readonly codigo: 'REQUER_APROVACAO';
+  readonly detalhes: DecisaoLimite['detalhes'];
+}
+
 /** Fatia de despesa elegível que consome limite de uma data (RN-012). */
 export interface Parcela {
   readonly indiceDespesa: number;
@@ -163,7 +170,7 @@ export interface Motivo {
 }
 
 /** Derivado de (reembolsável, solicitado); nunca guardado no item. */
-export type Status = 'APROVADO' | 'PARCIAL' | 'RECUSADO';
+export type Status = 'APROVADO' | 'PARCIAL' | 'RECUSADO' | 'PENDENTE';
 
 /** Um por despesa, na ordem da entrada (seção 4 da spec). */
 export interface ResultadoItem {

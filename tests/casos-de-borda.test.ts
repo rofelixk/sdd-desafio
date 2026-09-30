@@ -258,7 +258,8 @@ describe('Casos de borda — hospedagem e diárias', () => {
   });
 
   it('Borda › Diárias com acento e maiúscula', () => {
-    expect(hospedagem({ descricao: '3 Diárias', valor: 600 })).toEqual(['APROVADO', 60000n, 3]);
+    // 300,00 (3 × 100,00): abaixo do limiar de aprovação manual da RN-018
+    expect(hospedagem({ descricao: '3 Diárias', valor: 300 })).toEqual(['APROVADO', 30000n, 3]);
   });
 
   it('Borda › Duas hospedagens na mesma noite', () => {

@@ -1,12 +1,23 @@
 // Justificativa de cada item (RN-013): um modelo de texto por código da seção 4.
 
 import { formatarReais, formatarReaisDecimal } from './dinheiro.ts';
-import type { Categoria, Centavos, CodigoLimite, CodigoMotivo, DecisaoLimite, Motivo, ProblemaDado, Recusa } from './tipos.ts';
+import { LIMIAR_APROVACAO } from './politica.ts';
+import type {
+  Categoria,
+  Centavos,
+  CodigoLimite,
+  CodigoMotivo,
+  DecisaoAprovacao,
+  DecisaoLimite,
+  Motivo,
+  ProblemaDado,
+  Recusa,
+} from './tipos.ts';
 
-/** O que decidiu o item: a recusa de uma etapa ou a decisão do limite. */
-export type Decisao = Recusa | DecisaoLimite;
+/** O que decidiu o item: a recusa de uma etapa, a decisão do limite ou a aprovação manual. */
+export type Decisao = Recusa | DecisaoLimite | DecisaoAprovacao;
 
-type DetalhesDe<C extends CodigoMotivo> = C extends CodigoLimite
+type DetalhesDe<C extends CodigoMotivo> = C extends CodigoLimite | 'REQUER_APROVACAO'
   ? DecisaoLimite['detalhes']
   : Extract<Recusa, { codigo: C }>['detalhes'];
 
@@ -74,6 +85,14 @@ export const MODELOS: Modelos = {
     `Mesma data, categoria, fornecedor e valor da despesa '${d.idAceito}', que já foi considerada; este lançamento repetido não é reembolsado.`,
   NOTA_FISCAL_AUSENTE: (d) =>
     `Valor ${formatarReais(d.valor)} acima de ${formatarReaisDecimal(d.limiar)} exige nota fiscal, que não foi informada.`,
+  REQUER_APROVACAO: (d) => {
+    const corte = d.solicitado - d.reembolsavel;
+    const limite =
+      corte > 0n
+        ? `${limiteDoDia(d)}; excedente de ${formatarReais(corte)} não reembolsado`
+        : `dentro do limite de ${nomeCategoria(d.categoria)} (${formatarReais(d.limite)}${d.periodicidade === 'diaria' ? ' por diária' : ''})`;
+    return `Valor calculado ${formatarReais(d.reembolsavel)} acima de ${formatarReais(LIMIAR_APROVACAO)} aguarda aprovação do gestor; ${limite}.`;
+  },
 };
 
 export function montarMotivo(decisao: Decisao): Motivo {
