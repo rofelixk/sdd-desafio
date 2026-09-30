@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { verificarNotaFiscal } from '../../src/nucleo/elegibilidade.ts';
-import { TABELA_PADRAO, decisoes, valida } from '../apoio.ts';
+import { TABELA_PADRAO, decisoes, politicaCom, tabela, valida } from '../apoio.ts';
 
 const semNf = { categoria: 'transporte_urbano', tem_nota_fiscal: false };
 
@@ -23,6 +23,18 @@ describe('RN-008 — Nota fiscal obrigatória', () => {
     const d = valida({ ...semNf, valor: 100.004 });
     expect(d.valorSolicitado).toBe(10000n);
     expect(verificarNotaFiscal(d, TABELA_PADRAO)).toBeNull();
+  });
+
+  it('RN-008 › limiar trocado para 150,00 na tabela: 120,00 sem NF não é recusada', () => {
+    const tabela150 = tabela({ politica: politicaCom((p) => (p.nota_fiscal_obrigatoria_acima_de = 150.0)) });
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 120 }), tabela150)).toBeNull();
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 150 }), tabela150)).toBeNull();
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 150.01 }), tabela150)?.codigo).toBe('NOTA_FISCAL_AUSENTE');
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 120 }), TABELA_PADRAO)?.codigo).toBe('NOTA_FISCAL_AUSENTE');
+    // limiar com mais de 2 casas comparado sem arredondar
+    const tabelaFina = tabela({ politica: politicaCom((p) => (p.nota_fiscal_obrigatoria_acima_de = 100.005)) });
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 100 }), tabelaFina)).toBeNull();
+    expect(verificarNotaFiscal(valida({ ...semNf, valor: 100.01 }), tabelaFina)?.codigo).toBe('NOTA_FISCAL_AUSENTE');
   });
 
   it('RN-008 › dia de viagem não amplia o limiar de nota fiscal', () => {

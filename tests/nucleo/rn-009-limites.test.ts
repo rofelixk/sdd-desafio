@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { limiteDiario } from '../../src/nucleo/limites.ts';
-import { TABELA_PADRAO, alocarDespesas } from '../apoio.ts';
+import { TABELA_PADRAO, alocarDespesas, decisoes } from '../apoio.ts';
 
 /** `[código, reembolsável]` de cada despesa. */
 function resumo(despesas: Record<string, unknown>[], dias?: ReadonlySet<string>): [string, bigint][] {
@@ -28,6 +28,16 @@ describe('RN-009 — Limites diários por categoria', () => {
       ['APROVADO_INTEGRAL', 8000n],
       ['APROVADO_INTEGRAL', 25000n],
     ]);
+  });
+
+  it('RN-009 › alimentação 80,00 no CC-COMERCIAL → APROVADO 80,00 (limite 90,00)', () => {
+    const [a] = alocarDespesas([{ valor: 80 }], new Set(), { centroCusto: 'CC-COMERCIAL' });
+    expect(a).toMatchObject({ codigo: 'APROVADO_INTEGRAL', reembolsavel: 8000n, limiteAplicado: 9000n });
+    expect(decisoes([{ valor: 80 }], { centroCusto: 'CC-COMERCIAL' })).toEqual([['APROVADO', 'APROVADO_INTEGRAL', 8000n]]);
+  });
+
+  it('RN-009 › alimentação 50,00 no CC-ADM → PARCIAL 45,00', () => {
+    expect(decisoes([{ valor: 50 }], { centroCusto: 'CC-ADM' })).toEqual([['PARCIAL', 'LIMITE_DIARIO_EXCEDIDO', 4500n]]);
   });
 
   it('RN-009 › em dia de viagem alimentação vai a 90,00 e transporte a 120,00, hospedagem fica em 250,00', () => {

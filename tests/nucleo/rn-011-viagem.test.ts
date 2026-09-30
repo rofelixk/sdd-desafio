@@ -61,6 +61,23 @@ describe('RN-011 — Colaborador em viagem', () => {
     expect(itens[1]).toMatchObject({ valorReembolsavel: 7500n, limiteDiarioAplicado: 7500n, emViagem: false });
   });
 
+  it('RN-011 › CC-COMERCIAL: representacao 420,00 em dia de viagem → APROVADO 420,00 (limite 450,00)', () => {
+    const opcoes = { centroCusto: 'CC-COMERCIAL' };
+    const representacao = { categoria: 'representacao', data: '2026-07-14', valor: 420, tem_nota_fiscal: true };
+    const [, r] = rodar([hotel, representacao], opcoes);
+    expect(r).toMatchObject({ valorReembolsavel: 42000n, limiteDiarioAplicado: 45000n, emViagem: true });
+    expect(r?.motivo.codigo).toBe('APROVADO_INTEGRAL');
+    // fora da viagem, o limite é 300,00
+    expect(rodar([representacao], opcoes)[0]).toMatchObject({ valorReembolsavel: 30000n, limiteDiarioAplicado: 30000n });
+  });
+
+  it('RN-011 › acréscimo trocado para 20 na tabela: alimentação em dia de viagem tem limite 72,00', () => {
+    const politica = politicaCom((p) => (p.acrescimo_em_viagem_percentual = 20));
+    const [, a] = rodar([hotel, { ...alimentacao80, data: '2026-07-14' }], { politica });
+    expect(a).toMatchObject({ valorReembolsavel: 7200n, limiteDiarioAplicado: 7200n, emViagem: true });
+    expect(a?.motivo.codigo).toBe('LIMITE_DIARIO_EXCEDIDO');
+  });
+
   it('RN-011 › d-013 recusada por NF não torna 22 a 24/07 dias de viagem', () => {
     const d013 = { id: 'd-013', categoria: 'hospedagem', data: '2026-07-22', valor: 690, descricao: 'Airbnb 3 noites', tem_nota_fiscal: false };
     const itens = rodar([
