@@ -59,7 +59,9 @@ async function executar(argv: string[]): Promise<void> {
     const { politica, cambio } = lerExternos(); // entrada → tabela de limites → câmbio (R-12)
     const resultado = calcular(entrada, politica, cambio);
     conteudo = serializarJson(montarSaida(resultado));
-    resumo = `${resultado.resumo.quantidadeItens} itens processados; total reembolsável ${formatarReais(resultado.resumo.totalReembolsavel)}`;
+    const { quantidadeItens, totalReembolsavel, totalPendente } = resultado.resumo;
+    resumo = `${quantidadeItens} itens processados; total reembolsável ${formatarReais(totalReembolsavel)}`;
+    if (totalPendente > 0n) resumo += `; total pendente de aprovação ${formatarReais(totalPendente)}`;
   } catch (e) {
     if (e instanceof ErroEntrada) throw new Falha(`erro: ${e.message}`, 1);
     throw e;

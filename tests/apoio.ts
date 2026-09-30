@@ -1,7 +1,10 @@
 // Apoio aos testes: monta despesas brutas como sairiam do leitor de JSON, com
 // a tabela de limites da fixture da v4 (R-10).
 
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { expect } from 'vitest';
 import { lerCambio } from '../src/io/cambio.ts';
 import { lerJson } from '../src/io/json.ts';
@@ -151,4 +154,32 @@ export function rodar(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoe
 /** `[status, código, reembolsável]` de cada item do motor. */
 export function decisoes(despesas: (Record<string, unknown> | Cru)[], opcoes: Opcoes = {}) {
   return rodar(despesas, opcoes).map((i) => [statusDe(i), i.motivo.codigo, i.valorReembolsavel] as const);
+}
+
+// ---------------------------------------------------------------------------
+// CLI em processo filho (R-11): o projeto, ou uma cópia com dados/ trocado
+// ---------------------------------------------------------------------------
+
+/** Raiz do repositório. */
+export const RAIZ = resolve('.');
+
+/**
+ * Copia `src/`, `dados/` e `package.json` para uma pasta temporária (é o que
+ * o README ensina para testar outra tabela). Devolve a raiz da cópia; quem
+ * chama remove a pasta.
+ */
+export function copiaDoProjeto(): string {
+  const raiz = mkdtempSync(join(tmpdir(), 'reembolso-copia-'));
+  for (const item of ['src', 'dados', 'package.json']) cpSync(join(RAIZ, item), join(raiz, item), { recursive: true });
+  return raiz;
+}
+
+/** Roda `node <raiz>/src/cli.ts ...args` a partir de `cwd`. */
+export function rodarCli(args: string[], { raiz = RAIZ, cwd = RAIZ, env = {} }: { raiz?: string; cwd?: string; env?: Record<string, string> } = {}) {
+  const r = spawnSync(process.execPath, [join(raiz, 'src', 'cli.ts'), ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, ...env },
+  });
+  return { codigo: r.status, stdout: r.stdout, stderr: r.stderr };
 }
