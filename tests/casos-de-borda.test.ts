@@ -7,12 +7,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { lerCambio } from '../src/io/cambio.ts';
-import { serializarJson } from '../src/io/json.ts';
+import { ErroEntrada, validarEntrada } from '../src/io/entrada.ts';
+import { CAMINHO_POLITICA, lerExternos } from '../src/io/externos.ts';
+import { lerJson, serializarJson } from '../src/io/json.ts';
+import { lerPolitica } from '../src/io/politica.ts';
 import { montarSaida } from '../src/io/saida.ts';
 import { statusDe } from '../src/nucleo/status.ts';
 import type { ResultadoItem } from '../src/nucleo/tipos.ts';
 import { NumeroJson } from '../src/nucleo/tipos.ts';
-import { calcularV4, cru, entrada, rodar } from './apoio.ts';
+import { RAIZ, TEXTO_POLITICA_V4, calcularV4, copiaDoProjeto, cru, entrada, rodar, rodarCli } from './apoio.ts';
 
 /** O que a seção 7 verifica em cada item. */
 function decisao(i: ResultadoItem | undefined) {
@@ -817,5 +820,61 @@ describe('Casos de borda — aprovação manual', () => {
     );
     expect(r.itens.map((i) => decisao(i).status)).toEqual(['PENDENTE', 'APROVADO']);
     expect(r.resumo).toMatchObject({ totalReembolsavel: 8800n, totalPendente: 120000n, pendentes: 1 });
+  });
+});
+
+describe('Casos de borda — arquivos da v4', () => {
+  const copias: string[] = [];
+  afterAll(() => {
+    for (const p of copias) rmSync(p, { recursive: true, force: true });
+  });
+
+  /** Mensagem do `ErroEntrada` de `ler()`. */
+  function erro(ler: () => unknown): string {
+    try {
+      ler();
+    } catch (e) {
+      expect(e).toBeInstanceOf(ErroEntrada);
+      return (e as Error).message;
+    }
+    throw new Error('arquivo aceito');
+  }
+
+  const politica = () => JSON.parse(TEXTO_POLITICA_V4) as Record<string, any>;
+
+  it('Borda › Centro de custo não textual', () => {
+    const json = lerJson('{"colaborador": {"id": "c-1", "centro_custo": 42}, "periodo": {"inicio": "2026-07-01", "fim": "2026-07-31"}, "despesas": []}');
+    expect(erro(() => validarEntrada(json))).toContain('colaborador.centro_custo');
+  });
+
+  it('Borda › Tabela de limites inválida', () => {
+    const p = politica();
+    p.padrao.alimentacao.limite = -60;
+    expect(erro(() => lerPolitica(JSON.stringify(p)))).toMatch(/^tabela de limites .*padrao\.alimentacao\.limite/);
+  });
+
+  it('Borda › Arquivo de câmbio ausente', () => {
+    const inexistente = join(tmpdir(), 'reembolso-nao-existe', 'cambio.json');
+    expect(erro(() => lerExternos({ politica: CAMINHO_POLITICA, cambio: inexistente }))).toMatch(
+      /^arquivo de câmbio \(.*cambio\.json\): arquivo não encontrado$/,
+    );
+
+    // pelo CLI, numa cópia do projeto sem dados/cambio.json
+    const raiz = copiaDoProjeto();
+    copias.push(raiz);
+    rmSync(join(raiz, 'dados', 'cambio.json'));
+    const saida = join(raiz, 'saida.json');
+    const r = rodarCli(['calcular', '--input', join(RAIZ, 'exemplos', 'despesas-exemplo.json'), '--output', saida], { raiz });
+    expect(r.codigo).toBe(1);
+    expect(r.stderr).toMatch(/^erro: arquivo de câmbio \(dados\/cambio\.json\)/);
+    expect(existsSync(saida)).toBe(false);
+  });
+
+  it('Borda › Tabela sem versão', () => {
+    const p = politica();
+    delete p.versao;
+    const m = erro(() => lerPolitica(JSON.stringify(p)));
+    expect(m).toMatch(/^tabela de limites /);
+    expect(m).toContain('versao');
   });
 });
